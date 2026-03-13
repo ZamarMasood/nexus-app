@@ -1,11 +1,11 @@
 'use client';
 
 import { useFormState, useFormStatus } from 'react-dom';
-import { signInAction, type TeamLoginState } from './actions';
+import { signInAction, type LoginState } from './actions';
 import { Eye, EyeOff, Layers } from 'lucide-react';
 import { useState } from 'react';
 
-const initialState: TeamLoginState = { error: null };
+const initialState: LoginState = { error: null };
 
 function SubmitButton() {
   const { pending } = useFormStatus();
@@ -33,7 +33,7 @@ function SubmitButton() {
 }
 
 export default function LoginPage() {
-  const [state, action] = useFormState(signInAction, initialState);
+  const [state, action] = useFormState<LoginState, FormData>(signInAction, initialState);
   const [showPassword, setShowPassword] = useState(false);
 
   return (
@@ -94,7 +94,7 @@ export default function LoginPage() {
             Nexus
           </h1>
           <p className="mt-1 text-sm" style={{ color: '#7b78a8' }}>
-            Team workspace
+            Project workspace
           </p>
         </div>
 
@@ -115,7 +115,7 @@ export default function LoginPage() {
             Welcome back
           </h2>
           <p className="mb-6 text-sm" style={{ color: '#7b78a8' }}>
-            Sign in to your team account
+            Sign in to continue
           </p>
 
           <form action={action} className="space-y-4">
@@ -139,7 +139,7 @@ export default function LoginPage() {
                 className="block text-xs font-medium uppercase tracking-widest"
                 style={{ color: '#7b78a8' }}
               >
-                Work Email
+                Email
               </label>
               <input
                 id="email"
@@ -214,7 +214,7 @@ export default function LoginPage() {
         </div>
 
         <p className="mt-6 text-center text-xs" style={{ color: '#3d3a5a' }}>
-          Secure team access · Nexus Project Management
+          Nexus · Project Management Portal
         </p>
       </div>
     </div>

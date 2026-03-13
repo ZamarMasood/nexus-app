@@ -16,49 +16,51 @@ import {
   Send,
   ExternalLink,
   FileText,
+  Upload,
 } from "lucide-react";
 import {
   getTaskByIdWithAssignee,
   getCommentsByTaskId,
-  createComment,
   getFilesByTaskId,
+  uploadFileToTask,
 } from "@/lib/db/tasks";
-import type { TaskWithAssignee } from "@/lib/db/tasks";
-import type { Comment, ProjectFile } from "@/lib/types";
+import type { TaskWithAssignee, CommentWithAuthor } from "@/lib/db/tasks";
+import type { ProjectFile } from "@/lib/types";
+import { createCommentAction } from "./actions";
 
 // ── Priority config ───────────────────────────────────────────────────────────
 
 const PRIORITY_CONFIG = {
   urgent: {
     label: "Urgent",
-    badge: "bg-rose-50 text-rose-700 ring-1 ring-rose-200",
+    badge: "bg-rose-500/10 text-rose-400 ring-1 ring-rose-500/20",
     icon: AlertCircle,
-    iconColor: "text-rose-500",
+    iconColor: "text-rose-400",
   },
   high: {
     label: "High",
-    badge: "bg-orange-50 text-orange-700 ring-1 ring-orange-200",
+    badge: "bg-orange-500/10 text-orange-400 ring-1 ring-orange-500/20",
     icon: ArrowUp,
     iconColor: "text-orange-400",
   },
   normal: {
     label: "Normal",
-    badge: "bg-sky-50 text-sky-700 ring-1 ring-sky-200",
+    badge: "bg-sky-500/10 text-sky-400 ring-1 ring-sky-500/20",
     icon: Minus,
     iconColor: "text-sky-400",
   },
   low: {
     label: "Low",
-    badge: "bg-slate-100 text-slate-500 ring-1 ring-slate-200",
+    badge: "bg-surface-subtle text-muted-app ring-1 ring-surface",
     icon: ArrowDown,
-    iconColor: "text-slate-400",
+    iconColor: "text-faint-app",
   },
 } as const;
 
 const STATUS_CONFIG = {
-  todo: { label: "To Do", badge: "bg-slate-100 text-slate-600" },
-  in_progress: { label: "In Progress", badge: "bg-amber-100 text-amber-700" },
-  done: { label: "Done", badge: "bg-emerald-100 text-emerald-700" },
+  todo:        { label: "To Do",       badge: "bg-surface-subtle text-muted-app" },
+  in_progress: { label: "In Progress", badge: "bg-amber-500/10 text-amber-400" },
+  done:        { label: "Done",        badge: "bg-emerald-500/10 text-emerald-400" },
 } as const;
 
 // ── Skeleton ──────────────────────────────────────────────────────────────────
@@ -66,16 +68,16 @@ const STATUS_CONFIG = {
 function DetailSkeleton() {
   return (
     <div className="flex flex-col gap-8 animate-pulse">
-      <div className="h-8 w-2/3 rounded-lg bg-slate-100" />
+      <div className="h-8 w-2/3 rounded-lg bg-overlay-xs" />
       <div className="flex gap-3">
-        <div className="h-6 w-20 rounded-full bg-slate-100" />
-        <div className="h-6 w-20 rounded-full bg-slate-100" />
-        <div className="h-6 w-32 rounded-full bg-slate-100" />
+        <div className="h-6 w-20 rounded-full bg-overlay-xs" />
+        <div className="h-6 w-20 rounded-full bg-overlay-xs" />
+        <div className="h-6 w-32 rounded-full bg-overlay-xs" />
       </div>
       <div className="space-y-2">
-        <div className="h-3 w-full rounded bg-slate-100" />
-        <div className="h-3 w-full rounded bg-slate-100" />
-        <div className="h-3 w-3/4 rounded bg-slate-100" />
+        <div className="h-3 w-full rounded bg-overlay-xs" />
+        <div className="h-3 w-full rounded bg-overlay-xs" />
+        <div className="h-3 w-3/4 rounded bg-overlay-xs" />
       </div>
     </div>
   );
@@ -83,8 +85,15 @@ function DetailSkeleton() {
 
 // ── Comment item ──────────────────────────────────────────────────────────────
 
-function CommentItem({ comment }: { comment: Comment }) {
-  const initials = (comment.user_id ?? "?")[0]?.toUpperCase() ?? "?";
+function CommentItem({ comment }: { comment: CommentWithAuthor }) {
+  const authorName = comment.author_name ?? "Team Member";
+  const initials   = authorName
+    .split(" ")
+    .map((w) => w[0])
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
+
   const date = comment.created_at
     ? new Date(comment.created_at).toLocaleDateString("en-US", {
         month: "short",
@@ -96,17 +105,15 @@ function CommentItem({ comment }: { comment: Comment }) {
 
   return (
     <div className="flex gap-3">
-      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-violet-100 ring-2 ring-white shadow-sm">
-        <span className="text-xs font-bold text-violet-600">{initials}</span>
+      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-violet-500/15 ring-2 ring-surface shadow-sm">
+        <span className="text-xs font-bold text-violet-400">{initials}</span>
       </div>
-      <div className="flex-1 rounded-xl border border-slate-100 bg-white px-4 py-3 shadow-[0_1px_3px_rgba(15,23,42,0.05)]">
+      <div className="flex-1 rounded-xl border border-surface bg-surface-card px-4 py-3">
         <div className="flex items-center justify-between gap-2 mb-1.5">
-          <span className="text-xs font-semibold text-slate-700">
-            {comment.user_id ? `User ${comment.user_id.slice(0, 8)}` : "Anonymous"}
-          </span>
-          <span className="text-[11px] text-slate-400">{date}</span>
+          <span className="text-xs font-semibold text-secondary-app">{authorName}</span>
+          <span className="text-[11px] text-dim-app">{date}</span>
         </div>
-        <p className="text-sm text-slate-600 leading-relaxed whitespace-pre-wrap">
+        <p className="text-sm text-muted-app leading-relaxed whitespace-pre-wrap">
           {comment.content}
         </p>
       </div>
@@ -122,15 +129,15 @@ function FileItem({ file }: { file: ProjectFile }) {
       href={file.file_url ?? "#"}
       target="_blank"
       rel="noopener noreferrer"
-      className="flex items-center gap-3 rounded-xl border border-slate-100 bg-white px-4 py-3 shadow-[0_1px_3px_rgba(15,23,42,0.05)] hover:border-violet-200 hover:shadow-[0_2px_8px_rgba(139,92,246,0.1)] transition-[border-color,box-shadow] group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400"
+      className="flex items-center gap-3 rounded-xl border border-surface bg-surface-card px-4 py-3 hover:border-violet-500/30 hover:shadow-[0_2px_8px_rgba(139,92,246,0.1)] transition-[border-color,box-shadow] group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400"
     >
-      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-violet-50 ring-1 ring-violet-100">
-        <FileText className="h-4 w-4 text-violet-500" />
+      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-violet-500/15 ring-1 ring-violet-500/20">
+        <FileText className="h-4 w-4 text-violet-400" />
       </div>
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium text-slate-700 truncate">{file.filename ?? "Unnamed file"}</p>
+        <p className="text-sm font-medium text-secondary-app truncate">{file.filename ?? "Unnamed file"}</p>
         {file.created_at && (
-          <p className="text-[11px] text-slate-400">
+          <p className="text-[11px] text-dim-app">
             {new Date(file.created_at).toLocaleDateString("en-US", {
               month: "short",
               day: "numeric",
@@ -138,7 +145,7 @@ function FileItem({ file }: { file: ProjectFile }) {
           </p>
         )}
       </div>
-      <ExternalLink className="h-3.5 w-3.5 text-slate-300 group-hover:text-violet-400 transition-colors shrink-0" />
+      <ExternalLink className="h-3.5 w-3.5 text-faint-app group-hover:text-violet-400 transition-colors shrink-0" />
     </a>
   );
 }
@@ -148,14 +155,17 @@ function FileItem({ file }: { file: ProjectFile }) {
 export default function TaskDetailPage({ params }: { params: { id: string } }) {
   const router = useRouter();
   const [task, setTask] = useState<TaskWithAssignee | null>(null);
-  const [comments, setComments] = useState<Comment[]>([]);
+  const [comments, setComments] = useState<CommentWithAuthor[]>([]);
   const [files, setFiles] = useState<ProjectFile[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [commentText, setCommentText] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [commentError, setCommentError] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     async function load() {
@@ -177,6 +187,22 @@ export default function TaskDetailPage({ params }: { params: { id: string } }) {
     load();
   }, [params.id]);
 
+  async function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    setUploadError(null);
+    try {
+      const newFile = await uploadFileToTask(params.id, file);
+      setFiles((prev) => [newFile, ...prev]);
+    } catch (err) {
+      setUploadError(err instanceof Error ? err.message : "Upload failed.");
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  }
+
   async function handleSubmitComment(e: React.FormEvent) {
     e.preventDefault();
     if (!commentText.trim() || submitting) return;
@@ -184,7 +210,7 @@ export default function TaskDetailPage({ params }: { params: { id: string } }) {
     setSubmitting(true);
     setCommentError(null);
     try {
-      const newComment = await createComment(params.id, commentText.trim());
+      const newComment = await createCommentAction(params.id, commentText.trim());
       setComments((prev) => [...prev, newComment]);
       setCommentText("");
     } catch (err) {
@@ -202,11 +228,11 @@ export default function TaskDetailPage({ params }: { params: { id: string } }) {
   const statusConfig = status ? STATUS_CONFIG[status] ?? STATUS_CONFIG.todo : null;
 
   return (
-    <div className="mx-auto max-w-4xl">
+    <div className="mx-auto max-w-4xl p-6 sm:p-8 lg:p-10">
       {/* Back nav */}
       <button
         onClick={() => router.back()}
-        className="mb-6 flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-800 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400 rounded"
+        className="mb-6 flex items-center gap-1.5 text-sm text-faint-app hover:text-secondary-app transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400 rounded"
       >
         <ArrowLeft className="h-4 w-4" />
         Back to tasks
@@ -215,13 +241,13 @@ export default function TaskDetailPage({ params }: { params: { id: string } }) {
       {loading ? (
         <DetailSkeleton />
       ) : error ? (
-        <div className="rounded-xl border border-rose-100 bg-rose-50 px-5 py-4 text-sm text-rose-700">
+        <div className="rounded-xl border border-rose-500/20 bg-rose-500/10 px-5 py-4 text-sm text-rose-400">
           {error}
         </div>
       ) : task ? (
         <div className="flex flex-col gap-8">
           {/* Title + meta */}
-          <div className="rounded-2xl border border-slate-100 bg-white p-7 shadow-[0_1px_3px_rgba(15,23,42,0.06),0_4px_16px_rgba(15,23,42,0.04)]">
+          <div className="rounded-2xl border border-surface bg-surface-card p-7">
             <div className="flex flex-wrap items-center gap-2 mb-5">
               {statusConfig && (
                 <span className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${statusConfig.badge}`}>
@@ -236,14 +262,14 @@ export default function TaskDetailPage({ params }: { params: { id: string } }) {
               )}
             </div>
 
-            <h1 className="text-2xl font-bold tracking-[-0.03em] text-slate-900 leading-tight mb-6">
+            <h1 className="text-2xl font-bold tracking-[-0.03em] text-bright leading-tight mb-6">
               {task.title}
             </h1>
 
             {/* Meta row */}
-            <div className="grid grid-cols-2 gap-x-8 gap-y-4 sm:grid-cols-3 border-t border-slate-100 pt-5">
+            <div className="grid grid-cols-2 gap-x-8 gap-y-4 sm:grid-cols-3 border-t border-surface pt-5">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">Assignee</p>
+                <p className="text-xs font-semibold uppercase tracking-wider text-dim-app mb-1.5">Assignee</p>
                 {task.assignee ? (
                   <div className="flex items-center gap-2">
                     {task.assignee.avatar_url ? (
@@ -255,19 +281,19 @@ export default function TaskDetailPage({ params }: { params: { id: string } }) {
                         className="h-6 w-6 rounded-full object-cover"
                       />
                     ) : (
-                      <div className="flex h-6 w-6 items-center justify-center rounded-full bg-violet-100">
-                        <span className="text-[10px] font-bold text-violet-600">
+                      <div className="flex h-6 w-6 items-center justify-center rounded-full bg-violet-500/15">
+                        <span className="text-[10px] font-bold text-violet-400">
                           {task.assignee.name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2)}
                         </span>
                       </div>
                     )}
-                    <span className="text-sm text-slate-700">{task.assignee.name}</span>
+                    <span className="text-sm text-secondary-app">{task.assignee.name}</span>
                     {task.assignee.role && (
-                      <span className="text-xs text-slate-400">· {task.assignee.role}</span>
+                      <span className="text-xs text-dim-app">· {task.assignee.role}</span>
                     )}
                   </div>
                 ) : (
-                  <div className="flex items-center gap-2 text-sm text-slate-400">
+                  <div className="flex items-center gap-2 text-sm text-faint-app">
                     <User className="h-4 w-4" />
                     Unassigned
                   </div>
@@ -275,10 +301,10 @@ export default function TaskDetailPage({ params }: { params: { id: string } }) {
               </div>
 
               <div>
-                <p className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">Due Date</p>
+                <p className="text-xs font-semibold uppercase tracking-wider text-dim-app mb-1.5">Due Date</p>
                 {task.due_date ? (
-                  <div className="flex items-center gap-1.5 text-sm text-slate-700">
-                    <CalendarDays className="h-4 w-4 text-slate-400" />
+                  <div className="flex items-center gap-1.5 text-sm text-secondary-app">
+                    <CalendarDays className="h-4 w-4 text-dim-app" />
                     {new Date(task.due_date).toLocaleDateString("en-US", {
                       weekday: "short",
                       month: "short",
@@ -287,13 +313,13 @@ export default function TaskDetailPage({ params }: { params: { id: string } }) {
                     })}
                   </div>
                 ) : (
-                  <span className="text-sm text-slate-400">No due date</span>
+                  <span className="text-sm text-faint-app">No due date</span>
                 )}
               </div>
 
               <div>
-                <p className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">Created</p>
-                <span className="text-sm text-slate-700">
+                <p className="text-xs font-semibold uppercase tracking-wider text-dim-app mb-1.5">Created</p>
+                <span className="text-sm text-secondary-app">
                   {task.created_at
                     ? new Date(task.created_at).toLocaleDateString("en-US", {
                         month: "short",
@@ -307,9 +333,9 @@ export default function TaskDetailPage({ params }: { params: { id: string } }) {
 
             {/* Description */}
             {task.description && (
-              <div className="mt-6 border-t border-slate-100 pt-5">
-                <p className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-3">Description</p>
-                <p className="text-sm text-slate-600 leading-relaxed whitespace-pre-wrap">{task.description}</p>
+              <div className="mt-6 border-t border-surface pt-5">
+                <p className="text-xs font-semibold uppercase tracking-wider text-dim-app mb-3">Description</p>
+                <p className="text-sm text-muted-app leading-relaxed whitespace-pre-wrap">{task.description}</p>
               </div>
             )}
           </div>
@@ -317,20 +343,43 @@ export default function TaskDetailPage({ params }: { params: { id: string } }) {
           {/* File attachments */}
           <div>
             <div className="flex items-center gap-2 mb-4">
-              <Paperclip className="h-4 w-4 text-slate-400" />
-              <h2 className="text-sm font-semibold text-slate-700">
+              <Paperclip className="h-4 w-4 text-dim-app" />
+              <h2 className="text-sm font-semibold text-secondary-app">
                 Attachments
                 {files.length > 0 && (
-                  <span className="ml-1.5 inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-slate-100 px-1.5 text-[11px] font-semibold text-slate-500">
+                  <span className="ml-1.5 inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-overlay-xs px-1.5 text-[11px] font-semibold text-muted-app">
                     {files.length}
                   </span>
                 )}
               </h2>
+              <input
+                ref={fileInputRef}
+                type="file"
+                className="hidden"
+                onChange={handleFileUpload}
+              />
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploading}
+                className="ml-auto flex items-center gap-1.5 rounded-lg border border-surface bg-surface-card px-3 py-1.5 text-xs font-semibold text-muted-app hover:border-violet-500/30 hover:text-violet-400 disabled:opacity-50 disabled:cursor-not-allowed transition-[border-color,color] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400"
+              >
+                <Upload className="h-3.5 w-3.5" />
+                {uploading ? "Uploading…" : "Upload file"}
+              </button>
             </div>
+            {uploadError && (
+              <p className="mb-3 rounded-lg bg-rose-500/10 px-3 py-2 text-sm text-rose-400 ring-1 ring-rose-500/20">
+                {uploadError}
+              </p>
+            )}
             {files.length === 0 ? (
-              <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50/50 px-5 py-8 text-center">
-                <Paperclip className="mx-auto h-6 w-6 text-slate-300 mb-2" />
-                <p className="text-sm text-slate-400">No attachments yet</p>
+              <div
+                className="rounded-xl border border-dashed border-surface bg-surface-subtle px-5 py-8 text-center cursor-pointer hover:border-violet-500/30 hover:bg-violet-500/[0.03] transition-colors"
+                onClick={() => fileInputRef.current?.click()}
+              >
+                <Upload className="mx-auto h-6 w-6 text-faint-app mb-2" />
+                <p className="text-sm text-faint-app">Click to upload a file</p>
+                <p className="mt-0.5 text-xs text-dim-app">Any file type supported</p>
               </div>
             ) : (
               <div className="grid gap-2 sm:grid-cols-2">
@@ -342,17 +391,17 @@ export default function TaskDetailPage({ params }: { params: { id: string } }) {
           </div>
 
           {/* Comments */}
-          <div>
-            <div className="flex items-center gap-2 mb-4">
-              <MessageSquare className="h-4 w-4 text-slate-400" />
-              <h2 className="text-sm font-semibold text-slate-700">
+          <div className="rounded-2xl border border-surface bg-surface-card p-6">
+            <div className="flex items-center gap-2 mb-5">
+              <MessageSquare className="h-4 w-4 text-dim-app" />
+              <h2 className="text-sm font-semibold text-secondary-app">
                 Comments
-                {comments.length > 0 && (
-                  <span className="ml-1.5 inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-slate-100 px-1.5 text-[11px] font-semibold text-slate-500">
-                    {comments.length}
-                  </span>
-                )}
               </h2>
+              {comments.length > 0 && (
+                <span className="ml-1 inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-overlay-xs px-1.5 text-[11px] font-semibold text-muted-app">
+                  {comments.length}
+                </span>
+              )}
             </div>
 
             <div className="flex flex-col gap-3">
@@ -361,21 +410,24 @@ export default function TaskDetailPage({ params }: { params: { id: string } }) {
               ))}
 
               {comments.length === 0 && (
-                <p className="text-sm text-slate-400 px-1">No comments yet. Start the conversation.</p>
+                <p className="text-sm text-faint-app px-1">No comments yet. Start the conversation.</p>
               )}
 
               {commentError && (
-                <p className="rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-600 ring-1 ring-rose-200">
+                <p className="rounded-lg bg-rose-500/10 px-3 py-2 text-sm text-rose-400 ring-1 ring-rose-500/20">
                   {commentError}
                 </p>
               )}
 
               {/* Comment form */}
-              <form onSubmit={handleSubmitComment} className="mt-2 flex gap-3">
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-violet-100 ring-2 ring-white shadow-sm self-start mt-0.5">
-                  <User className="h-4 w-4 text-violet-500" />
+              <div className="mt-2 flex gap-3">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-violet-500/15 ring-2 ring-surface self-start mt-0.5">
+                  <User className="h-4 w-4 text-violet-400" />
                 </div>
-                <div className="flex-1 rounded-xl border border-slate-200 bg-white shadow-[0_1px_3px_rgba(15,23,42,0.06)] overflow-hidden focus-within:border-violet-300 focus-within:shadow-[0_1px_3px_rgba(15,23,42,0.06),0_0_0_3px_rgba(139,92,246,0.12)] transition-[border-color,box-shadow]">
+                <form
+                  onSubmit={handleSubmitComment}
+                  className="flex-1 rounded-xl border border-surface bg-surface-inset overflow-hidden focus-within:border-violet-500/40 focus-within:shadow-[0_0_0_3px_rgba(139,92,246,0.1)] transition-[border-color,box-shadow]"
+                >
                   <textarea
                     ref={textareaRef}
                     value={commentText}
@@ -387,9 +439,9 @@ export default function TaskDetailPage({ params }: { params: { id: string } }) {
                     }}
                     placeholder="Add a comment… (⌘↵ to send)"
                     rows={2}
-                    className="w-full resize-none px-4 py-3 text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none"
+                    className="w-full resize-none bg-transparent px-4 py-3 text-sm text-secondary-app placeholder:text-dim-app focus:outline-none"
                   />
-                  <div className="flex items-center justify-end border-t border-slate-100 px-3 py-2">
+                  <div className="flex items-center justify-end border-t border-surface px-3 py-2">
                     <button
                       type="submit"
                       disabled={!commentText.trim() || submitting}
@@ -399,8 +451,8 @@ export default function TaskDetailPage({ params }: { params: { id: string } }) {
                       {submitting ? "Posting…" : "Comment"}
                     </button>
                   </div>
-                </div>
-              </form>
+                </form>
+              </div>
             </div>
           </div>
         </div>

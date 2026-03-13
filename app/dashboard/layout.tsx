@@ -8,8 +8,13 @@ import {
   CheckSquare,
   Users,
   Receipt,
+  Settings,
+  LogOut,
+  ChevronRight,
 } from "lucide-react";
 import { TaskFormProvider } from "./task-form-context";
+import { signOutAction } from "@/app/(auth)/login/actions";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 const NAV = [
   { href: "/dashboard", label: "Overview", icon: LayoutDashboard, exact: true },
@@ -17,6 +22,7 @@ const NAV = [
   { href: "/dashboard/tasks", label: "Tasks", icon: CheckSquare },
   { href: "/dashboard/clients", label: "Clients", icon: Users },
   { href: "/dashboard/invoices", label: "Invoices", icon: Receipt },
+  { href: "/dashboard/settings", label: "Settings", icon: Settings },
 ];
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -24,19 +30,19 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   return (
     <TaskFormProvider>
-      <div className="flex min-h-screen flex-col bg-slate-50 lg:flex-row">
+      <div className="flex h-screen overflow-hidden flex-col bg-surface-page lg:flex-row">
 
-        {/* ── Mobile top bar (hidden on lg+) ─────────────────────────────── */}
-        <header className="flex shrink-0 items-center gap-3 bg-[#0e0f14] px-4 py-3 lg:hidden">
-          {/* Brand mark */}
-          <div className="flex shrink-0 items-center gap-2 mr-2">
-            <div className="flex h-6 w-6 items-center justify-center rounded-md bg-violet-500 shadow-[0_0_10px_rgba(139,92,246,0.5)]">
-              <span className="text-[10px] font-black text-white">N</span>
+        {/* ── Mobile top bar ─────────────────────────────────────────────── */}
+        <header className="flex shrink-0 items-center gap-2 bg-surface-sidebar border-b border-surface px-4 py-3 lg:hidden">
+          {/* Brand */}
+          <div className="flex shrink-0 items-center gap-2 mr-3">
+            <div className="relative flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-violet-500 to-violet-700 shadow-[0_0_16px_rgba(139,92,246,0.45)]">
+              <span className="text-[11px] font-black text-white tracking-tight">N</span>
             </div>
-            <span className="text-sm font-bold tracking-[-0.02em] text-white">Nexus</span>
+            <span className="text-sm font-semibold tracking-[-0.03em] text-bright">Nexus</span>
           </div>
 
-          {/* Nav links — horizontal scroll */}
+          {/* Nav */}
           <nav className="flex flex-1 items-center gap-0.5 overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none]">
             {NAV.map(({ href, label, icon: Icon, exact }) => {
               const active = exact ? pathname === href : pathname.startsWith(href);
@@ -46,11 +52,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   href={href}
                   className={[
                     "flex shrink-0 items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium",
-                    "transition-[background-color,color]",
-                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500",
+                    "transition-[background-color,color] duration-150",
+                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/60",
                     active
-                      ? "bg-violet-500/20 text-violet-300"
-                      : "text-slate-400 hover:bg-white/5 hover:text-slate-200",
+                      ? "bg-violet-500/15 text-violet-600 dark:text-violet-300"
+                      : "text-muted-app hover:bg-surface-subtle hover:text-secondary-app",
                   ].join(" ")}
                 >
                   <Icon className="h-3.5 w-3.5 shrink-0" />
@@ -59,23 +65,40 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               );
             })}
           </nav>
+
+          {/* Theme toggle + Mobile logout */}
+          <div className="flex shrink-0 items-center gap-1 ml-1">
+            <ThemeToggle />
+            <form action={signOutAction}>
+              <button
+                type="submit"
+                title="Sign out"
+                className="flex items-center justify-center rounded-lg p-1.5 text-faint-app transition-[background-color,color] duration-150 hover:bg-surface-subtle hover:text-muted-app focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/60 active:scale-95"
+              >
+                <LogOut className="h-4 w-4" />
+              </button>
+            </form>
+          </div>
         </header>
 
-        {/* ── Desktop sidebar (hidden below lg) ──────────────────────────── */}
-        <aside className="hidden lg:flex w-60 shrink-0 flex-col bg-[#0e0f14] px-3 py-5">
+        {/* ── Desktop sidebar ──────────────────────────────────────────────── */}
+        <aside className="hidden lg:flex w-[220px] shrink-0 flex-col bg-surface-sidebar border-r border-surface">
           {/* Brand */}
-          <div className="mb-8 px-3">
+          <div className="px-5 pt-6 pb-7">
             <div className="flex items-center gap-2.5">
-              <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-violet-500 shadow-[0_0_12px_rgba(139,92,246,0.5)]">
-                <span className="text-[11px] font-black text-white tracking-tight">N</span>
+              <div className="relative flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-violet-500 to-violet-700 shadow-[0_0_20px_rgba(139,92,246,0.4)]">
+                <span className="text-[12px] font-black text-white tracking-tight">N</span>
               </div>
-              <span className="text-base font-bold tracking-[-0.02em] text-white">Nexus</span>
+              <div>
+                <span className="block text-[15px] font-semibold tracking-[-0.03em] text-bright leading-none">Nexus</span>
+                <span className="block text-[10px] text-dim-app mt-0.5 font-medium tracking-wide uppercase">Workspace</span>
+              </div>
             </div>
-            <p className="mt-1 pl-[36px] text-[11px] text-slate-500">Team workspace</p>
           </div>
 
           {/* Nav */}
-          <nav className="flex flex-col gap-0.5">
+          <nav className="flex flex-col gap-0.5 px-3 flex-1">
+            <p className="px-3 mb-2 text-[10px] font-semibold uppercase tracking-widest text-dim-app">Menu</p>
             {NAV.map(({ href, label, icon: Icon, exact }) => {
               const active = exact ? pathname === href : pathname.startsWith(href);
               return (
@@ -83,37 +106,54 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   key={href}
                   href={href}
                   className={[
-                    "group flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium",
-                    "transition-[background-color,color]",
-                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500",
+                    "group relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-[13px] font-medium",
+                    "transition-[background-color,color] duration-150",
+                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/60",
                     active
-                      ? "bg-violet-500/15 text-violet-300"
-                      : "text-slate-400 hover:bg-white/5 hover:text-slate-200",
+                      ? "bg-violet-500/10 text-bright"
+                      : "text-faint-app hover:bg-surface-subtle hover:text-secondary-app",
                   ].join(" ")}
                 >
+                  {/* Active left accent */}
+                  {active && (
+                    <span className="absolute left-0 top-1/2 -translate-y-1/2 h-4 w-0.5 rounded-r-full bg-violet-400 shadow-[0_0_8px_rgba(167,139,250,0.8)]" />
+                  )}
                   <Icon
                     className={`h-4 w-4 shrink-0 transition-colors ${
-                      active ? "text-violet-400" : "text-slate-500 group-hover:text-slate-300"
+                      active ? "text-violet-500 dark:text-violet-400" : "text-dim-app group-hover:text-muted-app"
                     }`}
                   />
                   {label}
                   {active && (
-                    <span className="ml-auto h-1.5 w-1.5 rounded-full bg-violet-400" />
+                    <ChevronRight className="ml-auto h-3 w-3 text-violet-400/50" />
                   )}
                 </Link>
               );
             })}
           </nav>
 
-          {/* Footer */}
-          <div className="mt-auto border-t border-white/5 px-3 pt-4">
-            <p className="text-[11px] text-slate-600">Phase 1 · Internal</p>
-            <p className="mt-1 text-[10px] text-slate-700">Press C to add a task</p>
+          {/* Bottom — theme toggle + sign out */}
+          <div className="px-3 pb-5 pt-4 border-t border-surface mt-4 space-y-1">
+            {/* Theme toggle row */}
+            <div className="flex items-center gap-3 rounded-lg px-3 py-2">
+              <span className="text-[13px] font-medium text-faint-app flex-1">Theme</span>
+              <ThemeToggle />
+            </div>
+
+            <form action={signOutAction}>
+              <button
+                type="submit"
+                className="group flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-[13px] font-medium text-faint-app transition-[background-color,color] duration-150 hover:bg-rose-500/8 hover:text-rose-500 dark:hover:text-rose-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40 active:scale-[0.98]"
+              >
+                <LogOut className="h-4 w-4 shrink-0 text-dim-app transition-colors group-hover:text-rose-500 dark:group-hover:text-rose-400" />
+                Sign out
+              </button>
+            </form>
           </div>
         </aside>
 
-        {/* ── Main content ────────────────────────────────────────────────── */}
-        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">{children}</main>
+        {/* ── Main content ─────────────────────────────────────────────────── */}
+        <main className="flex-1 overflow-y-auto">{children}</main>
       </div>
     </TaskFormProvider>
   );

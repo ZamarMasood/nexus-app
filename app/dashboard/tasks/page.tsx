@@ -7,21 +7,22 @@ import Image from "next/image";
 import { TaskBoard } from "@/components/tasks/TaskBoard";
 import type { TaskWithAssignee } from "@/components/tasks/TaskCard";
 import { getTasksWithAssignees } from "@/lib/db/tasks";
+import { useTaskForm } from "@/app/dashboard/task-form-context";
 
 // ── Skeleton ──────────────────────────────────────────────────────────────────
 
 function SkeletonCard() {
   return (
-    <div className="flex flex-col gap-3 rounded-xl border border-slate-100 bg-white p-4 shadow-[0_1px_3px_rgba(15,23,42,0.06)]">
+    <div className="flex flex-col gap-3 rounded-xl border border-surface bg-surface-card p-4">
       <div className="flex items-start justify-between gap-3">
-        <div className="h-4 w-3/4 rounded bg-slate-100 animate-pulse" />
-        <div className="h-5 w-14 rounded-full bg-slate-100 animate-pulse" />
+        <div className="h-4 w-3/4 rounded bg-overlay-md animate-pulse" />
+        <div className="h-5 w-14 rounded-full bg-overlay-md animate-pulse" />
       </div>
-      <div className="h-3 w-full rounded bg-slate-100 animate-pulse" />
-      <div className="h-3 w-2/3 rounded bg-slate-100 animate-pulse" />
+      <div className="h-3 w-full rounded bg-overlay-sm animate-pulse" />
+      <div className="h-3 w-2/3 rounded bg-overlay-sm animate-pulse" />
       <div className="flex items-center justify-between">
-        <div className="h-5 w-20 rounded bg-slate-100 animate-pulse" />
-        <div className="h-3 w-16 rounded bg-slate-100 animate-pulse" />
+        <div className="h-5 w-20 rounded bg-overlay-md animate-pulse" />
+        <div className="h-3 w-16 rounded bg-overlay-sm animate-pulse" />
       </div>
     </div>
   );
@@ -29,17 +30,17 @@ function SkeletonCard() {
 
 function BoardSkeleton() {
   return (
-    <div className="flex gap-5 overflow-x-auto pb-6">
+    <div className="flex justify-center gap-5 overflow-x-auto pb-6">
       {[0, 1, 2].map((col) => (
-        <div key={col} className="flex w-[300px] shrink-0 flex-col">
-          <div className="mb-3 flex items-center justify-between px-1">
-            <div className="flex items-center gap-2">
-              <div className="h-2 w-2 rounded-full bg-slate-200 animate-pulse" />
-              <div className="h-4 w-20 rounded bg-slate-200 animate-pulse" />
+        <div key={col} className="flex w-[380px] shrink-0 flex-col">
+          <div className="mb-3 flex items-center justify-between rounded-xl border border-surface bg-surface-subtle px-4 py-2.5">
+            <div className="flex items-center gap-2.5">
+              <div className="h-2 w-2 rounded-full bg-surface-inset animate-pulse shrink-0" />
+              <div className="h-3.5 w-24 rounded bg-overlay-md animate-pulse" />
             </div>
-            <div className="h-5 w-5 rounded-full bg-slate-200 animate-pulse" />
+            <div className="h-3.5 w-4 rounded bg-overlay-md animate-pulse" />
           </div>
-          <div className="flex flex-col gap-2.5 rounded-2xl bg-slate-50/80 p-3 min-h-[240px]">
+          <div className="flex flex-col gap-2.5 rounded-2xl bg-overlay-sm p-3 min-h-[240px]">
             {Array.from({ length: col === 1 ? 3 : 2 }).map((_, i) => (
               <SkeletonCard key={i} />
             ))}
@@ -53,22 +54,22 @@ function BoardSkeleton() {
 // ── List view ─────────────────────────────────────────────────────────────────
 
 const PRIORITY_STYLES = {
-  urgent: "bg-rose-50 text-rose-700 ring-1 ring-rose-200",
-  high: "bg-orange-50 text-orange-700 ring-1 ring-orange-200",
-  normal: "bg-sky-50 text-sky-700 ring-1 ring-sky-200",
-  low: "bg-slate-100 text-slate-500 ring-1 ring-slate-200",
+  urgent: "bg-rose-500/10 text-rose-400 ring-1 ring-rose-500/20",
+  high:   "bg-orange-500/10 text-orange-400 ring-1 ring-orange-500/20",
+  normal: "bg-sky-500/10 text-sky-400 ring-1 ring-sky-500/20",
+  low:    "bg-surface-subtle text-muted-app ring-1 ring-surface",
 } as const;
 
 const STATUS_STYLES = {
-  todo: "bg-slate-100 text-slate-600",
-  in_progress: "bg-amber-100 text-amber-700",
-  done: "bg-emerald-100 text-emerald-700",
+  todo:        "bg-surface-subtle text-secondary-app",
+  in_progress: "bg-amber-400/10 text-amber-400",
+  done:        "bg-emerald-400/10 text-emerald-400",
 } as const;
 
 const STATUS_LABELS = {
-  todo: "To Do",
+  todo:        "To Do",
   in_progress: "In Progress",
-  done: "Done",
+  done:        "Done",
 } as const;
 
 function ListView({
@@ -79,11 +80,11 @@ function ListView({
   onTaskClick?: (task: TaskWithAssignee) => void;
 }) {
   return (
-    <div className="rounded-xl border border-slate-100 bg-white shadow-[0_1px_3px_rgba(15,23,42,0.06),0_2px_8px_rgba(15,23,42,0.04)] overflow-hidden">
+    <div className="rounded-xl border border-surface bg-surface-card overflow-hidden">
       {/* Table header */}
-      <div className="grid grid-cols-[1fr_100px_120px_120px_100px] gap-4 border-b border-slate-100 bg-slate-50/80 px-5 py-3">
+      <div className="grid grid-cols-[1fr_100px_120px_120px_100px] gap-4 border-b border-surface bg-overlay-xs px-5 py-3">
         {["Task", "Priority", "Status", "Assignee", "Due Date"].map((h) => (
-          <span key={h} className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+          <span key={h} className="text-xs font-semibold uppercase tracking-wider text-dim-app">
             {h}
           </span>
         ))}
@@ -91,7 +92,7 @@ function ListView({
 
       {tasks.length === 0 && (
         <div className="flex items-center justify-center py-16">
-          <p className="text-sm text-slate-400">No tasks yet</p>
+          <p className="text-sm text-faint-app">No tasks yet</p>
         </div>
       )}
 
@@ -101,12 +102,12 @@ function ListView({
           onClick={() => onTaskClick?.(task)}
           className={[
             "grid w-full grid-cols-[1fr_100px_120px_120px_100px] gap-4 px-5 py-3.5 text-left",
-            "hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-violet-400",
+            "hover:bg-overlay-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-violet-400",
             "transition-colors",
-            i !== tasks.length - 1 ? "border-b border-slate-50" : "",
+            i !== tasks.length - 1 ? "border-b border-surface" : "",
           ].join(" ")}
         >
-          <span className="text-sm font-medium text-slate-800 truncate leading-snug">
+          <span className="text-sm font-medium text-primary-app truncate leading-snug">
             {task.title}
           </span>
 
@@ -148,8 +149,8 @@ function ListView({
                     className="h-5 w-5 rounded-full object-cover"
                   />
                 ) : (
-                  <div className="flex h-5 w-5 items-center justify-center rounded-full bg-violet-100">
-                    <span className="text-[9px] font-bold text-violet-600">
+                  <div className="flex h-5 w-5 items-center justify-center rounded-full bg-violet-500/20">
+                    <span className="text-[9px] font-bold text-violet-300">
                       {task.assignee.name
                         .split(" ")
                         .map((n) => n[0])
@@ -159,14 +160,14 @@ function ListView({
                     </span>
                   </div>
                 )}
-                <span className="text-[11px] text-slate-500 truncate">{task.assignee.name}</span>
+                <span className="text-[11px] text-muted-app truncate">{task.assignee.name}</span>
               </>
             ) : (
-              <span className="text-[11px] text-slate-400">—</span>
+              <span className="text-[11px] text-faint-app">—</span>
             )}
           </span>
 
-          <span className="text-[11px] text-slate-500">
+          <span className="text-[11px] text-muted-app">
             {task.due_date
               ? new Date(task.due_date).toLocaleDateString("en-US", {
                   month: "short",
@@ -186,6 +187,7 @@ type ViewMode = "kanban" | "list";
 
 export default function TasksPage() {
   const router = useRouter();
+  const { openTaskForm } = useTaskForm();
   const [view, setView] = useState<ViewMode>("kanban");
   const [tasks, setTasks] = useState<TaskWithAssignee[]>([]);
   const [loading, setLoading] = useState(true);
@@ -203,19 +205,19 @@ export default function TasksPage() {
   }
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="p-6 sm:p-8 lg:p-10 flex flex-col gap-6">
       {/* Page header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-[-0.03em] text-slate-900">Tasks</h1>
-          <p className="mt-0.5 text-sm text-slate-500">
+          <h1 className="text-2xl font-bold tracking-[-0.03em] text-bright">Tasks</h1>
+          <p className="mt-0.5 text-sm text-faint-app">
             {loading ? "Loading…" : `${tasks.length} task${tasks.length !== 1 ? "s" : ""} across all projects`}
           </p>
         </div>
 
         <div className="flex items-center gap-3">
           {/* View toggle */}
-          <div className="flex items-center rounded-lg border border-slate-200 bg-white p-0.5 shadow-[0_1px_3px_rgba(15,23,42,0.06)]">
+          <div className="flex items-center rounded-lg border border-surface bg-surface-card p-0.5">
             <button
               onClick={() => setView("kanban")}
               className={[
@@ -223,8 +225,8 @@ export default function TasksPage() {
                 "transition-[background-color,color,box-shadow]",
                 "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400",
                 view === "kanban"
-                  ? "bg-slate-900 text-white shadow-sm"
-                  : "text-slate-500 hover:text-slate-700",
+                  ? "bg-violet-600 text-white shadow-sm"
+                  : "text-muted-app hover:text-secondary-app",
               ].join(" ")}
             >
               <LayoutGrid className="h-3.5 w-3.5" />
@@ -237,8 +239,8 @@ export default function TasksPage() {
                 "transition-[background-color,color,box-shadow]",
                 "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400",
                 view === "list"
-                  ? "bg-slate-900 text-white shadow-sm"
-                  : "text-slate-500 hover:text-slate-700",
+                  ? "bg-violet-600 text-white shadow-sm"
+                  : "text-muted-app hover:text-secondary-app",
               ].join(" ")}
             >
               <List className="h-3.5 w-3.5" />
@@ -247,7 +249,10 @@ export default function TasksPage() {
           </div>
 
           {/* New task */}
-          <button className="flex items-center gap-1.5 rounded-lg bg-violet-600 px-3.5 py-2 text-xs font-semibold text-white shadow-[0_2px_8px_rgba(139,92,246,0.35)] hover:bg-violet-700 hover:shadow-[0_4px_12px_rgba(139,92,246,0.4)] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400 focus-visible:ring-offset-2 transition-[background-color,box-shadow,transform]">
+          <button
+            onClick={() => openTaskForm()}
+            className="flex items-center gap-1.5 rounded-lg bg-violet-600 px-3.5 py-2 text-xs font-semibold text-white shadow-[0_2px_8px_rgba(139,92,246,0.35)] hover:bg-violet-500 hover:shadow-[0_4px_12px_rgba(139,92,246,0.4)] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400 focus-visible:ring-offset-2 transition-[background-color,box-shadow,transform]"
+          >
             <Plus className="h-3.5 w-3.5" />
             New task
           </button>
@@ -256,7 +261,7 @@ export default function TasksPage() {
 
       {/* Error */}
       {error && (
-        <div className="rounded-xl border border-rose-100 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+        <div className="rounded-xl border border-rose-500/20 bg-rose-500/10 px-4 py-3 text-sm text-rose-400">
           Failed to load tasks: {error}
         </div>
       )}

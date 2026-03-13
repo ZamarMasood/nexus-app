@@ -3,7 +3,7 @@ import React from 'react';
 import { renderToBuffer } from '@react-pdf/renderer';
 import { getInvoiceById, updateInvoice } from '@/lib/db/invoices';
 import { getClientById } from '@/lib/db/clients';
-import { supabase } from '@/lib/supabase';
+import { supabaseAdmin } from '@/lib/supabase-admin';
 import { InvoicePDFTemplate } from '@/components/invoices/InvoicePDFTemplate';
 
 export async function POST(req: NextRequest) {
@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
     const buffer = await renderToBuffer(element);
 
     const fileName = `${invoiceId}.pdf`;
-    const { error: uploadError } = await supabase.storage
+    const { error: uploadError } = await supabaseAdmin.storage
       .from('invoices')
       .upload(fileName, buffer, {
         contentType: 'application/pdf',
@@ -38,7 +38,7 @@ export async function POST(req: NextRequest) {
       throw new Error(`Storage upload failed: ${uploadError.message}`);
     }
 
-    const { data: urlData } = supabase.storage
+    const { data: urlData } = supabaseAdmin.storage
       .from('invoices')
       .getPublicUrl(fileName);
 

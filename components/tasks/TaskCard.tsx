@@ -17,31 +17,35 @@ interface TaskCardProps {
 const PRIORITY_CONFIG = {
   urgent: {
     label: "Urgent",
-    badge: "bg-rose-50 text-rose-700 ring-1 ring-rose-200",
-    border: "border-l-rose-500",
+    badge: "bg-rose-500/10 text-rose-400 ring-1 ring-rose-500/20",
+    border: "border-l-rose-500/80",
+    hoverGlow: "hover:shadow-[0_0_28px_rgba(239,68,68,0.2),0_8px_32px_rgba(0,0,0,0.6)]",
     icon: AlertCircle,
-    iconColor: "text-rose-500",
+    iconColor: "text-rose-400",
   },
   high: {
     label: "High",
-    badge: "bg-orange-50 text-orange-700 ring-1 ring-orange-200",
-    border: "border-l-orange-400",
+    badge: "bg-orange-500/10 text-orange-400 ring-1 ring-orange-500/20",
+    border: "border-l-orange-500/70",
+    hoverGlow: "hover:shadow-[0_0_28px_rgba(249,115,22,0.2),0_8px_32px_rgba(0,0,0,0.6)]",
     icon: ArrowUp,
     iconColor: "text-orange-400",
   },
   normal: {
     label: "Normal",
-    badge: "bg-sky-50 text-sky-700 ring-1 ring-sky-200",
-    border: "border-l-sky-400",
+    badge: "bg-sky-500/10 text-sky-400 ring-1 ring-sky-500/20",
+    border: "border-l-sky-500/60",
+    hoverGlow: "hover:shadow-[0_0_28px_rgba(14,165,233,0.18),0_8px_32px_rgba(0,0,0,0.6)]",
     icon: Minus,
     iconColor: "text-sky-400",
   },
   low: {
     label: "Low",
-    badge: "bg-slate-100 text-slate-500 ring-1 ring-slate-200",
-    border: "border-l-slate-300",
+    badge: "bg-surface-subtle text-muted-app ring-1 ring-surface",
+    border: "border-l-surface",
+    hoverGlow: "hover:shadow-[0_0_28px_rgba(139,92,246,0.14),0_8px_32px_rgba(0,0,0,0.6)]",
     icon: ArrowDown,
-    iconColor: "text-slate-400",
+    iconColor: "text-faint-app",
   },
 } as const;
 
@@ -72,22 +76,22 @@ export function TaskCard({ task, onClick, isDragging = false }: TaskCardProps) {
       onClick={() => onClick?.(task)}
       onKeyDown={(e) => e.key === "Enter" && onClick?.(task)}
       className={[
-        "group relative flex flex-col gap-3 rounded-xl border border-slate-100 bg-white p-4",
+        "group relative flex flex-col gap-3 rounded-xl border border-surface bg-surface-page p-4",
         "border-l-4",
         config.border,
         "cursor-pointer select-none",
-        "shadow-[0_1px_3px_rgba(15,23,42,0.06),0_2px_8px_rgba(15,23,42,0.04)]",
-        "hover:shadow-[0_4px_16px_rgba(15,23,42,0.1),0_8px_24px_rgba(15,23,42,0.06)]",
+        "shadow-[0_2px_8px_rgba(0,0,0,0.5),0_1px_2px_rgba(0,0,0,0.7)]",
+        config.hoverGlow,
         "hover:-translate-y-0.5",
-        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400 focus-visible:ring-offset-2",
-        "active:scale-[0.99] active:shadow-[0_1px_4px_rgba(15,23,42,0.08)]",
-        "transition-[transform,box-shadow,opacity]",
-        isDragging ? "opacity-80 rotate-1 scale-[1.02]" : "opacity-100",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400/50",
+        "active:scale-[0.99]",
+        "transition-[transform,box-shadow,border-color,opacity]",
+        isDragging ? "opacity-80 rotate-1 scale-[1.02] shadow-[0_20px_48px_rgba(0,0,0,0.7)]" : "opacity-100",
       ].join(" ")}
     >
       {/* Title + priority badge */}
       <div className="flex items-start justify-between gap-3">
-        <p className="text-sm font-semibold leading-snug tracking-[-0.01em] text-slate-800 line-clamp-2 group-hover:text-slate-900">
+        <p className="text-sm font-semibold leading-snug tracking-[-0.01em] text-secondary-app line-clamp-2 group-hover:text-bright transition-colors duration-100">
           {task.title}
         </p>
         <span
@@ -100,7 +104,7 @@ export function TaskCard({ task, onClick, isDragging = false }: TaskCardProps) {
 
       {/* Description */}
       {task.description && (
-        <p className="text-xs leading-relaxed text-slate-500 line-clamp-2">
+        <p className="text-xs leading-relaxed text-muted-app line-clamp-2">
           {task.description}
         </p>
       )}
@@ -118,25 +122,25 @@ export function TaskCard({ task, onClick, isDragging = false }: TaskCardProps) {
                 className="h-5 w-5 rounded-full object-cover ring-1 ring-white shadow-sm"
               />
             ) : (
-              <div className="flex h-5 w-5 items-center justify-center rounded-full bg-violet-100 ring-1 ring-white shadow-sm">
-                <span className="text-[9px] font-bold text-violet-600">
+              <div className="flex h-5 w-5 items-center justify-center rounded-full bg-violet-500/15 ring-1 ring-violet-500/25">
+                <span className="text-[9px] font-bold text-violet-300">
                   {getInitials(task.assignee.name)}
                 </span>
               </div>
             )}
-            <span className="text-[11px] text-slate-500">{task.assignee.name}</span>
+            <span className="text-[11px] text-muted-app">{task.assignee.name}</span>
           </div>
         ) : (
           <div className="flex items-center gap-1.5">
-            <div className="h-5 w-5 rounded-full border border-dashed border-slate-300 bg-slate-50" />
-            <span className="text-[11px] text-slate-400">Unassigned</span>
+            <div className="h-5 w-5 rounded-full border border-dashed border-surface bg-overlay-sm" />
+            <span className="text-[11px] text-faint-app">Unassigned</span>
           </div>
         )}
 
         {task.due_date && (
           <div
             className={`flex items-center gap-1 text-[11px] font-medium ${
-              overdue ? "text-rose-500" : "text-slate-400"
+              overdue ? "text-rose-400" : "text-faint-app"
             }`}
           >
             <CalendarDays className="h-3 w-3" />

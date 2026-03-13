@@ -4,3 +4,5 @@ node_modules
 tsconfig.tsbuildinfo
 temporary screenshots/
 .claude/
+screenshot.mjs
+screenshot-portal.mjs

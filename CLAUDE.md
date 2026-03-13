@@ -3,7 +3,13 @@
 ---
 
 ## Always Do First
-- **Read `D:\Job\Project\nexus-app\.claude\skills\frontend-design.md`** before writing any frontend code, every session, no exceptions.before writing any frontend code, every session, no exceptions.
+- Before writing any frontend code, use the Read tool to open and read 
+  the file at `.claude/skills/frontend-design.md`.
+- Do not use Skill() — use the Read tool on that file path directly.
+- If the file is not found at that path, STOP immediately and tell the 
+  user: "frontend-design.md skill file is missing. Please create it at 
+  .claude/skills/frontend-design.md before continuing." Do not proceed 
+  with any frontend work until the file is confirmed readable.
 
 ---
 
@@ -28,6 +34,30 @@ npm run build        # Production build
 npm run lint         # ESLint check
 npx tsc --noEmit     # TypeScript type check (run before every commit)
 ```
+
+---
+
+## Authentication Flow
+
+There is ONE login page at `app/(auth)/login/` shared by both team members and clients.
+
+**Logic:**
+1. User submits email + password
+2. First, try Supabase Auth login (team members)
+   - If success → redirect to `/dashboard`
+3. If Supabase Auth fails, query the `clients` table:
+   `WHERE email = ? AND portal_password = ?`
+   - If match found → create a client session, redirect to `/portal/tasks`
+4. If both fail → show "Invalid email or password" error
+
+**Middleware rules (`middleware.ts`):**
+- Protect `/dashboard/*` → redirect to `/login` if no team session
+- Protect `/portal/*` → redirect to `/login` if no client session
+- A client session must NEVER access `/dashboard/*` routes
+- A team session must NEVER access `/portal/*` routes
+
+**Security note:**
+- `portal_password` in the `clients` table must be hashed with `bcrypt` — never store plain text passwords
 
 ---
 
@@ -70,14 +100,13 @@ npx tsc --noEmit     # TypeScript type check (run before every commit)
 ## Project Structure
 ```
 app/
-├── (auth)/login/              # Team login
+├── (auth)/login/              # Single login page for both team + clients
 ├── dashboard/                 # Internal — team only (auth-protected)
 │   ├── projects/
 │   ├── tasks/
 │   ├── clients/
 │   └── invoices/
 ├── portal/                    # External — clients only (separate auth)
-│   ├── login/
 │   ├── tasks/
 │   ├── invoices/
 │   └── files/
@@ -99,7 +128,7 @@ lib/
 
 .claude/
 └── skills/
-    └── frontend-design.md     # ← frontend design skill (read before any UI work)
+    └── frontend-design.md     # ← read this before any UI work
 ```
 
 ---
@@ -116,7 +145,7 @@ lib/
 ## Database Tables (Supabase / PostgreSQL)
 | Table | Key Fields |
 |---|---|
-| `clients` | id, name, email, status, monthly_rate, portal_password |
+| `clients` | id, name, email, status, monthly_rate, portal_password (bcrypt hashed) |
 | `projects` | id, client_id, name, status, total_value, deadline |
 | `tasks` | id, project_id, title, status, priority, assignee_id, due_date |
 | `team_members` | id, name, email, role, avatar_url |

@@ -1,5 +1,10 @@
 import { supabase } from '../supabase';
 import type { Task, TaskInsert, TaskUpdate, TeamMember, Comment, ProjectFile } from '../types';
+// TeamMember used by TaskWithAssignee
+
+export type CommentWithAuthor = Comment & {
+  author_name: string | null;
+};
 
 export type TaskWithAssignee = Task & {
   assignee: Pick<TeamMember, 'id' | 'name' | 'avatar_url' | 'role'> | null;
@@ -87,7 +92,7 @@ export async function deleteTask(id: string): Promise<void> {
 
 // ── Comments ──────────────────────────────────────────────────────────────────
 
-export async function getCommentsByTaskId(taskId: string): Promise<Comment[]> {
+export async function getCommentsByTaskId(taskId: string): Promise<CommentWithAuthor[]> {
   const { data, error } = await supabase
     .from('comments')
     .select('*')
@@ -95,7 +100,7 @@ export async function getCommentsByTaskId(taskId: string): Promise<Comment[]> {
     .order('created_at', { ascending: true });
 
   if (error) throw new Error(`Failed to fetch comments for task ${taskId}: ${error.message}`);
-  return data;
+  return data as CommentWithAuthor[];
 }
 
 export async function createComment(
@@ -123,5 +128,29 @@ export async function getFilesByTaskId(taskId: string): Promise<ProjectFile[]> {
     .order('created_at', { ascending: false });
 
   if (error) throw new Error(`Failed to fetch files for task ${taskId}: ${error.message}`);
+  return data;
+}
+
+export async function uploadFileToTask(taskId: string, file: File): Promise<ProjectFile> {
+  const ext = file.name.split('.').pop();
+  const path = `tasks/${taskId}/${Date.now()}-${file.name}`;
+
+  const { error: uploadError } = await supabase.storage
+    .from('project-files')
+    .upload(path, file, { upsert: false });
+
+  if (uploadError) throw new Error(`Upload failed: ${uploadError.message}`);
+
+  const { data: { publicUrl } } = supabase.storage
+    .from('project-files')
+    .getPublicUrl(path);
+
+  const { data, error } = await supabase
+    .from('files')
+    .insert({ task_id: taskId, filename: file.name, file_url: publicUrl })
+    .select()
+    .single();
+
+  if (error) throw new Error(`Failed to save file record: ${error.message}`);
   return data;
 }

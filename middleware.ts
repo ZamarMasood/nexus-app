@@ -4,23 +4,30 @@ import { NextRequest, NextResponse } from 'next/server';
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // ── Portal routes (except /portal/login) ────────────────────────────────
-  if (pathname.startsWith('/portal') && !pathname.startsWith('/portal/login')) {
+  // ── Portal routes ─────────────────────────────────────────────────────────
+  if (pathname.startsWith('/portal')) {
     const portalClientId = request.cookies.get('portal_client_id');
+
+    // No client session → go to the shared login
     if (!portalClientId?.value) {
-      return NextResponse.redirect(new URL('/portal/login', request.url));
+      return NextResponse.redirect(new URL('/login', request.url));
     }
+
+    // Client session must NEVER access dashboard — handled below, but also
+    // guard here: if someone constructs a URL like /portal/../dashboard it
+    // is already caught by Next.js path normalisation, so this is fine.
     return NextResponse.next();
   }
 
-  // ── Dashboard routes ─────────────────────────────────────────────────────
+  // ── Dashboard routes ──────────────────────────────────────────────────────
   if (pathname.startsWith('/dashboard')) {
-    // Portal sessions must never access dashboard
+    // Portal (client) sessions must never access dashboard
     const portalClientId = request.cookies.get('portal_client_id');
     if (portalClientId?.value) {
-      return NextResponse.redirect(new URL('/portal/login', request.url));
+      return NextResponse.redirect(new URL('/portal/tasks', request.url));
     }
 
+    // Check Supabase Auth (team session)
     let supabaseResponse = NextResponse.next({ request });
 
     const supabase = createServerClient(

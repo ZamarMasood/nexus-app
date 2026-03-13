@@ -3,6 +3,7 @@
 @tailwind utilities;
 
 @layer base {
+  /* ── shadcn/ui design tokens ─────────────────────────────────────── */
   :root {
     --background: 0 0% 100%;
     --foreground: 222.2 84% 4.9%;
@@ -24,6 +25,24 @@
     --input: 214.3 31.8% 91.4%;
     --ring: 222.2 84% 4.9%;
     --radius: 0.5rem;
+
+    /* ── App surface tokens (light mode) ─────────────────────────── */
+    --surface-page:    248 250 252;   /* slate-50  */
+    --surface-sidebar: 255 255 255;   /* white     */
+    --surface-card:    241 245 249;   /* slate-100 */
+    --surface-subtle:  226 232 240;   /* slate-200 */
+    --surface-inset:   203 213 225;   /* slate-300 */
+
+    /* ── App text tokens (light mode) ────────────────────────────── */
+    --text-bright:     15  23  42;    /* slate-900 */
+    --text-primary:    30  41  59;    /* slate-800 */
+    --text-secondary:  71  85 105;    /* slate-600 */
+    --text-muted:     100 116 139;    /* slate-500 */
+    --text-faint:     100 116 139;    /* slate-500 — was slate-400, too light on white */
+    --text-dim:       148 163 184;    /* slate-400 — was slate-300, nearly invisible on white */
+
+    /* ── App border tokens (light mode) ─────────────────────────── */
+    --border-subtle:   0   0   0;     /* for rgba usage: border-black/8  */
   }
 
   .dark {
@@ -46,6 +65,24 @@
     --border: 217.2 32.6% 17.5%;
     --input: 217.2 32.6% 17.5%;
     --ring: 212.7 26.8% 83.9%;
+
+    /* ── App surface tokens (dark mode) ─────────────────────────── */
+    --surface-page:    15  17  23;    /* #0f1117 */
+    --surface-sidebar: 11  12  18;    /* #0b0c12 */
+    --surface-card:    17  19  24;    /* #111318 */
+    --surface-subtle:  22  24  32;    /* #161820 */
+    --surface-inset:   26  28  37;    /* #1a1c25 */
+
+    /* ── App text tokens (dark mode) ─────────────────────────────── */
+    --text-bright:    255 255 255;
+    --text-primary:   209 213 219;    /* #d1d5db */
+    --text-secondary: 156 163 175;    /* #9ca3af */
+    --text-muted:     107 114 128;    /* #6b7280 */
+    --text-faint:      75  85  99;    /* #4b5563 */
+    --text-dim:        55  65  81;    /* #374151 */
+
+    /* ── App border tokens (dark mode) ─────────────────────────── */
+    --border-subtle:  255 255 255;    /* for rgba usage: border-white/6  */
   }
 }
 
@@ -56,4 +93,80 @@
   body {
     @apply bg-background text-foreground;
   }
+}
+
+/* ── App semantic utility classes ─────────────────────────────────────── */
+@layer utilities {
+  .bg-surface-page    { background-color: rgb(var(--surface-page)); }
+  .bg-surface-sidebar { background-color: rgb(var(--surface-sidebar)); }
+  .bg-surface-card    { background-color: rgb(var(--surface-card)); }
+  .bg-surface-subtle  { background-color: rgb(var(--surface-subtle)); }
+  .bg-surface-inset   { background-color: rgb(var(--surface-inset)); }
+
+  .text-bright    { color: rgb(var(--text-bright)); }
+  .text-primary-app   { color: rgb(var(--text-primary)); }
+  .text-secondary-app { color: rgb(var(--text-secondary)); }
+  .text-muted-app     { color: rgb(var(--text-muted)); }
+  .text-faint-app     { color: rgb(var(--text-faint)); }
+  .text-dim-app       { color: rgb(var(--text-dim)); }
+
+  .border-subtle-app  { border-color: rgb(var(--border-subtle) / 0.08); }
+
+  /* Light-mode border helper (replaces border-white/[0.06] in dark) */
+  .border-surface {
+    border-color: rgb(var(--border-subtle) / 0.12);
+  }
+  .dark .border-surface {
+    border-color: rgb(255 255 255 / 0.06);
+  }
+
+  /* Input backgrounds */
+  .bg-input-app {
+    background-color: rgb(var(--border-subtle) / 0.04);
+  }
+  .dark .bg-input-app {
+    background-color: rgb(255 255 255 / 0.04);
+  }
+
+  /* Transparent overlays — adapt to dark/light automatically */
+  .bg-overlay-xs  { background-color: rgb(var(--border-subtle) / 0.02); }
+  .bg-overlay-sm  { background-color: rgb(var(--border-subtle) / 0.03); }
+  .bg-overlay-md  { background-color: rgb(var(--border-subtle) / 0.05); }
+
+  .hover\:bg-overlay-xs:hover { background-color: rgb(var(--border-subtle) / 0.02); }
+  .hover\:bg-overlay-sm:hover { background-color: rgb(var(--border-subtle) / 0.03); }
+  .hover\:bg-overlay-md:hover { background-color: rgb(var(--border-subtle) / 0.05); }
+
+  /* Dividers */
+  .divide-surface > :not([hidden]) ~ :not([hidden]) {
+    border-color: rgb(var(--border-subtle) / 0.06);
+  }
+}
+
+/* ── Page entrance animations ─────────────────────────────────────────── */
+@keyframes fade-in-up {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes scale-in {
+  from { opacity: 0; transform: scale(0.96); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+.animate-in {
+  animation: fade-in-up 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.animate-in-fast {
+  animation: fade-in 0.25s ease both;
+}
+
+.animate-scale-in {
+  animation: scale-in 0.3s cubic-bezier(0.16, 1, 0.3, 1) both;
 }

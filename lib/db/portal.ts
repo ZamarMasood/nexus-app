@@ -1,5 +1,9 @@
 import { supabase } from '../supabase';
-import type { Task, Invoice, Comment, ProjectFile } from '../types';
+import type { Task, Invoice, Comment, ProjectFile, TeamMember } from '../types';
+
+export type PortalTask = Task & {
+  assignee?: Pick<TeamMember, 'name' | 'avatar_url'> | null;
+};
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -14,18 +18,18 @@ async function getClientProjectIds(clientId: string): Promise<string[]> {
 
 // ─── Tasks ────────────────────────────────────────────────────────────────────
 
-export async function getPortalTasks(clientId: string): Promise<Task[]> {
+export async function getPortalTasks(clientId: string): Promise<PortalTask[]> {
   const projectIds = await getClientProjectIds(clientId);
   if (!projectIds.length) return [];
 
   const { data, error } = await supabase
     .from('tasks')
-    .select('*')
+    .select('*, assignee:team_members(name, avatar_url)')
     .in('project_id', projectIds)
     .order('created_at', { ascending: false });
 
   if (error) throw new Error(`Failed to fetch portal tasks: ${error.message}`);
-  return data;
+  return data as PortalTask[];
 }
 
 /**
@@ -35,19 +39,19 @@ export async function getPortalTasks(clientId: string): Promise<Task[]> {
 export async function getPortalTaskById(
   taskId: string,
   clientId: string
-): Promise<Task | null> {
+): Promise<PortalTask | null> {
   const projectIds = await getClientProjectIds(clientId);
   if (!projectIds.length) return null;
 
   const { data, error } = await supabase
     .from('tasks')
-    .select('*')
+    .select('*, assignee:team_members(name, avatar_url)')
     .eq('id', taskId)
     .in('project_id', projectIds)
     .maybeSingle();
 
   if (error) throw new Error(`Failed to fetch portal task: ${error.message}`);
-  return data;
+  return data as PortalTask | null;
 }
 
 // ─── Comments ─────────────────────────────────────────────────────────────────
@@ -72,9 +76,21 @@ export async function createPortalComment(
   content: string,
   clientId: string
 ): Promise<Comment> {
+  // Fetch client name to store as author_name
+  const { data: client } = await supabase
+    .from('clients')
+    .select('name')
+    .eq('id', clientId)
+    .maybeSingle();
+
   const { data, error } = await supabase
     .from('comments')
-    .insert({ task_id: taskId, content, user_id: clientId })
+    .insert({
+      task_id:     taskId,
+      content,
+      user_id:     clientId,
+      author_name: client?.name ?? null,
+    })
     .select()
     .single();
 
