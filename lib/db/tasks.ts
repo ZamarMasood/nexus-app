@@ -39,6 +39,71 @@ export async function getTasksWithAssignees(projectId?: string): Promise<TaskWit
   return data as TaskWithAssignee[];
 }
 
+/** Fetch only recent N tasks with assignee info (for dashboard list). */
+export async function getRecentTasksWithAssignees(limit: number = 10): Promise<TaskWithAssignee[]> {
+  const { data, error } = await supabase
+    .from('tasks')
+    .select('*, assignee:team_members!tasks_assignee_id_fkey(id, name, avatar_url, role)')
+    .order('created_at', { ascending: false })
+    .limit(limit);
+
+  if (error) throw new Error(`Failed to fetch recent tasks: ${error.message}`);
+  return data as TaskWithAssignee[];
+}
+
+/** Lightweight stats for dashboard — only fetches id, status, due_date. */
+export async function getTaskStats(): Promise<{
+  total: number;
+  done: number;
+  overdue: number;
+  dueSoon: number;
+}> {
+  const { data, error } = await supabase
+    .from('tasks')
+    .select('id, status, due_date');
+
+  if (error) throw new Error(`Failed to fetch task stats: ${error.message}`);
+
+  const tasks = data ?? [];
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const in7Days = new Date(today);
+  in7Days.setDate(in7Days.getDate() + 7);
+
+  return {
+    total: tasks.length,
+    done: tasks.filter((t) => t.status === 'done').length,
+    overdue: tasks.filter(
+      (t) => t.status !== 'done' && t.due_date && new Date(t.due_date) < today
+    ).length,
+    dueSoon: tasks.filter((t) => {
+      if (!t.due_date || t.status === 'done') return false;
+      const d = new Date(t.due_date);
+      return d >= today && d <= in7Days;
+    }).length,
+  };
+}
+
+/** Fetch task counts grouped by project_id — avoids loading all task rows for project list. */
+export async function getTaskCountsByProject(): Promise<
+  Record<string, { total: number; done: number }>
+> {
+  const { data, error } = await supabase
+    .from('tasks')
+    .select('project_id, status');
+
+  if (error) throw new Error(`Failed to fetch task counts: ${error.message}`);
+
+  const counts: Record<string, { total: number; done: number }> = {};
+  for (const t of data ?? []) {
+    if (!t.project_id) continue;
+    if (!counts[t.project_id]) counts[t.project_id] = { total: 0, done: 0 };
+    counts[t.project_id].total++;
+    if (t.status === 'done') counts[t.project_id].done++;
+  }
+  return counts;
+}
+
 export async function getTaskById(id: string): Promise<Task> {
   const { data, error } = await supabase
     .from('tasks')

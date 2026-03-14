@@ -83,7 +83,7 @@ export function ClientForm({ client, onSuccess, onCancel }: ClientFormProps) {
         </div>
       )}
 
-      <div className="grid grid-cols-2 gap-x-4 gap-y-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-4">
         {/* Name */}
         <div>
           <label className={LABEL}>

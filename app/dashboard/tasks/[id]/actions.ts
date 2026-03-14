@@ -12,15 +12,15 @@ export async function createCommentAction(
 ): Promise<CommentWithAuthor> {
   const supabase = createSupabaseServerClient();
 
-  const { data: { user } } = await supabase.auth.getUser();
+  const { data: { session } } = await supabase.auth.getSession();
 
   let authorName: string | null = null;
   let teamMemberId: string | null = null;
-  if (user?.email) {
+  if (session?.user?.email) {
     const { data: member } = await supabase
       .from('team_members')
       .select('id, name')
-      .eq('email', user.email)
+      .eq('email', session.user.email)
       .maybeSingle();
     teamMemberId = member?.id ?? null;
     authorName   = member?.name ?? null;

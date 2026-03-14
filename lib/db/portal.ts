@@ -5,53 +5,45 @@ export type PortalTask = Task & {
   assignee?: Pick<TeamMember, 'name' | 'avatar_url'> | null;
 };
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
-async function getClientProjectIds(clientId: string): Promise<string[]> {
-  const { data, error } = await supabase
-    .from('projects')
-    .select('id')
-    .eq('client_id', clientId);
-  if (error) throw new Error(`Failed to fetch client projects: ${error.message}`);
-  return (data ?? []).map((p) => p.id);
-}
-
 // ─── Tasks ────────────────────────────────────────────────────────────────────
 
+/**
+ * Fetch all tasks for a client using an inner join on projects,
+ * reducing 2 sequential queries to 1.
+ */
 export async function getPortalTasks(clientId: string): Promise<PortalTask[]> {
-  const projectIds = await getClientProjectIds(clientId);
-  if (!projectIds.length) return [];
-
   const { data, error } = await supabase
     .from('tasks')
-    .select('*, assignee:team_members(name, avatar_url)')
-    .in('project_id', projectIds)
+    .select('*, assignee:team_members(name, avatar_url), project:projects!inner(id)')
+    .eq('project.client_id', clientId)
     .order('created_at', { ascending: false });
 
   if (error) throw new Error(`Failed to fetch portal tasks: ${error.message}`);
-  return data as PortalTask[];
+
+  // Strip the joined project field from results
+  return (data ?? []).map(({ project, ...rest }) => rest) as PortalTask[];
 }
 
 /**
  * Fetch a single task only if it belongs to a project owned by clientId.
- * Returns null if the task does not exist or does not belong to this client.
+ * Uses inner join — single query instead of 2.
  */
 export async function getPortalTaskById(
   taskId: string,
   clientId: string
 ): Promise<PortalTask | null> {
-  const projectIds = await getClientProjectIds(clientId);
-  if (!projectIds.length) return null;
-
   const { data, error } = await supabase
     .from('tasks')
-    .select('*, assignee:team_members(name, avatar_url)')
+    .select('*, assignee:team_members(name, avatar_url), project:projects!inner(id)')
     .eq('id', taskId)
-    .in('project_id', projectIds)
+    .eq('project.client_id', clientId)
     .maybeSingle();
 
   if (error) throw new Error(`Failed to fetch portal task: ${error.message}`);
-  return data as PortalTask | null;
+  if (!data) return null;
+
+  const { project, ...rest } = data;
+  return rest as PortalTask;
 }
 
 // ─── Comments ─────────────────────────────────────────────────────────────────
@@ -120,46 +112,31 @@ export type PortalFileWithContext = ProjectFile & {
   projectName: string;
 };
 
+/**
+ * Fetch all files for a client using nested joins:
+ * files → tasks (inner) → projects (inner, filtered by client_id).
+ * Reduces 3 sequential queries to 1.
+ */
 export async function getPortalFiles(clientId: string): Promise<PortalFileWithContext[]> {
-  const { data: projects, error: projectsError } = await supabase
-    .from('projects')
-    .select('id, name')
-    .eq('client_id', clientId);
-
-  if (projectsError) throw new Error(`Failed to fetch projects: ${projectsError.message}`);
-  if (!projects?.length) return [];
-
-  const projectIds = projects.map((p) => p.id);
-  const projectMap = new Map(projects.map((p) => [p.id, p.name]));
-
-  const { data: tasks, error: tasksError } = await supabase
-    .from('tasks')
-    .select('id, title, project_id')
-    .in('project_id', projectIds);
-
-  if (tasksError) throw new Error(`Failed to fetch tasks: ${tasksError.message}`);
-  if (!tasks?.length) return [];
-
-  const taskIds = tasks.map((t) => t.id);
-  const taskMap = new Map(tasks.map((t) => [t.id, t]));
-
-  const { data: files, error: filesError } = await supabase
+  const { data, error } = await supabase
     .from('files')
-    .select('*')
-    .in('task_id', taskIds)
+    .select(
+      '*, task:tasks!inner(id, title, project_id, project:projects!inner(id, name))'
+    )
+    .eq('task.project.client_id', clientId)
     .order('created_at', { ascending: false });
 
-  if (filesError) throw new Error(`Failed to fetch files: ${filesError.message}`);
+  if (error) throw new Error(`Failed to fetch portal files: ${error.message}`);
 
-  return (files ?? []).map((f) => {
-    const task = taskMap.get(f.task_id ?? '');
-    const projectId = task?.project_id ?? '';
-    return {
-      ...f,
-      taskId: f.task_id ?? '',
-      taskTitle: task?.title ?? 'Unknown Task',
-      projectId,
-      projectName: projectMap.get(projectId) ?? 'Unknown Project',
-    };
-  });
+  return (data ?? []).map((f: any) => ({
+    id: f.id,
+    task_id: f.task_id,
+    filename: f.filename,
+    file_url: f.file_url,
+    created_at: f.created_at,
+    taskId: f.task?.id ?? f.task_id ?? '',
+    taskTitle: f.task?.title ?? 'Unknown Task',
+    projectId: f.task?.project?.id ?? '',
+    projectName: f.task?.project?.name ?? 'Unknown Project',
+  }));
 }

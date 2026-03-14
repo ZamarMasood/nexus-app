@@ -29,54 +29,49 @@ const STATUS_CONFIG: Record<string, { label: string; bg: string; text: string; d
   done:        { label: "Done",        bg: "bg-emerald-500/10", text: "text-emerald-400", dot: "bg-emerald-400" },
 };
 
+interface TaskStats {
+  total: number;
+  done: number;
+  overdue: number;
+  dueSoon: number;
+}
+
 interface DashboardClientProps {
-  tasks: TaskWithAssignee[];
+  recentTasks: TaskWithAssignee[];
+  taskStats: TaskStats;
   projects: Project[];
   userName: string | null;
   dateLabel: string;
   greetingText: string;
 }
 
-export default function DashboardClient({ tasks, projects, userName, dateLabel, greetingText }: DashboardClientProps) {
+export default function DashboardClient({ recentTasks, taskStats, projects, userName, dateLabel, greetingText }: DashboardClientProps) {
   const { openTaskForm } = useTaskForm();
 
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-
-  const overdueTasks      = tasks.filter((t) => !t.due_date || t.status === "done" ? false : new Date(t.due_date) < today);
-  const activeProjects    = projects.filter((p) => p.status === "active" || p.status === "in_progress");
-  const in7Days           = new Date(today);
-  in7Days.setDate(in7Days.getDate() + 7);
-  const upcomingDeadlines = tasks.filter((t) => {
-    if (!t.due_date || t.status === "done") return false;
-    const d = new Date(t.due_date);
-    return d >= today && d <= in7Days;
-  });
-  const doneTasks     = tasks.filter((t) => t.status === "done");
-  const recentTasks   = [...tasks].slice(0, 10);
-  const completionPct = tasks.length ? Math.round((doneTasks.length / tasks.length) * 100) : 0;
+  const activeProjects = projects.filter((p) => p.status === "active" || p.status === "in_progress");
+  const completionPct  = taskStats.total ? Math.round((taskStats.done / taskStats.total) * 100) : 0;
 
   const stats = [
     {
       label:      "Total Tasks",
-      value:      tasks.length,
+      value:      taskStats.total,
       icon:       CheckSquare,
       accent:     "from-violet-500/20 to-violet-600/5",
       iconColor:  "text-violet-400",
       iconBg:     "bg-violet-500/10",
       sub:        `${completionPct}% complete`,
-      trend:      doneTasks.length > 0,
+      trend:      taskStats.done > 0,
       progress:   completionPct,
     },
     {
       label:      "Overdue",
-      value:      overdueTasks.length,
+      value:      taskStats.overdue,
       icon:       AlertCircle,
-      accent:     overdueTasks.length > 0 ? "from-rose-500/20 to-rose-600/5" : "",
-      iconColor:  overdueTasks.length > 0 ? "text-rose-400" : "text-faint-app",
-      iconBg:     overdueTasks.length > 0 ? "bg-rose-500/10" : "bg-surface-inset",
-      sub:        overdueTasks.length > 0 ? "Needs attention" : "All on track",
-      valueColor: overdueTasks.length > 0 ? "text-rose-400" : undefined,
+      accent:     taskStats.overdue > 0 ? "from-rose-500/20 to-rose-600/5" : "",
+      iconColor:  taskStats.overdue > 0 ? "text-rose-400" : "text-faint-app",
+      iconBg:     taskStats.overdue > 0 ? "bg-rose-500/10" : "bg-surface-inset",
+      sub:        taskStats.overdue > 0 ? "Needs attention" : "All on track",
+      valueColor: taskStats.overdue > 0 ? "text-rose-400" : undefined,
     },
     {
       label:     "Active Projects",
@@ -89,7 +84,7 @@ export default function DashboardClient({ tasks, projects, userName, dateLabel, 
     },
     {
       label:     "Due This Week",
-      value:     upcomingDeadlines.length,
+      value:     taskStats.dueSoon,
       icon:      Calendar,
       accent:    "from-amber-500/20 to-amber-600/5",
       iconColor: "text-amber-400",
@@ -154,7 +149,7 @@ export default function DashboardClient({ tasks, projects, userName, dateLabel, 
               <p className="mt-2 text-[11px] font-medium text-dim-app">{label}</p>
               <p className="mt-0.5 text-[11px] text-dim-app">{sub}</p>
 
-              {progress !== undefined && tasks.length > 0 && (
+              {progress !== undefined && taskStats.total > 0 && (
                 <div className="mt-3 h-1 w-full rounded-full bg-surface-inset overflow-hidden">
                   <div
                     className="h-full rounded-full bg-violet-500 transition-[width] duration-700"
@@ -201,7 +196,7 @@ export default function DashboardClient({ tasks, projects, userName, dateLabel, 
         <div className="flex items-center justify-between px-6 py-4 border-b border-surface">
           <div>
             <h2 className="text-[13px] font-semibold tracking-[-0.02em] text-bright">Recent Tasks</h2>
-            <p className="text-[11px] text-dim-app mt-0.5">{tasks.length} total tasks</p>
+            <p className="text-[11px] text-dim-app mt-0.5">{taskStats.total} total tasks</p>
           </div>
           <Link
             href="/dashboard/tasks"

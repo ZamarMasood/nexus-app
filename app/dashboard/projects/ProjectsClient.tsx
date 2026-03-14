@@ -13,7 +13,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import type { Project, Client, Task } from "@/lib/types";
+import type { Project, Client } from "@/lib/types";
 
 const STATUS_CONFIG: Record<string, { label: string; dot: string; badge: string; bar: string }> = {
   active: {
@@ -177,25 +177,15 @@ function NewProjectDialog({ open, onOpenChange, clients, onSuccess }: NewProject
 interface ProjectsClientProps {
   initialProjects: Project[];
   clients: Client[];
-  tasks: Task[];
+  taskCounts: Record<string, { total: number; done: number }>;
 }
 
-export default function ProjectsClient({ initialProjects, clients, tasks }: ProjectsClientProps) {
+export default function ProjectsClient({ initialProjects, clients, taskCounts }: ProjectsClientProps) {
   const router = useRouter();
   const [projects, setProjects] = useState<Project[]>(initialProjects);
   const [newProjectOpen, setNewProjectOpen] = useState(false);
 
   const clientMap = new Map(clients.map((c) => [c.id, c]));
-
-  const taskCountMap = tasks.reduce<Record<string, number>>((acc, t) => {
-    if (t.project_id) acc[t.project_id] = (acc[t.project_id] ?? 0) + 1;
-    return acc;
-  }, {});
-
-  const doneTaskCountMap = tasks.reduce<Record<string, number>>((acc, t) => {
-    if (t.project_id && t.status === "done") acc[t.project_id] = (acc[t.project_id] ?? 0) + 1;
-    return acc;
-  }, {});
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -278,8 +268,9 @@ export default function ProjectsClient({ initialProjects, clients, tasks }: Proj
             <ul>
               {projects.map((project, i) => {
                 const client    = project.client_id ? clientMap.get(project.client_id) : null;
-                const total     = taskCountMap[project.id] ?? 0;
-                const done      = doneTaskCountMap[project.id] ?? 0;
+                const counts    = taskCounts[project.id];
+                const total     = counts?.total ?? 0;
+                const done      = counts?.done ?? 0;
                 const pct       = total > 0 ? Math.round((done / total) * 100) : 0;
                 const cfg       = getStatusConfig(project.status);
                 const isOverdue =

@@ -62,6 +62,7 @@ CREATE TABLE comments (
   task_id UUID REFERENCES tasks(id),
   user_id UUID,
   content TEXT,
+  author_name TEXT,
   created_at TIMESTAMP DEFAULT NOW()
 );
 

@@ -117,9 +117,9 @@ export function InvoiceForm({ onSuccess, onCancel }: InvoiceFormProps) {
         </div>
       )}
 
-      <div className="grid grid-cols-2 gap-x-4 gap-y-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-4">
         {/* Client — full width */}
-        <div className="col-span-2">
+        <div className="sm:col-span-2">
           <label className={LABEL}>
             <span className="flex items-center gap-1.5">
               <Users className="h-3 w-3" />

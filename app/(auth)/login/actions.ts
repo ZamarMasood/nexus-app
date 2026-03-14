@@ -25,28 +25,23 @@ export async function signInAction(
 
   const supabase = createSupabaseServerClient();
 
-  // ── 1. Try Supabase Auth (team members) ──────────────────────────────────
-  const { error: authError } = await supabase.auth.signInWithPassword({
-    email,
-    password,
-  });
+  // ── Run both auth methods in parallel ──────────────────────────────────────
+  const [authResult, clientResult] = await Promise.all([
+    supabase.auth.signInWithPassword({ email, password }),
+    supabase.from('clients').select('id, portal_password').eq('email', email).maybeSingle(),
+  ]);
 
-  if (!authError) {
+  // 1. Team member auth succeeded → dashboard
+  if (!authResult.error) {
     redirect('/dashboard');
   }
 
-  // ── 2. Try client portal login (bcrypt comparison) ───────────────────────
-  const { data: clientRow, error: clientFetchError } = await supabase
-    .from('clients')
-    .select('id, portal_password')
-    .eq('email', email)
-    .maybeSingle();
-
-  if (!clientFetchError && clientRow?.portal_password) {
-    const match = await bcrypt.compare(password, clientRow.portal_password);
+  // 2. Client portal auth — check bcrypt
+  if (!clientResult.error && clientResult.data?.portal_password) {
+    const match = await bcrypt.compare(password, clientResult.data.portal_password);
     if (match) {
       const cookieStore = cookies();
-      cookieStore.set('portal_client_id', clientRow.id, {
+      cookieStore.set('portal_client_id', clientResult.data.id, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         maxAge: 60 * 60 * 24 * 7, // 7 days
@@ -57,7 +52,7 @@ export async function signInAction(
     }
   }
 
-  // ── 3. Both failed — generic message (never reveal which one failed) ──────
+  // 3. Both failed
   return { error: 'Invalid email or password.' };
 }
 

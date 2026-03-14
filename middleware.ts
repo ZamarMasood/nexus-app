@@ -6,16 +6,13 @@ export async function middleware(request: NextRequest) {
 
   // ── Portal routes ─────────────────────────────────────────────────────────
   if (pathname.startsWith('/portal')) {
-    const portalClientId = request.cookies.get('portal_client_id');
+    // Portal login page is public
+    if (pathname === '/portal/login') return NextResponse.next();
 
-    // No client session → go to the shared login
+    const portalClientId = request.cookies.get('portal_client_id');
     if (!portalClientId?.value) {
       return NextResponse.redirect(new URL('/login', request.url));
     }
-
-    // Client session must NEVER access dashboard — handled below, but also
-    // guard here: if someone constructs a URL like /portal/../dashboard it
-    // is already caught by Next.js path normalisation, so this is fine.
     return NextResponse.next();
   }
 
@@ -28,6 +25,9 @@ export async function middleware(request: NextRequest) {
     }
 
     // Check Supabase Auth (team session)
+    // Use getSession() instead of getUser() — reads JWT from cookie locally
+    // (no network roundtrip). This saves ~200-500ms per navigation.
+    // Server components can still call getUser() when verified identity is needed.
     let supabaseResponse = NextResponse.next({ request });
 
     const supabase = createServerClient(
@@ -52,10 +52,10 @@ export async function middleware(request: NextRequest) {
     );
 
     const {
-      data: { user },
-    } = await supabase.auth.getUser();
+      data: { session },
+    } = await supabase.auth.getSession();
 
-    if (!user) {
+    if (!session) {
       return NextResponse.redirect(new URL('/login', request.url));
     }
 

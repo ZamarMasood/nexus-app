@@ -12,7 +12,8 @@ import {
 } from "@/components/ui/dialog";
 import { InvoiceForm } from "@/components/invoices/InvoiceForm";
 import { formatCurrency, formatDate } from "@/lib/utils";
-import type { Invoice, Client, InvoiceStatus } from "@/lib/types";
+import type { ClientListItem } from "@/lib/db/clients";
+import type { Invoice, InvoiceStatus } from "@/lib/types";
 
 const STATUS_FILTERS: { value: InvoiceStatus | "all"; label: string }[] = [
   { value: "all",     label: "All"     },
@@ -35,7 +36,7 @@ const STATUS_DOT: Record<InvoiceStatus, string> = {
 
 interface InvoicesClientProps {
   initialInvoices: Invoice[];
-  clients: Client[];
+  clients: ClientListItem[];
 }
 
 export default function InvoicesClient({ initialInvoices, clients }: InvoicesClientProps) {

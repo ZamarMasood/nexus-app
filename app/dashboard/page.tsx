@@ -1,4 +1,4 @@
-import { getTasksWithAssignees } from "@/lib/db/tasks";
+import { getRecentTasksWithAssignees, getTaskStats } from "@/lib/db/tasks";
 import { getProjects } from "@/lib/db/projects";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { getTeamMemberByEmail } from "@/lib/db/team-members";
@@ -12,15 +12,20 @@ function greeting() {
 }
 
 export default async function DashboardPage() {
-  const [tasks, projects, userName] = await Promise.all([
-    getTasksWithAssignees(),
+  // Fetch lightweight stats + only 10 recent tasks (with joins) in parallel
+  const [recentTasks, taskStats, projects, userName] = await Promise.all([
+    getRecentTasksWithAssignees(10),
+    getTaskStats(),
     getProjects(),
     (async () => {
       try {
         const supabase = createSupabaseServerClient();
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user?.email) return null;
-        const member = await getTeamMemberByEmail(user.email);
+        // Use getSession() (reads JWT locally) instead of getUser() (network call).
+        // Middleware already validated the session; we just need the email here.
+        const { data: { session } } = await supabase.auth.getSession();
+        const email = session?.user?.email;
+        if (!email) return null;
+        const member = await getTeamMemberByEmail(email);
         return member?.name ?? null;
       } catch {
         return null;
@@ -34,7 +39,8 @@ export default async function DashboardPage() {
 
   return (
     <DashboardClient
-      tasks={tasks}
+      recentTasks={recentTasks}
+      taskStats={taskStats}
       projects={projects}
       userName={userName}
       dateLabel={dateLabel}

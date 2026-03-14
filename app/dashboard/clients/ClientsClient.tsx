@@ -12,7 +12,8 @@ import {
 } from "@/components/ui/dialog";
 import { ClientForm } from "@/components/clients/ClientForm";
 import { formatCurrency } from "@/lib/utils";
-import type { Client, Project, ClientStatus } from "@/lib/types";
+import type { ProjectListItem } from "@/lib/db/projects";
+import type { Client, ClientStatus } from "@/lib/types";
 
 const STATUS_FILTERS: { value: ClientStatus | "all"; label: string }[] = [
   { value: "all",      label: "All"      },
@@ -54,7 +55,7 @@ function avatarColor(name: string): string {
 
 interface ClientsClientProps {
   initialClients: Client[];
-  projects: Project[];
+  projects: ProjectListItem[];
 }
 
 export default function ClientsClient({ initialClients, projects }: ClientsClientProps) {
