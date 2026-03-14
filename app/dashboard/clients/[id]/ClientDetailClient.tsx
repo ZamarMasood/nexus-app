@@ -90,9 +90,12 @@ export default function ClientDetailClient({
     );
   }, [allClients, search]);
 
-  // Only fetch when SWITCHING to a different client (not on initial mount)
+  // Track which client is currently loaded to avoid redundant fetches
+  const [loadedId, setLoadedId] = useState(clientId);
+
+  // Fetch when switching to a different client
   useEffect(() => {
-    if (selectedId === clientId) return; // initial data comes from server props
+    if (selectedId === loadedId) return;
     async function loadData() {
       setLoading(true);
       setRelatedLoading(true);
@@ -108,6 +111,7 @@ export default function ClientDetailClient({
         setClient(c);
         setProjects(p);
         setInvoices(inv);
+        setLoadedId(selectedId);
       } catch (err) {
         setError(err instanceof Error ? err.message : "Failed to load client.");
       } finally {
@@ -116,7 +120,7 @@ export default function ClientDetailClient({
       }
     }
     loadData();
-  }, [selectedId, clientId]);
+  }, [selectedId, loadedId]);
 
   function selectClient(id: string) {
     if (id === selectedId) return;

@@ -11,8 +11,8 @@ import {
 import {
   getPortalTaskById,
   getPortalComments,
+  getPortalFilesByTaskId,
 } from "@/lib/db/portal";
-import { getFilesByTaskId } from "@/lib/db/tasks";
 import { CommentForm } from "./CommentForm";
 
 const STATUS_CONFIG = {
@@ -46,8 +46,8 @@ export default async function PortalTaskDetailPage({
 
   const [task, comments, files] = await Promise.all([
     getPortalTaskById(params.id, clientId),
-    getPortalComments(params.id),
-    getFilesByTaskId(params.id),
+    getPortalComments(params.id, clientId),
+    getPortalFilesByTaskId(params.id, clientId),
   ]);
 
   if (!task) notFound();
@@ -198,7 +198,7 @@ export default async function PortalTaskDetailPage({
             return (
               <div key={comment.id} className="flex gap-3">
                 <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full ring-2 ring-surface shadow-sm text-xs font-bold ${
-                  isClient ? "bg-violet-500/15 text-violet-400" : "bg-violet-500/15 text-violet-400"
+                  isClient ? "bg-violet-500/15 text-violet-400" : "bg-sky-500/15 text-sky-400"
                 }`}>
                   {initials}
                 </div>

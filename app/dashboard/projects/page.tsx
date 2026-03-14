@@ -3,6 +3,8 @@ import { getClients } from "@/lib/db/clients";
 import { getTaskCountsByProject } from "@/lib/db/tasks";
 import ProjectsClient from "./ProjectsClient";
 
+export const dynamic = "force-dynamic";
+
 export default async function ProjectsPage() {
   // Fetch task counts (only project_id + status) instead of ALL task rows
   const [projects, clients, taskCounts] = await Promise.all([

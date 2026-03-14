@@ -19,10 +19,10 @@ export async function updateProfileAction(
   if (!name) return { error: 'Name is required.', success: null };
 
   const supabase = createSupabaseServerClient();
-  const { data: { session } } = await supabase.auth.getSession();
-  if (!session?.user?.email) return { error: 'Not authenticated.', success: null };
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user?.email) return { error: 'Not authenticated.', success: null };
 
-  const member = await getTeamMemberByEmail(session.user.email).catch(() => null);
+  const member = await getTeamMemberByEmail(user.email).catch(() => null);
   if (!member) return { error: 'Team member record not found.', success: null };
 
   await updateTeamMember(member.id, { name, avatar_url, role });

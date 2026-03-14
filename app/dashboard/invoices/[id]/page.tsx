@@ -2,6 +2,8 @@ import { getInvoicesForList, getInvoiceById } from "@/lib/db/invoices";
 import { getClientsForList } from "@/lib/db/clients";
 import InvoiceDetailClient from "./InvoiceDetailClient";
 
+export const dynamic = "force-dynamic";
+
 interface InvoiceDetailPageProps {
   params: Promise<{ id: string }>;
 }

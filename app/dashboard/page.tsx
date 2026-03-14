@@ -4,6 +4,8 @@ import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { getTeamMemberByEmail } from "@/lib/db/team-members";
 import DashboardClient from "./DashboardClient";
 
+export const dynamic = "force-dynamic";
+
 function greeting() {
   const h = new Date().getHours();
   if (h < 12) return "Good morning";
@@ -20,10 +22,8 @@ export default async function DashboardPage() {
     (async () => {
       try {
         const supabase = createSupabaseServerClient();
-        // Use getSession() (reads JWT locally) instead of getUser() (network call).
-        // Middleware already validated the session; we just need the email here.
-        const { data: { session } } = await supabase.auth.getSession();
-        const email = session?.user?.email;
+        const { data: { user } } = await supabase.auth.getUser();
+        const email = user?.email;
         if (!email) return null;
         const member = await getTeamMemberByEmail(email);
         return member?.name ?? null;

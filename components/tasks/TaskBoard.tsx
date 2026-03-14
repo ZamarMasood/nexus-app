@@ -5,7 +5,7 @@ import { DragDropContext, Droppable, Draggable, DropResult } from "@hello-pangea
 import { Plus } from "lucide-react";
 import { TaskCard } from "./TaskCard";
 import type { TaskWithAssignee } from "./TaskCard";
-import { updateTask } from "@/lib/db/tasks";
+import { updateTaskStatusAction } from "@/app/dashboard/tasks/actions";
 import type { TaskStatus } from "@/lib/types";
 import { useTaskForm } from "@/app/dashboard/task-form-context";
 
@@ -86,9 +86,8 @@ export function TaskBoard({ initialTasks, onTaskClick }: TaskBoardProps) {
       prev.map((t) => (t.id === draggableId ? { ...t, status: newStatus } : t))
     );
 
-    try {
-      await updateTask(draggableId, { status: newStatus });
-    } catch {
+    const updateResult = await updateTaskStatusAction(draggableId, newStatus);
+    if (updateResult?.error) {
       // Revert on failure
       setTasks((prev) =>
         prev.map((t) =>

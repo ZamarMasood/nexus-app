@@ -196,9 +196,12 @@ export default function ProjectDetailClient({
     });
   }, [allProjects, search, clientMap]);
 
-  // Only fetch when SWITCHING to a different project (not on initial mount)
+  // Track which project is currently loaded to avoid redundant fetches
+  const [loadedId, setLoadedId] = useState(projectId);
+
+  // Fetch when switching to a different project
   useEffect(() => {
-    if (selectedId === projectId) return; // initial data comes from server props
+    if (selectedId === loadedId) return;
     async function load() {
       setLoading(true);
       setTasksLoading(true);
@@ -212,6 +215,7 @@ export default function ProjectDetailClient({
         setProject(proj);
         setClient(findClientInList(proj.client_id, clients));
         setTasks(t);
+        setLoadedId(selectedId);
       } catch (err) {
         setError(err instanceof Error ? err.message : "Failed to load project");
       } finally {
@@ -220,7 +224,7 @@ export default function ProjectDetailClient({
       }
     }
     load();
-  }, [selectedId, projectId, clients]);
+  }, [selectedId, loadedId, clients]);
 
   function selectProject(id: string) {
     if (id === selectedId) return;

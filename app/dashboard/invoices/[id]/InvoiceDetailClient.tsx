@@ -83,9 +83,12 @@ export default function InvoiceDetailClient({
     });
   }, [allInvoices, search, clientMap]);
 
-  // Only fetch when SWITCHING to a different invoice (not on initial mount)
+  // Track which invoice is currently loaded to avoid redundant fetches
+  const [loadedId, setLoadedId] = useState(invoiceId);
+
+  // Fetch when switching to a different invoice
   useEffect(() => {
-    if (selectedId === invoiceId) return; // initial data comes from server props
+    if (selectedId === loadedId) return;
     async function load() {
       setLoading(true);
       setError(null);
@@ -94,6 +97,7 @@ export default function InvoiceDetailClient({
         const inv = await getInvoiceById(selectedId);
         setInvoice(inv);
         setClient(findClientInList(inv.client_id, clients));
+        setLoadedId(selectedId);
       } catch (err) {
         setError(err instanceof Error ? err.message : "Failed to load invoice.");
       } finally {
@@ -101,7 +105,7 @@ export default function InvoiceDetailClient({
       }
     }
     load();
-  }, [selectedId, invoiceId, clients]);
+  }, [selectedId, loadedId, clients]);
 
   function selectInvoice(id: string) {
     if (id === selectedId) return;

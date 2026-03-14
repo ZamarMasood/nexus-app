@@ -3,6 +3,8 @@ import { getClientsForList } from "@/lib/db/clients";
 import { getTasksWithAssignees } from "@/lib/db/tasks";
 import ProjectDetailClient from "./ProjectDetailClient";
 
+export const dynamic = "force-dynamic";
+
 interface ProjectDetailPageProps {
   params: Promise<{ id: string }>;
 }

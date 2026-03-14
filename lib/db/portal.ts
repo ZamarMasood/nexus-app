@@ -48,7 +48,21 @@ export async function getPortalTaskById(
 
 // ─── Comments ─────────────────────────────────────────────────────────────────
 
-export async function getPortalComments(taskId: string): Promise<Comment[]> {
+/**
+ * Fetch comments for a task, but only if the task belongs to a project
+ * owned by clientId. Uses inner join for ownership validation.
+ */
+export async function getPortalComments(taskId: string, clientId: string): Promise<Comment[]> {
+  // First verify the task belongs to this client
+  const { data: task } = await supabase
+    .from('tasks')
+    .select('id, project:projects!inner(id)')
+    .eq('id', taskId)
+    .eq('project.client_id', clientId)
+    .maybeSingle();
+
+  if (!task) return [];
+
   const { data, error } = await supabase
     .from('comments')
     .select('*')
@@ -87,6 +101,31 @@ export async function createPortalComment(
     .single();
 
   if (error) throw new Error(`Failed to create comment: ${error.message}`);
+  return data;
+}
+
+/**
+ * Fetch files for a task, but only if the task belongs to a project
+ * owned by clientId. Uses inner join for ownership validation.
+ */
+export async function getPortalFilesByTaskId(taskId: string, clientId: string): Promise<ProjectFile[]> {
+  // Verify task belongs to this client
+  const { data: task } = await supabase
+    .from('tasks')
+    .select('id, project:projects!inner(id)')
+    .eq('id', taskId)
+    .eq('project.client_id', clientId)
+    .maybeSingle();
+
+  if (!task) return [];
+
+  const { data, error } = await supabase
+    .from('files')
+    .select('*')
+    .eq('task_id', taskId)
+    .order('created_at', { ascending: false });
+
+  if (error) throw new Error(`Failed to fetch files for task ${taskId}: ${error.message}`);
   return data;
 }
 

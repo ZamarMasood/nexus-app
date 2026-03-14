@@ -4,12 +4,12 @@ import { getTeamMemberByEmail } from '@/lib/db/team-members';
 
 export async function GET() {
   const supabase = createSupabaseServerClient();
-  const { data: { session } } = await supabase.auth.getSession();
+  const { data: { user } } = await supabase.auth.getUser();
 
-  if (!session?.user?.email) {
+  if (!user?.email) {
     return NextResponse.json({ name: null });
   }
 
-  const member = await getTeamMemberByEmail(session.user.email);
+  const member = await getTeamMemberByEmail(user.email);
   return NextResponse.json({ name: member?.name ?? null });
 }

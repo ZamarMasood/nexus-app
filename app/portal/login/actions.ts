@@ -3,6 +3,7 @@
 import { redirect } from 'next/navigation';
 import { cookies } from 'next/headers';
 import { createSupabaseServerClient } from '@/lib/supabase-server';
+import bcrypt from 'bcryptjs';
 
 export interface PortalLoginState {
   error: string | null;
@@ -22,12 +23,16 @@ export async function portalSignInAction(
   const supabase = createSupabaseServerClient();
   const { data, error } = await supabase
     .from('clients')
-    .select('id, name')
+    .select('id, name, portal_password')
     .eq('email', email)
-    .eq('portal_password', portalPassword)
-    .single();
+    .maybeSingle();
 
-  if (error || !data) {
+  if (error || !data?.portal_password) {
+    return { error: 'Invalid credentials. Contact your project manager if you need access.' };
+  }
+
+  const match = await bcrypt.compare(portalPassword, data.portal_password);
+  if (!match) {
     return { error: 'Invalid credentials. Contact your project manager if you need access.' };
   }
 

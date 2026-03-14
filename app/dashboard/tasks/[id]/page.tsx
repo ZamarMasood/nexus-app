@@ -1,6 +1,8 @@
 import { getTaskByIdWithAssignee, getCommentsByTaskId, getFilesByTaskId } from "@/lib/db/tasks";
 import TaskDetailClient from "./TaskDetailClient";
 
+export const dynamic = "force-dynamic";
+
 interface TaskDetailPageProps {
   params: Promise<{ id: string }>;
 }

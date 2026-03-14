@@ -63,7 +63,7 @@ export async function updateClientPasswordAction(
   const match = await bcrypt.compare(currentPassword, client.portal_password);
   if (!match) return { error: 'Current password is incorrect.', success: null };
 
-  const hashed = await bcrypt.hash(newPassword, 12);
+  const hashed = await bcrypt.hash(newPassword, 10);
   const { error: updateError } = await supabase
     .from('clients')
     .update({ portal_password: hashed })

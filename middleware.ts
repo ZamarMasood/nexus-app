@@ -25,9 +25,6 @@ export async function middleware(request: NextRequest) {
     }
 
     // Check Supabase Auth (team session)
-    // Use getSession() instead of getUser() — reads JWT from cookie locally
-    // (no network roundtrip). This saves ~200-500ms per navigation.
-    // Server components can still call getUser() when verified identity is needed.
     let supabaseResponse = NextResponse.next({ request });
 
     const supabase = createServerClient(
@@ -51,12 +48,18 @@ export async function middleware(request: NextRequest) {
       }
     );
 
-    const {
-      data: { session },
-    } = await supabase.auth.getSession();
+    const { data: { user }, error } = await supabase.auth.getUser();
 
-    if (!session) {
-      return NextResponse.redirect(new URL('/login', request.url));
+    if (error || !user) {
+      // Clear stale auth cookies to prevent refresh-token loop
+      const loginUrl = new URL('/login', request.url);
+      const response = NextResponse.redirect(loginUrl);
+      request.cookies.getAll().forEach((cookie) => {
+        if (cookie.name.startsWith('sb-')) {
+          response.cookies.delete(cookie.name);
+        }
+      });
+      return response;
     }
 
     return supabaseResponse;
