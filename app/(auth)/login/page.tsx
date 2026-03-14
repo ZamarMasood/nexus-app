@@ -49,7 +49,7 @@ export default function LoginPage() {
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
-  const isDark = resolvedTheme === 'dark';
+  const isDark = mounted ? resolvedTheme === 'dark' : true;
 
   // Show page immediately with dark defaults until mounted
   const bg         = mounted ? (isDark ? '#120828'                      : '#f5f3ff')     : '#120828';
@@ -132,21 +132,24 @@ export default function LoginPage() {
         {/* Back button — top left */}
         <Link
           href="/"
-          className="absolute top-5 left-5 z-20 flex items-center gap-1.5 rounded-xl px-3 py-2 text-[13px] font-medium transition-[background-color,transform] duration-150 hover:bg-violet-500/10 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/40"
+          className="s1 group absolute top-5 left-5 z-20 flex items-center gap-1.5 rounded-xl px-3 py-2 text-[13px] font-medium transition-[background-color,transform,box-shadow] duration-200 hover:bg-violet-500/10 hover:shadow-[0_0_16px_rgba(124,58,237,0.18)] active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/40"
           style={{ color: textSub, border: `1px solid ${cardBdr}`, backdropFilter: 'blur(8px)', background: cardBg }}
         >
-          <ArrowLeft size={14} />
+          <ArrowLeft size={14} className="transition-transform duration-200 group-hover:-translate-x-0.5" />
           Back
         </Link>
 
         {/* Theme toggle — top right */}
         <button
           onClick={() => setTheme(isDark ? 'light' : 'dark')}
-          className="absolute top-5 right-5 z-20 flex size-9 items-center justify-center rounded-xl transition-[background-color,transform] duration-150 hover:bg-violet-500/10 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/40"
+          className="s1 group absolute top-5 right-5 z-20 flex size-9 items-center justify-center rounded-xl transition-[background-color,transform,box-shadow] duration-200 hover:bg-violet-500/10 hover:shadow-[0_0_16px_rgba(124,58,237,0.18)] active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/40"
           style={{ color: textSub, border: `1px solid ${cardBdr}`, backdropFilter: 'blur(8px)', background: cardBg }}
           aria-label="Toggle theme"
         >
-          {isDark ? <Sun size={15} /> : <Moon size={15} />}
+          {isDark
+            ? <Sun size={15} className="transition-transform duration-300 group-hover:rotate-12 group-hover:scale-110" />
+            : <Moon size={15} className="transition-transform duration-300 group-hover:-rotate-12 group-hover:scale-110" />
+          }
         </button>
 
         {/* Glass card */}
