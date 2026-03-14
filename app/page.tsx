@@ -107,8 +107,17 @@ export default function LandingPage() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [openFaq, setOpenFaq] = useState<number | null>(null);
+  const [menuHeight, setMenuHeight] = useState(0);
+  const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => { setMounted(true); }, []);
+  useEffect(() => {
+    if (!menuOpen) { setMenuHeight(0); return; }
+    const id = setTimeout(() => {
+      if (menuRef.current) setMenuHeight(menuRef.current.offsetHeight);
+    }, 0);
+    return () => clearTimeout(id);
+  }, [menuOpen]);
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20);
     window.addEventListener('scroll', onScroll);
@@ -235,23 +244,30 @@ export default function LandingPage() {
           </div>
 
           {menuOpen && (
-            <div className="md:hidden px-6 pb-5 pt-2 space-y-1"
-              style={{ borderTop: `1px solid ${isDark ? 'rgba(255,255,255,0.06)' : 'rgba(124,58,237,0.08)'}` }}>
+            <div
+              ref={menuRef}
+              className="md:hidden px-4 pb-4 pt-2 space-y-1"
+              style={{
+                borderTop: `1px solid ${isDark ? 'rgba(255,255,255,0.06)' : 'rgba(124,58,237,0.1)'}`,
+              }}>
               {NAV_LINKS.map(l => (
                 <a key={l} href={`#${l.toLowerCase().replace(/ /g, '-')}`}
                   onClick={() => setMenuOpen(false)}
-                  className="block rounded-xl px-4 py-3 text-[14px] font-medium transition-[background-color] duration-150 hover:bg-violet-500/8"
+                  className="block rounded-xl px-4 py-3 text-[14px] font-medium transition-[background-color] duration-150 hover:bg-violet-500/8 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/40"
                   style={{ color: textSub }}>{l}</a>
               ))}
               <Link href="/login" onClick={() => setMenuOpen(false)}
-                className="block rounded-xl px-4 py-3 text-[14px] font-semibold text-white"
+                className="block rounded-xl px-4 py-3 text-[14px] font-semibold text-white text-center mt-1 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/60"
                 style={{ background: 'linear-gradient(135deg,#7c3aed,#5b21b6)' }}>Sign in</Link>
             </div>
           )}
         </header>
 
         {/* ── HERO ────────────────────────────────────────────────────────── */}
-        <section className="relative overflow-hidden pt-32 pb-24 px-6">
+        <section
+          className="relative overflow-hidden pt-24 sm:pt-32 pb-16 sm:pb-24 px-4 sm:px-6"
+          style={menuHeight > 0 ? { paddingTop: `calc(6rem + ${menuHeight}px)` } : undefined}
+        >
           <div className="pointer-events-none absolute inset-0">
             <div className="dot-grid absolute inset-0" />
             <div className="absolute inset-0" style={{ background: `radial-gradient(ellipse 70% 60% at 50% 50%, transparent 45%, ${bg} 100%)` }} />
@@ -284,15 +300,15 @@ export default function LandingPage() {
               The all-in-one workspace for agencies and studios — tasks, client portals, invoicing, and analytics in one beautiful place.
             </p>
 
-            <div className="hero-cta flex flex-wrap items-center justify-center gap-3">
+            <div className="hero-cta flex flex-col sm:flex-row items-center justify-center gap-3">
               <Link href="/login"
-                className="group flex items-center gap-2 rounded-2xl px-7 py-3.5 text-[15px] font-semibold text-white transition-[transform,box-shadow] duration-200 hover:scale-[1.03] hover:shadow-[0_8px_40px_rgba(124,58,237,0.5)] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/60"
+                className="group flex w-full sm:w-auto items-center justify-center gap-2 rounded-2xl px-7 py-3.5 text-[15px] font-semibold text-white transition-[transform,box-shadow] duration-200 hover:scale-[1.03] hover:shadow-[0_8px_40px_rgba(124,58,237,0.5)] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/60"
                 style={{ background: 'linear-gradient(135deg,#7c3aed,#5b21b6)', boxShadow: '0 4px 24px rgba(124,58,237,0.4)' }}>
                 Get started free
                 <ArrowRight size={16} className="transition-transform duration-200 group-hover:translate-x-0.5" />
               </Link>
               <a href="#features"
-                className="flex items-center gap-2 rounded-2xl px-7 py-3.5 text-[15px] font-semibold transition-[background-color,border-color] duration-150 hover:bg-violet-500/8 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/40"
+                className="flex w-full sm:w-auto items-center justify-center gap-2 rounded-2xl px-7 py-3.5 text-[15px] font-semibold transition-[background-color,border-color] duration-150 hover:bg-violet-500/8 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/40"
                 style={{ border: `1px solid ${isDark ? 'rgba(255,255,255,0.1)' : 'rgba(124,58,237,0.2)'}`, color: textH }}>
                 See features
               </a>
@@ -300,7 +316,7 @@ export default function LandingPage() {
           </div>
 
           {/* Floating mockup */}
-          <div className="hero-mockup relative z-10 mx-auto mt-20 max-w-3xl px-4">
+          <div className="hero-mockup relative z-10 mx-auto mt-10 sm:mt-20 max-w-3xl px-2 sm:px-4">
             <div className="float-card">
               <div className="overflow-hidden rounded-2xl"
                 style={{
@@ -349,7 +365,7 @@ export default function LandingPage() {
         </section>
 
         {/* ── STATS ───────────────────────────────────────────────────────── */}
-        <section className="py-14 px-6">
+        <section className="py-10 sm:py-14 px-4 sm:px-6">
           <div className="mx-auto max-w-3xl">
             <div className="grid grid-cols-3 rounded-2xl overflow-hidden"
               style={{ background: cardBg, border: `1px solid ${cardBdr}`, backdropFilter: 'blur(12px)', boxShadow: isDark ? '0 4px 32px rgba(0,0,0,0.3)' : '0 4px 32px rgba(124,58,237,0.08)' }}>
@@ -358,9 +374,9 @@ export default function LandingPage() {
                 { n: 99,   s: '.9%',     label: 'Uptime SLA' },
                 { n: 2,    s: '× faster', label: 'Than ClickUp' },
               ].map(({ n, s, label }, i) => (
-                <div key={label} className="py-8 text-center px-4"
+                <div key={label} className="py-5 sm:py-8 text-center px-2 sm:px-4"
                   style={{ borderLeft: i > 0 ? `1px solid ${cardBdr}` : 'none' }}>
-                  <p className="text-[36px] font-bold tracking-[-0.04em]" style={{ color: textH, fontFamily: 'var(--font-display)' }}>
+                  <p className="text-[clamp(22px,5vw,36px)] font-bold tracking-[-0.04em]" style={{ color: textH, fontFamily: 'var(--font-display)' }}>
                     <Counter to={n} suffix={s} />
                   </p>
                   <p className="mt-1 text-[12px]" style={{ color: textSub }}>{label}</p>
@@ -371,7 +387,7 @@ export default function LandingPage() {
         </section>
 
         {/* ── FEATURES ────────────────────────────────────────────────────── */}
-        <section id="features" className="py-24 px-6">
+        <section id="features" className="py-16 sm:py-24 px-4 sm:px-6">
           <div className="mx-auto max-w-6xl">
             <div ref={featSection.ref}
               className={`text-center mb-16 ${featSection.inView ? 'section-in' : ''}`}>
@@ -401,7 +417,7 @@ export default function LandingPage() {
         </section>
 
         {/* ── HOW IT WORKS ────────────────────────────────────────────────── */}
-        <section id="how-it-works" className="py-24 px-6">
+        <section id="how-it-works" className="py-16 sm:py-24 px-4 sm:px-6">
           <div className="mx-auto max-w-4xl">
             <div ref={stepsSection.ref} className={`text-center mb-16 ${stepsSection.inView ? 'section-in' : ''}`}>
               <p className="mb-3 text-[11px] font-mono font-semibold uppercase tracking-[0.15em] text-violet-500">Process</p>
@@ -430,7 +446,7 @@ export default function LandingPage() {
         </section>
 
         {/* ── TESTIMONIALS ────────────────────────────────────────────────── */}
-        <section id="testimonials" className="py-24 px-6">
+        <section id="testimonials" className="py-16 sm:py-24 px-4 sm:px-6">
           <div className="mx-auto max-w-6xl">
             <div ref={testiSection.ref} className={`text-center mb-16 ${testiSection.inView ? 'section-in' : ''}`}>
               <p className="mb-3 text-[11px] font-mono font-semibold uppercase tracking-[0.15em] text-violet-500">Testimonials</p>
@@ -474,7 +490,7 @@ export default function LandingPage() {
         </section>
 
         {/* ── COMPARISON ──────────────────────────────────────────────────── */}
-        <section id="comparison" className="py-24 px-6">
+        <section id="comparison" className="py-16 sm:py-24 px-4 sm:px-6">
           <div className="mx-auto max-w-4xl">
             <div ref={cmpSection.ref} className={`text-center mb-16 ${cmpSection.inView ? 'section-in' : ''}`}>
               <p className="mb-3 text-[11px] font-mono font-semibold uppercase tracking-[0.15em] text-violet-500">Comparison</p>
@@ -486,8 +502,9 @@ export default function LandingPage() {
               </p>
             </div>
 
-            <div className={`overflow-hidden rounded-2xl ${cmpSection.inView ? 'section-in' : ''}`}
+            <div className={`overflow-x-auto rounded-2xl ${cmpSection.inView ? 'section-in' : ''}`}
               style={{ border: `1px solid ${cardBdr}`, backdropFilter: 'blur(12px)', boxShadow: isDark ? '0 4px 32px rgba(0,0,0,0.3)' : '0 8px 40px rgba(124,58,237,0.08)' }}>
+              <div className="min-w-[480px]">
               {/* Header row */}
               <div className="grid grid-cols-4 text-[12px] font-semibold"
                 style={{ background: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(124,58,237,0.04)', borderBottom: `1px solid ${cardBdr}` }}>
@@ -528,12 +545,13 @@ export default function LandingPage() {
                   ))}
                 </div>
               ))}
+              </div>{/* end min-w wrapper */}
             </div>
           </div>
         </section>
 
         {/* ── FAQ ─────────────────────────────────────────────────────────── */}
-        <section id="faq" className="py-24 px-6">
+        <section id="faq" className="py-16 sm:py-24 px-4 sm:px-6">
           <div className="mx-auto max-w-2xl">
             <div ref={faqSection.ref} className={`text-center mb-16 ${faqSection.inView ? 'section-in' : ''}`}>
               <p className="mb-3 text-[11px] font-mono font-semibold uppercase tracking-[0.15em] text-violet-500">FAQ</p>
@@ -571,10 +589,10 @@ export default function LandingPage() {
         </section>
 
         {/* ── FINAL CTA ───────────────────────────────────────────────────── */}
-        <section className="py-24 px-6">
+        <section className="py-16 sm:py-24 px-4 sm:px-6">
           <div className="mx-auto max-w-4xl">
             <div ref={ctaSection.ref}
-              className={`relative overflow-hidden rounded-3xl px-8 py-16 text-center ${ctaSection.inView ? 'section-in' : ''}`}
+              className={`relative overflow-hidden rounded-3xl px-5 py-12 sm:px-8 sm:py-16 text-center ${ctaSection.inView ? 'section-in' : ''}`}
               style={{
                 background: isDark ? 'linear-gradient(135deg,#1a0a3e 0%,#0d0618 50%,#0f0528 100%)' : 'linear-gradient(135deg,#ede9fe 0%,#f5f3ff 50%,#ede9fe 100%)',
                 border: `1px solid ${isDark ? 'rgba(124,58,237,0.3)' : 'rgba(124,58,237,0.2)'}`,
@@ -606,7 +624,7 @@ export default function LandingPage() {
 
         {/* ── FOOTER ──────────────────────────────────────────────────────── */}
         <footer
-          className="relative overflow-hidden px-6 pt-16 pb-8"
+          className="relative overflow-hidden px-4 sm:px-6 pt-12 sm:pt-16 pb-8"
           style={{
             borderTop: `1px solid ${isDark ? 'rgba(255,255,255,0.06)' : 'rgba(124,58,237,0.1)'}`,
             background: isDark
