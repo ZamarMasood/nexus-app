@@ -72,7 +72,7 @@ export default function PortalSettingsClient({ initialName, email }: PortalSetti
   const initials = name.split(' ').map((w) => w[0]).slice(0, 2).join('').toUpperCase();
 
   return (
-    <div className="mx-auto max-w-2xl px-6 py-10">
+    <div className="p-4 sm:px-6 sm:py-8">
 
       {/* Page header */}
       <div className="mb-8 animate-in" style={{ animationDelay: '0ms' }}>
@@ -82,9 +82,11 @@ export default function PortalSettingsClient({ initialName, email }: PortalSetti
         <p className="mt-1.5 text-sm text-faint-app">Update your name and portal password.</p>
       </div>
 
+      <div className="flex flex-col lg:flex-row gap-5 items-stretch">
+
       {/* ── Profile section ────────────────────────────────────────────────── */}
       <section
-        className="rounded-2xl border border-surface bg-surface-card overflow-hidden mb-5 animate-in"
+        className="flex-1 rounded-2xl border border-surface bg-surface-card overflow-hidden animate-in"
         style={{ animationDelay: '80ms' }}
       >
         <div className="flex items-center gap-3 px-6 py-4 border-b border-surface bg-overlay-xs">
@@ -145,7 +147,7 @@ export default function PortalSettingsClient({ initialName, email }: PortalSetti
 
       {/* ── Security section ───────────────────────────────────────────────── */}
       <section
-        className="rounded-2xl border border-surface bg-surface-card overflow-hidden animate-in"
+        className="flex-1 rounded-2xl border border-surface bg-surface-card overflow-hidden animate-in"
         style={{ animationDelay: '160ms' }}
       >
         <div className="flex items-center gap-3 px-6 py-4 border-b border-surface bg-overlay-xs">
@@ -232,6 +234,8 @@ export default function PortalSettingsClient({ initialName, email }: PortalSetti
           </div>
         </form>
       </section>
+
+      </div>
     </div>
   );
 }

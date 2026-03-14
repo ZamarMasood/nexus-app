@@ -135,11 +135,11 @@ export default async function PortalTaskDetailPage({
             {files.map((file) => (
               <div
                 key={file.id}
-                className="flex items-center justify-between rounded-xl border border-surface bg-surface-inset px-4 py-3"
+                className="flex items-center justify-between gap-3 rounded-xl border border-surface bg-surface-inset px-4 py-3"
               >
-                <div className="flex items-center gap-3">
-                  <span className="text-lg">{getFileIcon(file.filename)}</span>
-                  <span className="text-[13px] font-medium text-muted-app">
+                <div className="flex items-center gap-3 min-w-0">
+                  <span className="text-lg shrink-0">{getFileIcon(file.filename)}</span>
+                  <span className="text-[13px] font-medium text-muted-app truncate">
                     {file.filename ?? "Untitled file"}
                   </span>
                 </div>

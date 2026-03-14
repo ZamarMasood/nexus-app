@@ -9,8 +9,7 @@ import {
   FileText,
   RefreshCw,
   Check,
-  ExternalLink,
-  X,
+  Download,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { getInvoiceById, updateInvoice } from "@/lib/db/invoices";
@@ -36,7 +35,7 @@ export default function InvoiceDetailPage() {
   const [markingPaid, setMarkingPaid] = useState(false);
   const [generatingPdf, setGeneratingPdf] = useState(false);
   const [copied, setCopied] = useState(false);
-  const [showPdf, setShowPdf] = useState(true);
+  const [showPdf, setShowPdf] = useState(false);
   const [pdfCacheBust, setPdfCacheBust] = useState(() => Date.now());
 
   const load = useCallback(async () => {
@@ -165,7 +164,7 @@ export default function InvoiceDetailPage() {
           </div>
 
           {/* Details grid */}
-          <div className="grid grid-cols-3 divide-x divide-surface">
+          <div className="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-surface">
             {[
               {
                 label: "Client",
@@ -194,7 +193,7 @@ export default function InvoiceDetailPage() {
           </div>
 
           {/* Actions */}
-          <div className="flex items-center gap-2 border-t border-surface px-6 py-4">
+          <div className="flex flex-wrap items-center gap-2 border-t border-surface px-4 sm:px-6 py-4">
             {invoice.status !== "paid" && (
               <Button
                 onClick={markAsPaid}
@@ -245,24 +244,26 @@ export default function InvoiceDetailPage() {
             {invoice.pdf_url && (
               <a
                 href={invoice.pdf_url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="ml-auto inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm text-faint-app transition-colors hover:bg-overlay-xs hover:text-muted-app focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500"
+                download
+                className="ml-auto inline-flex items-center gap-1.5 rounded-lg border border-surface bg-surface-subtle px-3 py-2 text-sm font-medium text-muted-app hover:bg-overlay-sm hover:text-primary-app transition-[background-color,color] duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500"
               >
-                <ExternalLink className="h-3.5 w-3.5" />
-                Open PDF
+                <Download className="h-3.5 w-3.5" />
+                Download PDF
               </a>
             )}
           </div>
         </div>
 
-        {/* PDF preview */}
+        {/* PDF section */}
         {invoice.pdf_url ? (
           <div className="overflow-hidden rounded-xl border border-surface bg-surface-card">
-            <div className="flex items-center gap-2 border-b border-surface px-5 py-3">
-              <FileText className="h-4 w-4 text-faint-app" />
-              <span className="text-sm font-medium text-muted-app">PDF Preview</span>
-              <div className="ml-auto flex items-center gap-1.5">
+            {/* Header row — always visible */}
+            <div className="flex flex-wrap items-center gap-3 border-b border-surface px-5 py-4">
+              <div className="flex items-center gap-2 flex-1 min-w-0">
+                <FileText className="h-4 w-4 shrink-0 text-violet-400" />
+                <span className="text-sm font-semibold text-muted-app">Invoice PDF</span>
+              </div>
+              <div className="flex items-center gap-2">
                 <Button
                   variant="outline"
                   size="sm"
@@ -273,43 +274,35 @@ export default function InvoiceDetailPage() {
                   <RefreshCw className={`h-3 w-3 ${generatingPdf ? "animate-spin" : ""}`} />
                   Regenerate
                 </Button>
-                <button
-                  onClick={() => setShowPdf(false)}
-                  className="flex h-7 w-7 items-center justify-center rounded-md text-faint-app transition-colors hover:bg-overlay-xs hover:text-muted-app focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500"
-                  aria-label="Close PDF preview"
+                <Button
+                  size="sm"
+                  onClick={() => setShowPdf((v) => !v)}
+                  className="gap-1.5 bg-violet-600 hover:bg-violet-500 text-white shadow-[0_2px_10px_rgba(139,92,246,0.35)] transition-[background-color,box-shadow]"
                 >
-                  <X className="h-3.5 w-3.5" />
-                </button>
+                  <FileText className="h-3.5 w-3.5" />
+                  {showPdf ? "Hide PDF" : "View PDF"}
+                </Button>
               </div>
             </div>
+
+            {/* PDF iframe — shown only when toggled */}
             {showPdf && (
               <iframe
                 src={`${invoice.pdf_url}?t=${pdfCacheBust}#toolbar=0`}
-                className="h-[700px] w-full"
+                className="h-[600px] sm:h-[750px] w-full"
                 title={`Invoice ${invoice.invoice_number}`}
               />
             )}
-            {!showPdf && (
-              <div className="flex items-center justify-center gap-2 py-6">
-                <button
-                  onClick={() => setShowPdf(true)}
-                  className="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm text-faint-app transition-colors hover:bg-overlay-xs hover:text-muted-app focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500"
-                >
-                  <FileText className="h-4 w-4" />
-                  Show PDF Preview
-                </button>
-              </div>
-            )}
           </div>
         ) : (
-          <div className="flex flex-col items-center justify-center gap-4 rounded-xl border border-surface bg-surface-card py-20">
+          <div className="flex flex-col items-center justify-center gap-4 rounded-xl border border-surface bg-surface-card py-16">
             <div className="flex h-14 w-14 items-center justify-center rounded-full border border-surface bg-surface-inset">
               <FileText className="h-6 w-6 text-faint-app" />
             </div>
             <div className="text-center">
-              <p className="text-sm font-medium text-secondary-app">No PDF generated yet</p>
+              <p className="text-sm font-semibold text-secondary-app">No PDF generated yet</p>
               <p className="mt-1 text-xs text-faint-app">
-                Click &ldquo;Generate PDF&rdquo; above to create and store the invoice PDF.
+                Generate a PDF to preview and share this invoice.
               </p>
             </div>
             <Button

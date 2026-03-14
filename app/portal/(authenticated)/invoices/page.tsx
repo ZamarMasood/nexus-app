@@ -28,7 +28,7 @@ function InvoiceRow({ invoice, delay }: { invoice: Invoice; delay: number }) {
   return (
     <div
       className={[
-        "group flex items-center gap-4 rounded-2xl border bg-surface-card px-5 py-4",
+        "group flex items-center gap-2 sm:gap-4 rounded-2xl border bg-surface-card px-3 py-3 sm:px-5 sm:py-4",
         "transition-[background-color,box-shadow] duration-150",
         "hover:bg-surface-subtle hover:shadow-[0_4px_20px_rgba(0,0,0,0.08)]",
         isOverdue ? "border-rose-500/20" : "border-surface",
@@ -46,12 +46,13 @@ function InvoiceRow({ invoice, delay }: { invoice: Invoice; delay: number }) {
         <p className="text-[14px] font-semibold text-bright truncate">
           {invoice.invoice_number ?? `Invoice #${invoice.id.slice(0, 8)}`}
         </p>
-        <p className="mt-0.5 text-[12px] text-faint-app">
-          Due {formatDate(invoice.due_date)}
-        </p>
+        <div className="mt-0.5 flex items-center gap-2 flex-wrap">
+          <p className="text-[12px] text-faint-app">Due {formatDate(invoice.due_date)}</p>
+          <p className="text-[12px] font-semibold text-muted-app tabular-nums sm:hidden">{formatCurrency(invoice.amount)}</p>
+        </div>
       </div>
 
-      {/* Amount */}
+      {/* Amount — desktop only */}
       <div className="text-right shrink-0 hidden sm:block">
         <p className="text-[16px] font-bold tracking-[-0.02em] text-bright tabular-nums">
           {formatCurrency(invoice.amount)}
@@ -74,7 +75,7 @@ function InvoiceRow({ invoice, delay }: { invoice: Invoice; delay: number }) {
           target="_blank"
           rel="noopener noreferrer"
           className={[
-            "shrink-0 inline-flex items-center gap-1.5 rounded-lg px-3 py-2",
+            "shrink-0 inline-flex items-center gap-1.5 rounded-lg px-2 py-1.5 sm:px-3 sm:py-2",
             "text-[12px] font-semibold text-violet-400 bg-violet-500/10",
             "hover:bg-violet-600 hover:text-white",
             "transition-[background-color,color] duration-150",
@@ -83,11 +84,9 @@ function InvoiceRow({ invoice, delay }: { invoice: Invoice; delay: number }) {
           ].join(" ")}
         >
           <Download className="h-3.5 w-3.5" />
-          PDF
+          <span className="hidden sm:inline">PDF</span>
         </a>
-      ) : (
-        <div className="w-[60px] shrink-0" />
-      )}
+      ) : null}
     </div>
   );
 }
@@ -144,7 +143,7 @@ export default async function PortalInvoicesPage() {
 
       {/* Summary cards */}
       {invoices.length > 0 && (
-        <div className="mb-8 grid grid-cols-2 gap-4 sm:grid-cols-3">
+        <div className="mb-8 grid grid-cols-1 sm:grid-cols-3 gap-4">
           <SummaryCard
             label="Total Invoices" value={String(invoices.length)}
             icon={Receipt} accent="from-violet-500/20 to-violet-600/5"

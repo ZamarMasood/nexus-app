@@ -100,11 +100,11 @@ export function TaskBoard({ initialTasks, onTaskClick }: TaskBoardProps) {
 
   return (
     <DragDropContext onDragEnd={onDragEnd}>
-      <div className="flex justify-center gap-5 overflow-x-auto pb-6">
+      <div className="flex flex-col lg:flex-row lg:justify-center gap-5 pb-6">
         {COLUMNS.map((col) => {
           const colTasks = tasksByStatus[col.id];
           return (
-            <div key={col.id} className="flex w-[380px] shrink-0 flex-col">
+            <div key={col.id} className="flex w-full lg:w-[380px] lg:shrink-0 flex-col">
               {/* Column header — full-width pill */}
               <div className={`mb-3 flex items-center justify-between rounded-xl px-4 py-2.5 ${col.headerPill}`}>
                 <div className="flex items-center gap-2.5">

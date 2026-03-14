@@ -251,13 +251,13 @@ export default async function PortalTasksPage() {
           </p>
         </div>
       ) : (
-        <div className="flex justify-center gap-5 overflow-x-auto pb-6">
+        <div className="flex flex-col lg:flex-row lg:justify-center gap-5 pb-6">
           {COLUMNS.map(({ status, label, icon: ColIcon, headerColor, headerPill, dotColor, dotGlow, bgColor, borderColor, countColor, iconColor }, colIndex) => {
             const columnTasks = tasks.filter((t) => t.status === status);
             return (
               <div
                 key={status}
-                className="flex w-[380px] shrink-0 flex-col animate-in"
+                className="flex w-full lg:w-[380px] lg:shrink-0 flex-col animate-in"
                 style={{ animationDelay: `${160 + colIndex * 80}ms` }}
               >
                 <div className={`mb-3 flex items-center justify-between rounded-xl px-4 py-2.5 ${headerPill}`}>
