@@ -45,13 +45,30 @@ export default function DashboardPage() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading]   = useState(true);
   const [error, setError]       = useState<string | null>(null);
-  const [mounted, setMounted]   = useState(false);
+  const [userName, setUserName] = useState<string | null>(null);
+  // Deferred to client to prevent server/client hydration mismatch on dates
+  const [dateLabel, setDateLabel]       = useState("");
+  const [greetingText, setGreetingText] = useState("Good morning");
+  const [today, setToday]               = useState<Date>(new Date(0)); // epoch — deterministic
+
+  useEffect(() => {
+    const d = new Date();
+    d.setHours(0, 0, 0, 0);
+    setToday(d);
+    setDateLabel(new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" }));
+    setGreetingText(greeting());
+  }, []);
 
   async function load() {
     try {
-      const [t, p] = await Promise.all([getTasksWithAssignees(), getProjects()]);
+      const [t, p, meRes] = await Promise.all([
+        getTasksWithAssignees(),
+        getProjects(),
+        fetch('/api/me').then((r) => r.json() as Promise<{ name: string | null }>),
+      ]);
       setTasks(t);
       setProjects(p);
+      setUserName(meRes.name);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Failed to load dashboard");
     } finally {
@@ -59,10 +76,7 @@ export default function DashboardPage() {
     }
   }
 
-  useEffect(() => { load(); setMounted(true); }, []);
-
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  useEffect(() => { load(); }, []);
 
   const overdueTasks      = tasks.filter((t) => !t.due_date || t.status === "done" ? false : new Date(t.due_date) < today);
   const activeProjects    = projects.filter((p) => p.status === "active" || p.status === "in_progress");
@@ -145,12 +159,12 @@ export default function DashboardPage() {
       >
         <div>
           <p className="text-[11px] font-semibold uppercase tracking-widest text-dim-app mb-1">
-            {new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}
+            {dateLabel}
           </p>
           <h1 className="text-[28px] font-bold tracking-[-0.04em] text-bright leading-tight">
-            {greeting()}
+            {greetingText}{userName ? `, ${userName}!` : "!"}
           </h1>
-          <p className="mt-1 text-sm text-faint-app">Here's what's happening today.</p>
+          <p className="mt-1 text-sm text-faint-app">Here&apos;s what&apos;s happening today.</p>
         </div>
 
         <button

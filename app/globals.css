@@ -3,6 +3,40 @@
 @tailwind utilities;
 
 @layer base {
+  /* ── Master color system ──────────────────────────────────────────── */
+  :root {
+    /* Base layers */
+    --color-base:          248 250 252;   /* page background     */
+    --color-surface:       241 245 249;   /* cards, panels       */
+    --color-elevated:      226 232 240;   /* modals, dropdowns   */
+    /* Brand primary */
+    --color-primary:       124  58 237;   /* violet-600          */
+    --color-primary-hover: 109  40 217;   /* violet-700          */
+    /* Semantic text */
+    --color-text:           15  23  42;   /* main text           */
+    --color-text-muted:     71  85 105;   /* secondary text      */
+    /* Border */
+    --color-border:          0   0   0;   /* used w/ opacity     */
+    /* Status */
+    --color-success:        52 211 153;   /* emerald-400         */
+    --color-warning:       251 191  36;   /* amber-400           */
+    --color-danger:        248 113 113;   /* rose-400            */
+  }
+
+  .dark {
+    --color-base:           15  17  23;   /* #0f1117             */
+    --color-surface:        17  19  24;   /* #111318             */
+    --color-elevated:       26  28  37;   /* #1a1c25             */
+    --color-primary:       124  58 237;   /* violet-600 (same)   */
+    --color-primary-hover: 109  40 217;   /* violet-700          */
+    --color-text:          255 255 255;
+    --color-text-muted:    156 163 175;   /* #9ca3af             */
+    --color-border:        255 255 255;   /* used w/ opacity     */
+    --color-success:        52 211 153;   /* emerald-400         */
+    --color-warning:       251 191  36;   /* amber-400           */
+    --color-danger:        248 113 113;   /* rose-400            */
+  }
+
   /* ── shadcn/ui design tokens ─────────────────────────────────────── */
   :root {
     --background: 0 0% 100%;
@@ -93,6 +127,38 @@
   body {
     @apply bg-background text-foreground;
   }
+}
+
+/* ── Master color utility classes ─────────────────────────────────────── */
+@layer utilities {
+  .bg-color-base        { background-color: rgb(var(--color-base)); }
+  .bg-color-surface     { background-color: rgb(var(--color-surface)); }
+  .bg-color-elevated    { background-color: rgb(var(--color-elevated)); }
+  .bg-color-primary     { background-color: rgb(var(--color-primary)); }
+  .bg-color-success     { background-color: rgb(var(--color-success)); }
+  .bg-color-warning     { background-color: rgb(var(--color-warning)); }
+  .bg-color-danger      { background-color: rgb(var(--color-danger)); }
+
+  .text-color-text      { color: rgb(var(--color-text)); }
+  .text-color-muted     { color: rgb(var(--color-text-muted)); }
+  .text-color-primary   { color: rgb(var(--color-primary)); }
+  .text-color-success   { color: rgb(var(--color-success)); }
+  .text-color-warning   { color: rgb(var(--color-warning)); }
+  .text-color-danger    { color: rgb(var(--color-danger)); }
+
+  .border-color-border  { border-color: rgb(var(--color-border) / 0.10); }
+  .border-color-primary { border-color: rgb(var(--color-primary) / 0.30); }
+  .border-color-success { border-color: rgb(var(--color-success) / 0.25); }
+  .border-color-warning { border-color: rgb(var(--color-warning) / 0.25); }
+  .border-color-danger  { border-color: rgb(var(--color-danger) / 0.25); }
+
+  /* Status badge shorthand classes */
+  .badge-todo     { @apply bg-surface-subtle text-muted-app ring-1 ring-surface; }
+  .badge-progress { background-color: rgb(var(--color-warning) / 0.10); color: rgb(var(--color-warning)); ring: 1px solid rgb(var(--color-warning) / 0.20); }
+  .badge-done     { background-color: rgb(var(--color-success) / 0.10); color: rgb(var(--color-success)); }
+  .badge-pending  { background-color: rgb(var(--color-warning) / 0.10); color: rgb(var(--color-warning)); }
+  .badge-paid     { background-color: rgb(var(--color-success) / 0.10); color: rgb(var(--color-success)); }
+  .badge-overdue  { background-color: rgb(var(--color-danger) / 0.10); color: rgb(var(--color-danger)); }
 }
 
 /* ── App semantic utility classes ─────────────────────────────────────── */

@@ -1,6 +1,7 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import {
   CalendarDays,
   AlertCircle,
@@ -134,9 +135,11 @@ function PortalTaskCard({ task, delay }: { task: PortalTask; delay: number }) {
             {task.assignee ? (
               <>
                 {task.assignee.avatar_url ? (
-                  <img
+                  <Image
                     src={task.assignee.avatar_url}
                     alt={task.assignee.name}
+                    width={20}
+                    height={20}
                     className="h-5 w-5 rounded-full object-cover ring-1 ring-violet-500/25"
                   />
                 ) : (

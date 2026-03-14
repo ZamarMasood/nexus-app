@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Image from 'next/image';
 import { User, Lock, Camera, CheckCircle, AlertCircle, Loader2, Sparkles } from 'lucide-react';
 import { updateProfileAction, updatePasswordAction, type SettingsState } from './actions';
 import {
@@ -124,9 +125,11 @@ export default function SettingsClient({ initialName, initialAvatarUrl, initialR
           <div className="flex items-center gap-5">
             <div className="shrink-0 relative group/avatar">
               {avatarUrl ? (
-                <img
+                <Image
                   src={avatarUrl}
                   alt={name}
+                  width={64}
+                  height={64}
                   className="h-16 w-16 rounded-full object-cover ring-2 ring-violet-500/30"
                 />
               ) : (
