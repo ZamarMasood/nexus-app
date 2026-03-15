@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Plus, Receipt, ChevronRight, DollarSign, Clock, AlertTriangle, TrendingUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -45,6 +45,9 @@ export default function InvoicesClient({ initialInvoices, clients }: InvoicesCli
   const [filter, setFilter]     = useState<InvoiceStatus | "all">("all");
   const [createOpen, setCreateOpen] = useState(false);
 
+  // Sync local state when server re-renders with fresh data (after router.refresh)
+  useEffect(() => { setInvoices(initialInvoices); }, [initialInvoices]);
+
   const clientMap = useMemo(() => {
     const m: Record<string, string> = {};
     for (const c of clients) m[c.id] = c.name;
@@ -67,6 +70,7 @@ export default function InvoicesClient({ initialInvoices, clients }: InvoicesCli
   function handleInvoiceCreated(invoice: Invoice) {
     setInvoices((prev) => [invoice, ...prev]);
     setCreateOpen(false);
+    router.refresh();
   }
 
   const summaryCards = [

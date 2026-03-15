@@ -1,6 +1,7 @@
 'use server';
 
 import bcrypt from 'bcryptjs';
+import { revalidatePath } from 'next/cache';
 import { createSupabaseServerClient } from '@/lib/supabase-server';
 import type { Client, ClientInsert, ClientUpdate } from '@/lib/types';
 
@@ -23,7 +24,13 @@ export async function createClientAction(payload: ClientInsert): Promise<Client>
     .select()
     .single();
 
-  if (error) throw new Error(`Failed to create client: ${error.message}`);
+  if (error) {
+    if (error.code === '23505' && error.message.includes('clients_email_key')) {
+      throw new Error('A client already exists with this email.');
+    }
+    throw new Error(`Failed to create client: ${error.message}`);
+  }
+  revalidatePath('/dashboard', 'layout');
   return result;
 }
 
@@ -53,7 +60,13 @@ export async function updateClientAction(
     .select()
     .single();
 
-  if (error) throw new Error(`Failed to update client ${id}: ${error.message}`);
+  if (error) {
+    if (error.code === '23505' && error.message.includes('clients_email_key')) {
+      throw new Error('A client already exists with this email.');
+    }
+    throw new Error(`Failed to update client: ${error.message}`);
+  }
+  revalidatePath('/dashboard', 'layout');
   return result;
 }
 
@@ -81,8 +94,6 @@ export async function resetPortalPasswordAction(
     .single();
 
   if (error) throw new Error(`Failed to reset portal password: ${error.message}`);
+  revalidatePath('/dashboard', 'layout');
   return { client: result, plainPassword };
 }
-
-
-// end of file

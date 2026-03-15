@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { DragDropContext, Droppable, Draggable, DropResult } from "@hello-pangea/dnd";
 import { Plus } from "lucide-react";
 import { TaskCard } from "./TaskCard";
@@ -65,6 +65,9 @@ interface TaskBoardProps {
 export function TaskBoard({ initialTasks, onTaskClick }: TaskBoardProps) {
   const [tasks, setTasks] = useState<TaskWithAssignee[]>(initialTasks);
   const { openTaskForm } = useTaskForm();
+
+  // Sync local state when server re-renders with fresh data (after router.refresh)
+  useEffect(() => { setTasks(initialTasks); }, [initialTasks]);
 
   const tasksByStatus = COLUMNS.reduce<Record<TaskStatus, TaskWithAssignee[]>>(
     (acc, col) => {

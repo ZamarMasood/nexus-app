@@ -309,7 +309,7 @@ export default function ClientDetailClient({
 
               {isEditing ? (
                 <div className="border-t border-surface px-4 sm:px-6 py-5">
-                  <ClientForm client={client} onSuccess={(updated) => { setClient(updated); setIsEditing(false); }} onCancel={() => setIsEditing(false)} />
+                  <ClientForm client={client} onSuccess={(updated) => { setClient(updated); setIsEditing(false); router.refresh(); }} onCancel={() => setIsEditing(false)} />
                 </div>
               ) : (
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-3 border-t border-surface px-4 sm:px-6 py-4 sm:py-5">

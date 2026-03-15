@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { getInvoiceById, updateInvoice } from "@/lib/db/invoices";
+import { revalidateDashboard } from "@/app/dashboard/actions";
 import type { InvoiceListItem } from "@/lib/db/invoices";
 import type { ClientListItem } from "@/lib/db/clients";
 import { formatCurrency, formatDate } from "@/lib/utils";
@@ -130,6 +131,7 @@ export default function InvoiceDetailClient({
         setInvoice(json.invoice);
         setPdfCacheBust(Date.now());
       }
+      await revalidateDashboard();
     } catch (err) {
       console.error("Failed to mark as paid:", err);
     } finally {

@@ -16,6 +16,7 @@ import {
   ArrowLeft,
 } from "lucide-react";
 import { updateProject } from "@/lib/db/projects";
+import { revalidateDashboard } from "@/app/dashboard/actions";
 import type { ProjectListItem } from "@/lib/db/projects";
 import type { ClientListItem } from "@/lib/db/clients";
 import { getProjectById } from "@/lib/db/projects";
@@ -93,6 +94,7 @@ function EditForm({ project, onSave, onCancel }: EditFormProps) {
         total_value: totalValue ? parseFloat(totalValue) : null,
       });
       onSave(updated);
+      await revalidateDashboard();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to save");
     } finally {

@@ -17,6 +17,6 @@ export async function updateTaskStatusAction(
     return { error: `Failed to update task: ${error.message}` };
   }
 
-  revalidatePath("/dashboard/tasks");
+  revalidatePath("/dashboard", "layout");
   return null;
 }

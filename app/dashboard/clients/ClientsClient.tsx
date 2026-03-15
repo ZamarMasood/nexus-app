@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Plus, Users, ChevronRight, TrendingUp, DollarSign, Activity } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -64,6 +64,9 @@ export default function ClientsClient({ initialClients, projects }: ClientsClien
   const [filter, setFilter]   = useState<ClientStatus | "all">("all");
   const [addOpen, setAddOpen] = useState(false);
 
+  // Sync local state when server re-renders with fresh data (after router.refresh)
+  useEffect(() => { setClients(initialClients); }, [initialClients]);
+
   const activeProjectCount = useMemo(() => {
     const map: Record<string, number> = {};
     for (const p of projects) {
@@ -89,6 +92,7 @@ export default function ClientsClient({ initialClients, projects }: ClientsClien
   function handleClientAdded(client: Client) {
     setClients((prev) => [...prev, client].sort((a, b) => a.name.localeCompare(b.name)));
     setAddOpen(false);
+    router.refresh();
   }
 
   return (

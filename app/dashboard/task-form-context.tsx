@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { useRouter } from "next/navigation";
 import { TaskFormDialog } from "@/components/tasks/TaskForm";
 
 interface TaskFormContextValue {
@@ -17,11 +18,10 @@ export function useTaskForm() {
 
 export function TaskFormProvider({
   children,
-  onTaskCreated,
 }: {
   children: ReactNode;
-  onTaskCreated?: () => void;
 }) {
+  const router = useRouter();
   const [open, setOpen] = useState(false);
   const [defaultProjectId, setDefaultProjectId] = useState<string | undefined>();
 
@@ -53,7 +53,7 @@ export function TaskFormProvider({
         open={open}
         onOpenChange={setOpen}
         defaultProjectId={defaultProjectId}
-        onSuccess={onTaskCreated}
+        onSuccess={() => router.refresh()}
       />
     </TaskFormContext.Provider>
   );

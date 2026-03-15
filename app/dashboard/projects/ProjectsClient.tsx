@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Plus, FolderKanban, Calendar, ChevronRight, BarChart3 } from "lucide-react";
 import Link from "next/link";
 import { createProject } from "@/lib/db/projects";
+import { revalidateDashboard } from "@/app/dashboard/actions";
 import { formatDate } from "@/lib/utils";
 import {
   Dialog,
@@ -90,6 +91,7 @@ function NewProjectDialog({ open, onOpenChange, clients, onSuccess }: NewProject
       });
       onOpenChange(false);
       onSuccess();
+      await revalidateDashboard();
     } catch (err: unknown) {
       setSubmitError(err instanceof Error ? err.message : "Something went wrong");
     } finally {
@@ -184,6 +186,9 @@ export default function ProjectsClient({ initialProjects, clients, taskCounts }:
   const router = useRouter();
   const [projects, setProjects] = useState<Project[]>(initialProjects);
   const [newProjectOpen, setNewProjectOpen] = useState(false);
+
+  // Sync local state when server re-renders with fresh data (after router.refresh)
+  useEffect(() => { setProjects(initialProjects); }, [initialProjects]);
 
   const clientMap = new Map(clients.map((c) => [c.id, c]));
 

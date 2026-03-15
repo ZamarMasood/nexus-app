@@ -10,7 +10,8 @@ function greeting() {
   const h = new Date().getHours();
   if (h < 12) return "Good morning";
   if (h < 17) return "Good afternoon";
-  return "Good evening";
+  if (h < 21) return "Good evening";
+  return "Good night";
 }
 
 export default async function DashboardPage() {

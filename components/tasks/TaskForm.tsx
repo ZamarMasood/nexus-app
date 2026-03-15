@@ -5,6 +5,7 @@ import { Loader2, CalendarDays, AlignLeft, FolderKanban, UserCircle2, Flag, Hash
 import { createTask, updateTask } from "@/lib/db/tasks";
 import { getProjects } from "@/lib/db/projects";
 import { getTeamMembers } from "@/lib/db/team-members";
+import { revalidateDashboard } from "@/app/dashboard/actions";
 import type { Task, TaskPriority, TaskStatus, Project, TeamMember } from "@/lib/types";
 import {
   Dialog,
@@ -130,6 +131,7 @@ export function TaskFormDialog({
 
       onOpenChange(false);
       onSuccess?.();
+      await revalidateDashboard();
     } catch (err: unknown) {
       setSubmitError(err instanceof Error ? err.message : "Something went wrong");
     } finally {
