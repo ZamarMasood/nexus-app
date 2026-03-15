@@ -3,6 +3,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Plus, Users, ChevronRight, TrendingUp, DollarSign, Activity } from "lucide-react";
+import { revalidateDashboard } from "@/app/dashboard/actions";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -89,9 +90,10 @@ export default function ClientsClient({ initialClients, projects }: ClientsClien
     return { active: active.length, mrr, totalArr };
   }, [clients]);
 
-  function handleClientAdded(client: Client) {
+  async function handleClientAdded(client: Client) {
     setClients((prev) => [...prev, client].sort((a, b) => a.name.localeCompare(b.name)));
     setAddOpen(false);
+    await revalidateDashboard();
     router.refresh();
   }
 

@@ -91,13 +91,13 @@ export function InvoiceForm({ onSuccess, onCancel }: InvoiceFormProps) {
           body:    JSON.stringify({ invoiceId: invoice.id }),
         });
         const json = await res.json() as { pdf_url?: string; invoice?: Invoice; error?: string };
-        if (json.invoice) { onSuccess(json.invoice); await revalidateDashboard(); return; }
+        if (json.invoice) { await revalidateDashboard(); onSuccess(json.invoice); return; }
       } catch {
         // PDF generation failed — still succeed with created invoice
       }
 
-      onSuccess(invoice);
       await revalidateDashboard();
+      onSuccess(invoice);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong.");
     } finally {

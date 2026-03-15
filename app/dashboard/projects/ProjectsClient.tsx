@@ -90,8 +90,8 @@ function NewProjectDialog({ open, onOpenChange, clients, onSuccess }: NewProject
         total_value: totalValue ? parseFloat(totalValue) : null,
       });
       onOpenChange(false);
-      onSuccess();
       await revalidateDashboard();
+      onSuccess();
     } catch (err: unknown) {
       setSubmitError(err instanceof Error ? err.message : "Something went wrong");
     } finally {

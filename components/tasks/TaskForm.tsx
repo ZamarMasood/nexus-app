@@ -130,8 +130,8 @@ export function TaskFormDialog({
       }
 
       onOpenChange(false);
-      onSuccess?.();
       await revalidateDashboard();
+      onSuccess?.();
     } catch (err: unknown) {
       setSubmitError(err instanceof Error ? err.message : "Something went wrong");
     } finally {
