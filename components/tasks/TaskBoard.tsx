@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { DragDropContext, Droppable, Draggable, DropResult } from "@hello-pangea/dnd";
 import { Plus } from "lucide-react";
 import { TaskCard } from "./TaskCard";
@@ -63,6 +64,7 @@ interface TaskBoardProps {
 }
 
 export function TaskBoard({ initialTasks, onTaskClick }: TaskBoardProps) {
+  const router = useRouter();
   const [tasks, setTasks] = useState<TaskWithAssignee[]>(initialTasks);
   const { openTaskForm } = useTaskForm();
 
@@ -120,8 +122,11 @@ export function TaskBoard({ initialTasks, onTaskClick }: TaskBoardProps) {
           t.id === draggableId ? { ...t, status: source.droppableId as TaskStatus } : t
         )
       );
+    } else {
+      // Force client-side refresh to ensure server data is re-fetched in production
+      router.refresh();
     }
-  }, []);
+  }, [router]);
 
   return (
     <DragDropContext onDragEnd={onDragEnd}>

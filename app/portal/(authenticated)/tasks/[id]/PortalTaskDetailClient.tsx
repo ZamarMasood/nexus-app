@@ -50,8 +50,10 @@ function CommentItem({ comment, clientId }: { comment: Comment; clientId: string
   const initials = authorName === "You"
     ? "Y"
     : authorName.split(" ").map((w: string) => w[0]).slice(0, 2).join("").toUpperCase();
-  const date = comment.created_at
-    ? new Date(comment.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })
+  const raw = comment.created_at ?? "";
+  const utc = raw && !raw.endsWith("Z") && !raw.includes("+") ? raw + "Z" : raw;
+  const date = utc
+    ? new Date(utc).toLocaleString("en-US", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit", hour12: true, timeZone: "Asia/Karachi" })
     : "";
 
   return (
