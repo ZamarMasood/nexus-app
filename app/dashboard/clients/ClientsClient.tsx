@@ -91,7 +91,7 @@ export default function ClientsClient({ initialClients, projects }: ClientsClien
   }, [clients]);
 
   async function handleClientAdded(client: Client) {
-    setClients((prev) => [...prev, client].sort((a, b) => a.name.localeCompare(b.name)));
+    setClients((prev) => [client, ...prev]);
     setAddOpen(false);
     await revalidateDashboard();
     router.refresh();

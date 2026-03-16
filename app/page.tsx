@@ -550,6 +550,40 @@ export default function LandingPage() {
           </div>
         </section>
 
+        {/* ── FINAL CTA ───────────────────────────────────────────────────── */}
+        <section className="py-16 sm:py-24 px-4 sm:px-6">
+          <div className="mx-auto max-w-4xl">
+            <div ref={ctaSection.ref}
+              className={`relative overflow-hidden rounded-3xl px-5 py-12 sm:px-8 sm:py-16 text-center ${ctaSection.inView ? 'section-in' : ''}`}
+              style={{
+                background: isDark ? 'linear-gradient(135deg,#1a0a3e 0%,#0d0618 50%,#0f0528 100%)' : 'linear-gradient(135deg,#ede9fe 0%,#f5f3ff 50%,#ede9fe 100%)',
+                border: `1px solid ${isDark ? 'rgba(124,58,237,0.3)' : 'rgba(124,58,237,0.2)'}`,
+                boxShadow: isDark ? '0 0 80px rgba(124,58,237,0.2)' : '0 0 80px rgba(124,58,237,0.08)',
+              }}>
+              <div className="orb-c pointer-events-none absolute -top-20 left-1/2 -translate-x-1/2 size-[400px] rounded-full"
+                style={{ background: `radial-gradient(circle,${isDark ? 'rgba(124,58,237,0.25)' : 'rgba(124,58,237,0.12)'} 0%,transparent 60%)`, filter: 'blur(50px)' }} />
+
+              <div className="relative z-10">
+                <div className="mb-2 flex justify-center">
+                  {[...Array(5)].map((_, i) => <Star key={i} size={14} className="text-violet-400 mx-0.5" fill="currentColor" />)}
+                </div>
+                <p className="mb-6 text-[13px]" style={{ color: textSub }}>Loved by teams at 200+ studios worldwide</p>
+                <h2 className="mb-4 text-[clamp(28px,4vw,48px)] font-bold tracking-[-0.04em]" style={{ color: textH, fontFamily: 'var(--font-display)' }}>
+                  Ready to ship faster?
+                </h2>
+                <p className="mb-10 text-[16px] leading-[1.7] mx-auto max-w-[400px]" style={{ color: textSub }}>
+                  Join your team on Nexus and never lose track of a task, invoice, or client again.
+                </p>
+                <Link href="/login"
+                  className="inline-flex items-center gap-2 rounded-2xl px-8 py-4 text-[15px] font-semibold text-white transition-[transform,box-shadow] duration-200 hover:scale-[1.03] hover:shadow-[0_8px_48px_rgba(124,58,237,0.55)] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/60"
+                  style={{ background: 'linear-gradient(135deg,#7c3aed,#5b21b6)', boxShadow: '0 4px 24px rgba(124,58,237,0.4)' }}>
+                  Get started — it&apos;s free <ArrowRight size={16} />
+                </Link>
+              </div>
+            </div>
+          </div>
+        </section>
+
         {/* ── FAQ ─────────────────────────────────────────────────────────── */}
         <section id="faq" className="py-16 sm:py-24 px-4 sm:px-6">
           <div className="mx-auto max-w-2xl">
@@ -584,40 +618,6 @@ export default function LandingPage() {
                   </div>
                 );
               })}
-            </div>
-          </div>
-        </section>
-
-        {/* ── FINAL CTA ───────────────────────────────────────────────────── */}
-        <section className="py-16 sm:py-24 px-4 sm:px-6">
-          <div className="mx-auto max-w-4xl">
-            <div ref={ctaSection.ref}
-              className={`relative overflow-hidden rounded-3xl px-5 py-12 sm:px-8 sm:py-16 text-center ${ctaSection.inView ? 'section-in' : ''}`}
-              style={{
-                background: isDark ? 'linear-gradient(135deg,#1a0a3e 0%,#0d0618 50%,#0f0528 100%)' : 'linear-gradient(135deg,#ede9fe 0%,#f5f3ff 50%,#ede9fe 100%)',
-                border: `1px solid ${isDark ? 'rgba(124,58,237,0.3)' : 'rgba(124,58,237,0.2)'}`,
-                boxShadow: isDark ? '0 0 80px rgba(124,58,237,0.2)' : '0 0 80px rgba(124,58,237,0.08)',
-              }}>
-              <div className="orb-c pointer-events-none absolute -top-20 left-1/2 -translate-x-1/2 size-[400px] rounded-full"
-                style={{ background: `radial-gradient(circle,${isDark ? 'rgba(124,58,237,0.25)' : 'rgba(124,58,237,0.12)'} 0%,transparent 60%)`, filter: 'blur(50px)' }} />
-
-              <div className="relative z-10">
-                <div className="mb-2 flex justify-center">
-                  {[...Array(5)].map((_, i) => <Star key={i} size={14} className="text-violet-400 mx-0.5" fill="currentColor" />)}
-                </div>
-                <p className="mb-6 text-[13px]" style={{ color: textSub }}>Loved by teams at 200+ studios worldwide</p>
-                <h2 className="mb-4 text-[clamp(28px,4vw,48px)] font-bold tracking-[-0.04em]" style={{ color: textH, fontFamily: 'var(--font-display)' }}>
-                  Ready to ship faster?
-                </h2>
-                <p className="mb-10 text-[16px] leading-[1.7] mx-auto max-w-[400px]" style={{ color: textSub }}>
-                  Join your team on Nexus and never lose track of a task, invoice, or client again.
-                </p>
-                <Link href="/login"
-                  className="inline-flex items-center gap-2 rounded-2xl px-8 py-4 text-[15px] font-semibold text-white transition-[transform,box-shadow] duration-200 hover:scale-[1.03] hover:shadow-[0_8px_48px_rgba(124,58,237,0.55)] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/60"
-                  style={{ background: 'linear-gradient(135deg,#7c3aed,#5b21b6)', boxShadow: '0 4px 24px rgba(124,58,237,0.4)' }}>
-                  Get started — it&apos;s free <ArrowRight size={16} />
-                </Link>
-              </div>
             </div>
           </div>
         </section>

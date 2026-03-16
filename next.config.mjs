@@ -13,10 +13,9 @@ const nextConfig = {
       '@radix-ui/react-label',
       '@supabase/supabase-js',
     ],
-    // Cache client-side router navigations so revisiting a page is instant
-    staleTimes: {
-      dynamic: 30,  // Cache dynamic pages for 30s on client
-    },
+    // staleTimes removed — it caused stale data after mutations (e.g. task
+    // board drag-and-drop) because the client-side router served cached pages
+    // for 30s, ignoring server revalidation.
   },
   images: {
     remotePatterns: [

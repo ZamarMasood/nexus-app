@@ -8,7 +8,7 @@ export async function getClients(): Promise<Client[]> {
   const { data, error } = await supabase
     .from('clients')
     .select('id, name, email, status, monthly_rate, project_type, start_date, created_at')
-    .order('name', { ascending: true });
+    .order('created_at', { ascending: false });
 
   if (error) throw new Error(`Failed to fetch clients: ${error.message}`);
   return data as Client[];
@@ -19,7 +19,7 @@ export async function getClientsForList(): Promise<ClientListItem[]> {
   const { data, error } = await supabase
     .from('clients')
     .select('id, name, email, status, monthly_rate, project_type, start_date')
-    .order('name', { ascending: true });
+    .order('created_at', { ascending: false });
 
   if (error) throw new Error(`Failed to fetch clients: ${error.message}`);
   return data;

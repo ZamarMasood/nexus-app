@@ -104,6 +104,21 @@ export async function getTaskCountsByProject(): Promise<
   return counts;
 }
 
+/** Sidebar list item — lightweight task for sidebar display. */
+export type TaskSidebarItem = Pick<Task, 'id' | 'title' | 'status' | 'priority' | 'due_date'>;
+
+/** Fetch all tasks for a given assignee — lightweight for sidebar. */
+export async function getTasksByAssignee(assigneeId: string): Promise<TaskSidebarItem[]> {
+  const { data, error } = await supabase
+    .from('tasks')
+    .select('id, title, status, priority, due_date')
+    .eq('assignee_id', assigneeId)
+    .order('created_at', { ascending: false });
+
+  if (error) throw new Error(`Failed to fetch tasks for assignee: ${error.message}`);
+  return data;
+}
+
 export async function getTaskById(id: string): Promise<Task> {
   const { data, error } = await supabase
     .from('tasks')

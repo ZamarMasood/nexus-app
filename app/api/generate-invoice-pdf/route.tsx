@@ -24,7 +24,9 @@ export async function POST(req: NextRequest) {
 
     // Cast needed: renderToBuffer expects DocumentProps element; our wrapper satisfies the contract at runtime
     const element = React.createElement(InvoicePDFTemplate, { invoice, client }) as Parameters<typeof renderToBuffer>[0];
-    const buffer = await renderToBuffer(element);
+    const pdfBuffer = await renderToBuffer(element);
+    // Convert to Uint8Array for Supabase storage compatibility
+    const buffer = new Uint8Array(pdfBuffer);
 
     const fileName = `${invoiceId}.pdf`;
     const { error: uploadError } = await supabaseAdmin.storage

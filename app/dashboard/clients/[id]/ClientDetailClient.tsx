@@ -243,44 +243,56 @@ export default function ClientDetailClient({
         {/* ── Right panel — Client detail ─────────────────────────────── */}
         <div className="flex-1 min-w-0">
         {loading ? (
-          <div className="space-y-6 animate-pulse">
+          <div className="space-y-6">
             {/* Skeleton: client info card */}
-            <div className="rounded-xl border border-surface bg-surface-card overflow-hidden">
+            <div className="rounded-xl border border-surface bg-surface-card overflow-hidden animate-pulse">
               <div className="px-4 sm:px-6 pt-5 sm:pt-6 pb-5 flex items-start justify-between">
-                <div className="space-y-2">
+                <div className="space-y-3">
                   <div className="flex items-center gap-3">
-                    <div className="h-7 w-40 rounded bg-overlay-xs" />
-                    <div className="h-5 w-16 rounded-full bg-overlay-xs" />
+                    <div className="h-6 w-36 rounded-md bg-white/[0.06]" />
+                    <div className="h-5 w-16 rounded-full bg-white/[0.06]" />
                   </div>
-                  <div className="h-4 w-48 rounded bg-overlay-xs" />
+                  <div className="h-3.5 w-44 rounded-md bg-white/[0.06]" />
                 </div>
-                <div className="h-8 w-16 rounded-lg bg-overlay-xs" />
+                <div className="h-8 w-16 rounded-lg bg-white/[0.06]" />
               </div>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-3 border-t border-surface px-4 sm:px-6 py-4 sm:py-5">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-4 border-t border-surface px-4 sm:px-6 py-4 sm:py-5">
                 {[0, 1, 2].map((i) => (
                   <div key={i} className="space-y-2">
-                    <div className="h-3 w-20 rounded bg-overlay-xs" />
-                    <div className="h-4 w-24 rounded bg-overlay-xs" />
+                    <div className="h-2.5 w-16 rounded bg-white/[0.04]" />
+                    <div className="h-4 w-24 rounded-md bg-white/[0.06]" />
                   </div>
                 ))}
               </div>
             </div>
             {/* Skeleton: tabs card */}
-            <div className="rounded-xl border border-surface bg-surface-card overflow-hidden">
-              <div className="flex gap-4 border-b border-surface px-4 pt-3 pb-0">
-                <div className="h-8 w-24 rounded bg-overlay-xs" />
-                <div className="h-8 w-24 rounded bg-overlay-xs" />
+            <div className="rounded-xl border border-surface bg-surface-card overflow-hidden animate-pulse">
+              <div className="flex gap-1 border-b border-surface px-4 pt-3 pb-0">
+                <div className="h-9 w-24 rounded-t-lg bg-white/[0.06]" />
+                <div className="h-9 w-24 rounded-t-lg bg-white/[0.06]" />
               </div>
-              <div className="p-4 space-y-3">
+              <div className="p-4 space-y-0 divide-y divide-white/[0.04]">
                 {[0, 1, 2].map((i) => (
-                  <div key={i} className="h-12 rounded-lg bg-overlay-xs" />
+                  <div key={i} className="flex items-center justify-between py-3.5">
+                    <div className="space-y-2 flex-1">
+                      <div className="h-3.5 w-40 rounded-md bg-white/[0.06]" />
+                      <div className="flex items-center gap-2">
+                        <div className="h-4 w-14 rounded-full bg-white/[0.06]" />
+                        <div className="h-3 w-20 rounded bg-white/[0.04]" />
+                      </div>
+                    </div>
+                    <div className="h-4 w-16 rounded-md bg-white/[0.06]" />
+                  </div>
                 ))}
               </div>
             </div>
             {/* Skeleton: portal access */}
-            <div className="rounded-xl border border-surface bg-surface-card px-6 py-5">
-              <div className="h-4 w-28 rounded bg-overlay-xs mb-4" />
-              <div className="h-10 rounded-lg bg-overlay-xs" />
+            <div className="rounded-xl border border-surface bg-surface-card px-4 sm:px-6 py-5 animate-pulse">
+              <div className="h-3.5 w-24 rounded-md bg-white/[0.06] mb-4" />
+              <div className="h-10 w-full rounded-lg bg-white/[0.06]" />
+              <div className="flex justify-end mt-3">
+                <div className="h-8 w-28 rounded-lg bg-white/[0.06]" />
+              </div>
             </div>
           </div>
         ) : error || !client ? (
