@@ -46,6 +46,27 @@ export async function getPortalTaskById(
   return rest as PortalTask;
 }
 
+/**
+ * Same as getPortalTaskById but also returns the project name.
+ */
+export async function getPortalTaskByIdWithProject(
+  taskId: string,
+  clientId: string
+): Promise<(PortalTask & { projectName: string | null }) | null> {
+  const { data, error } = await supabase
+    .from('tasks')
+    .select('*, assignee:team_members(name, avatar_url), project:projects!inner(id, name)')
+    .eq('id', taskId)
+    .eq('project.client_id', clientId)
+    .maybeSingle();
+
+  if (error) throw new Error(`Failed to fetch portal task: ${error.message}`);
+  if (!data) return null;
+
+  const { project, ...rest } = data;
+  return { ...rest, projectName: (project as { id: string; name: string } | null)?.name ?? null } as PortalTask & { projectName: string | null };
+}
+
 // ─── Comments ─────────────────────────────────────────────────────────────────
 
 /**

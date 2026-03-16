@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { DragDropContext, Droppable, Draggable, DropResult } from "@hello-pangea/dnd";
 import { Plus } from "lucide-react";
 import { TaskCard } from "./TaskCard";
@@ -66,8 +66,23 @@ export function TaskBoard({ initialTasks, onTaskClick }: TaskBoardProps) {
   const [tasks, setTasks] = useState<TaskWithAssignee[]>(initialTasks);
   const { openTaskForm } = useTaskForm();
 
-  // Sync local state when server re-renders with fresh data (after router.refresh)
-  useEffect(() => { setTasks(initialTasks); }, [initialTasks]);
+  // Track in-flight optimistic updates so revalidation doesn't overwrite them
+  const pendingUpdatesRef = useRef<Map<string, TaskStatus>>(new Map());
+
+  // Sync local state when server re-renders with fresh data,
+  // but preserve any in-flight optimistic status changes
+  useEffect(() => {
+    setTasks((prev) => {
+      if (pendingUpdatesRef.current.size === 0) {
+        return initialTasks;
+      }
+      // Merge: use server data but keep optimistic statuses for pending tasks
+      return initialTasks.map((task) => {
+        const pendingStatus = pendingUpdatesRef.current.get(task.id);
+        return pendingStatus ? { ...task, status: pendingStatus } : task;
+      });
+    });
+  }, [initialTasks]);
 
   const tasksByStatus = COLUMNS.reduce<Record<TaskStatus, TaskWithAssignee[]>>(
     (acc, col) => {
@@ -77,12 +92,15 @@ export function TaskBoard({ initialTasks, onTaskClick }: TaskBoardProps) {
     { todo: [], in_progress: [], done: [] }
   );
 
-  async function onDragEnd(result: DropResult) {
+  const onDragEnd = useCallback(async function onDragEnd(result: DropResult) {
     const { source, destination, draggableId } = result;
     if (!destination) return;
     if (source.droppableId === destination.droppableId && source.index === destination.index) return;
 
     const newStatus = destination.droppableId as TaskStatus;
+
+    // Mark this task as having a pending optimistic update
+    pendingUpdatesRef.current.set(draggableId, newStatus);
 
     // Optimistic update
     setTasks((prev) =>
@@ -90,7 +108,12 @@ export function TaskBoard({ initialTasks, onTaskClick }: TaskBoardProps) {
     );
 
     const updateResult = await updateTaskStatusAction(draggableId, newStatus);
+
+    // Clear the pending flag — server data is now authoritative
+    pendingUpdatesRef.current.delete(draggableId);
+
     if (updateResult?.error) {
+      console.error("Task status update failed:", updateResult.error);
       // Revert on failure
       setTasks((prev) =>
         prev.map((t) =>
@@ -98,7 +121,7 @@ export function TaskBoard({ initialTasks, onTaskClick }: TaskBoardProps) {
         )
       );
     }
-  }
+  }, []);
 
   return (
     <DragDropContext onDragEnd={onDragEnd}>

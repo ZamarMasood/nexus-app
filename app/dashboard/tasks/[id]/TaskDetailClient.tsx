@@ -21,6 +21,7 @@ import {
   ListTodo,
 } from "lucide-react";
 import { uploadFileToTask, getTaskByIdWithAssignee, getCommentsByTaskId, getFilesByTaskId } from "@/lib/db/tasks";
+import { getProjectById } from "@/lib/db/projects";
 import type { TaskWithAssignee, CommentWithAuthor, TaskSidebarItem } from "@/lib/db/tasks";
 import type { ProjectFile, TaskStatus, TaskPriority } from "@/lib/types";
 import { formatDate } from "@/lib/utils";
@@ -149,7 +150,17 @@ export default function TaskDetailClient({
         setTask(t);
         setComments(c);
         setFiles(f);
-        setProjectName(null); // Will be fetched if needed
+        // Fetch project name if the task has a project_id
+        if (t.project_id) {
+          try {
+            const project = await getProjectById(t.project_id);
+            setProjectName(project.name);
+          } catch {
+            setProjectName(null);
+          }
+        } else {
+          setProjectName(null);
+        }
         setLoadedId(selectedId);
       } catch (err) {
         setError(err instanceof Error ? err.message : "Failed to load task.");
