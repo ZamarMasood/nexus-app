@@ -128,7 +128,7 @@ export async function replaceProjectAssignments(
 
   if (deleteError) throw new Error(`Failed to clear project assignments: ${deleteError.message}`);
 
-  const uniqueProjectIds = [...new Set(projectIds)];
+  const uniqueProjectIds = projectIds.filter((id, index) => projectIds.indexOf(id) === index);
   if (uniqueProjectIds.length > 0) {
     const rows = uniqueProjectIds.map((project_id) => ({ project_id, member_id: memberId }));
     const { error: insertError } = await adminAny
