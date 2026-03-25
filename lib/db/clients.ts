@@ -1,10 +1,13 @@
-import { supabase } from '../supabase';
+'use server';
+import { supabaseAdmin } from '../supabase-admin';
+import { createSupabaseServerClient } from '../supabase-server';
 import type { Client, ClientInsert, ClientUpdate } from '../types';
 
 // Lightweight type for sidebar/list views — excludes portal_password
 export type ClientListItem = Pick<Client, 'id' | 'name' | 'email' | 'status' | 'monthly_rate' | 'project_type' | 'start_date'>;
 
 export async function getClients(): Promise<Client[]> {
+  const supabase = createSupabaseServerClient();
   const { data, error } = await supabase
     .from('clients')
     .select('id, name, email, status, monthly_rate, project_type, start_date, created_at')
@@ -16,6 +19,7 @@ export async function getClients(): Promise<Client[]> {
 
 /** Fetch only the columns needed for list/sidebar display (no portal_password). */
 export async function getClientsForList(): Promise<ClientListItem[]> {
+  const supabase = createSupabaseServerClient();
   const { data, error } = await supabase
     .from('clients')
     .select('id, name, email, status, monthly_rate, project_type, start_date')
@@ -26,6 +30,7 @@ export async function getClientsForList(): Promise<ClientListItem[]> {
 }
 
 export async function getClientById(id: string): Promise<Client> {
+  const supabase = createSupabaseServerClient();
   const { data, error } = await supabase
     .from('clients')
     .select('id, name, email, status, monthly_rate, project_type, start_date, created_at')
@@ -37,7 +42,7 @@ export async function getClientById(id: string): Promise<Client> {
 }
 
 export async function createClient(client: ClientInsert): Promise<Client> {
-  const { data, error } = await supabase
+  const { data, error } = await supabaseAdmin
     .from('clients')
     .insert(client)
     .select()
@@ -48,7 +53,7 @@ export async function createClient(client: ClientInsert): Promise<Client> {
 }
 
 export async function updateClient(id: string, updates: ClientUpdate): Promise<Client> {
-  const { data, error } = await supabase
+  const { data, error } = await supabaseAdmin
     .from('clients')
     .update(updates)
     .eq('id', id)
@@ -56,5 +61,62 @@ export async function updateClient(id: string, updates: ClientUpdate): Promise<C
     .single();
 
   if (error) throw new Error(`Failed to update client ${id}: ${error.message}`);
+  return data;
+}
+
+// ── Member-scoped queries ──────────────────────────────────────────────────────
+
+/** Resolves client IDs reachable by a member via their assigned projects. */
+async function getMemberClientIds(memberId: string): Promise<string[]> {
+  const supabase = createSupabaseServerClient();
+
+  // Step 1: project IDs the member is assigned to
+  const { data: memberRows } = await (supabaseAdmin as any)
+    .from('project_members')
+    .select('project_id')
+    .eq('member_id', memberId);
+
+  const projectIds: string[] = (memberRows ?? []).map((r: { project_id: string }) => r.project_id);
+  if (projectIds.length === 0) return [];
+
+  // Step 2: client IDs from those projects
+  const { data: projects } = await supabase
+    .from('projects')
+    .select('client_id')
+    .in('id', projectIds)
+    .not('client_id', 'is', null);
+
+  return [...new Set((projects ?? []).map((p) => p.client_id).filter(Boolean))] as string[];
+}
+
+/** Fetch only clients whose projects are assigned to this member. */
+export async function getClientsByMember(memberId: string): Promise<Client[]> {
+  const clientIds = await getMemberClientIds(memberId);
+  if (clientIds.length === 0) return [];
+
+  const supabase = createSupabaseServerClient();
+  const { data, error } = await supabase
+    .from('clients')
+    .select('id, name, email, status, monthly_rate, project_type, start_date, created_at')
+    .in('id', clientIds)
+    .order('created_at', { ascending: false });
+
+  if (error) throw new Error(`Failed to fetch clients for member: ${error.message}`);
+  return data as Client[];
+}
+
+/** Lightweight client list for a member (no portal_password). */
+export async function getClientsForListByMember(memberId: string): Promise<ClientListItem[]> {
+  const clientIds = await getMemberClientIds(memberId);
+  if (clientIds.length === 0) return [];
+
+  const supabase = createSupabaseServerClient();
+  const { data, error } = await supabase
+    .from('clients')
+    .select('id, name, email, status, monthly_rate, project_type, start_date')
+    .in('id', clientIds)
+    .order('created_at', { ascending: false });
+
+  if (error) throw new Error(`Failed to fetch client list for member: ${error.message}`);
   return data;
 }

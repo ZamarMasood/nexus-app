@@ -57,9 +57,10 @@ function avatarColor(name: string): string {
 interface ClientsClientProps {
   initialClients: Client[];
   projects: ProjectListItem[];
+  isAdmin: boolean;
 }
 
-export default function ClientsClient({ initialClients, projects }: ClientsClientProps) {
+export default function ClientsClient({ initialClients, projects, isAdmin }: ClientsClientProps) {
   const router = useRouter();
   const [clients, setClients] = useState<Client[]>(initialClients);
   const [filter, setFilter]   = useState<ClientStatus | "all">("all");
@@ -108,13 +109,15 @@ export default function ClientsClient({ initialClients, projects }: ClientsClien
             {clients.length} client{clients.length !== 1 ? "s" : ""} total
           </p>
         </div>
-        <Button
-          onClick={() => setAddOpen(true)}
-          className="gap-1.5 bg-violet-600 hover:bg-violet-500 text-white shadow-[0_4px_24px_rgba(139,92,246,0.35),0_1px_4px_rgba(0,0,0,0.4)] hover:shadow-[0_4px_28px_rgba(139,92,246,0.5)] transition-[background-color,box-shadow] focus-visible:ring-violet-500"
-        >
-          <Plus className="h-4 w-4" />
-          Add Client
-        </Button>
+        {isAdmin && (
+          <Button
+            onClick={() => setAddOpen(true)}
+            className="gap-1.5 bg-violet-600 hover:bg-violet-500 text-white shadow-[0_4px_24px_rgba(139,92,246,0.35),0_1px_4px_rgba(0,0,0,0.4)] hover:shadow-[0_4px_28px_rgba(139,92,246,0.5)] transition-[background-color,box-shadow] focus-visible:ring-violet-500"
+          >
+            <Plus className="h-4 w-4" />
+            Add Client
+          </Button>
+        )}
       </div>
 
       {/* Summary cards */}

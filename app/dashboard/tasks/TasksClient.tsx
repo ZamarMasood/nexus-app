@@ -145,9 +145,10 @@ type ViewMode = "kanban" | "list";
 
 interface TasksClientProps {
   initialTasks: TaskWithAssignee[];
+  isAdmin: boolean;
 }
 
-export default function TasksClient({ initialTasks }: TasksClientProps) {
+export default function TasksClient({ initialTasks, isAdmin }: TasksClientProps) {
   const router = useRouter();
   const { openTaskForm } = useTaskForm();
   const [view, setView] = useState<ViewMode>("kanban");
@@ -201,19 +202,21 @@ export default function TasksClient({ initialTasks }: TasksClientProps) {
           </div>
 
           {/* New task */}
-          <button
-            onClick={() => openTaskForm()}
-            className="flex items-center gap-1.5 rounded-lg bg-violet-600 px-3.5 py-2 text-xs font-semibold text-white shadow-[0_2px_8px_rgba(139,92,246,0.35)] hover:bg-violet-500 hover:shadow-[0_4px_12px_rgba(139,92,246,0.4)] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400 focus-visible:ring-offset-2 transition-[background-color,box-shadow,transform]"
-          >
-            <Plus className="h-3.5 w-3.5" />
-            New task
-          </button>
+          {isAdmin && (
+            <button
+              onClick={() => openTaskForm()}
+              className="flex items-center gap-1.5 rounded-lg bg-violet-600 px-3.5 py-2 text-xs font-semibold text-white shadow-[0_2px_8px_rgba(139,92,246,0.35)] hover:bg-violet-500 hover:shadow-[0_4px_12px_rgba(139,92,246,0.4)] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400 focus-visible:ring-offset-2 transition-[background-color,box-shadow,transform]"
+            >
+              <Plus className="h-3.5 w-3.5" />
+              New task
+            </button>
+          )}
         </div>
       </div>
 
       {/* Content */}
       {view === "kanban" ? (
-        <TaskBoard initialTasks={initialTasks} onTaskClick={handleTaskClick} />
+        <TaskBoard initialTasks={initialTasks} onTaskClick={handleTaskClick} isAdmin={isAdmin} />
       ) : (
         <ListView tasks={initialTasks} onTaskClick={handleTaskClick} />
       )}

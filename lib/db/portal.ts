@@ -1,4 +1,5 @@
-import { supabase } from '../supabase';
+'use server';
+import { supabaseAdmin as supabase } from '../supabase-admin';
 import type { Task, Invoice, Comment, ProjectFile, TeamMember } from '../types';
 
 export type PortalTask = Task & {

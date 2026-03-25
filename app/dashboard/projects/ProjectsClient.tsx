@@ -180,9 +180,10 @@ interface ProjectsClientProps {
   initialProjects: Project[];
   clients: Client[];
   taskCounts: Record<string, { total: number; done: number }>;
+  isAdmin: boolean;
 }
 
-export default function ProjectsClient({ initialProjects, clients, taskCounts }: ProjectsClientProps) {
+export default function ProjectsClient({ initialProjects, clients, taskCounts, isAdmin }: ProjectsClientProps) {
   const router = useRouter();
   const [projects, setProjects] = useState<Project[]>(initialProjects);
   const [newProjectOpen, setNewProjectOpen] = useState(false);
@@ -213,13 +214,15 @@ export default function ProjectsClient({ initialProjects, clients, taskCounts }:
             {projects.length} project{projects.length !== 1 ? "s" : ""}
           </p>
         </div>
-        <button
-          onClick={() => setNewProjectOpen(true)}
-          className="group flex items-center gap-2 rounded-xl bg-violet-600 px-4 py-2.5 text-sm font-semibold text-white shadow-[0_4px_24px_rgba(139,92,246,0.35),0_1px_4px_rgba(0,0,0,0.4)] hover:bg-violet-500 hover:shadow-[0_4px_28px_rgba(139,92,246,0.5)] active:scale-[0.97] transition-[background-color,box-shadow,transform] duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400"
-        >
-          <Plus className="h-4 w-4 transition-transform duration-200 group-hover:rotate-90" />
-          New Project
-        </button>
+        {isAdmin && (
+          <button
+            onClick={() => setNewProjectOpen(true)}
+            className="group flex items-center gap-2 rounded-xl bg-violet-600 px-4 py-2.5 text-sm font-semibold text-white shadow-[0_4px_24px_rgba(139,92,246,0.35),0_1px_4px_rgba(0,0,0,0.4)] hover:bg-violet-500 hover:shadow-[0_4px_28px_rgba(139,92,246,0.5)] active:scale-[0.97] transition-[background-color,box-shadow,transform] duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400"
+          >
+            <Plus className="h-4 w-4 transition-transform duration-200 group-hover:rotate-90" />
+            New Project
+          </button>
+        )}
       </div>
 
       {/* Status summary pills */}
@@ -250,13 +253,15 @@ export default function ProjectsClient({ initialProjects, clients, taskCounts }:
           </div>
           <p className="text-sm font-semibold text-muted-app">No projects yet</p>
           <p className="mt-1 text-xs text-dim-app">Create your first project to get started</p>
-          <button
-            onClick={() => setNewProjectOpen(true)}
-            className="mt-5 inline-flex items-center gap-1.5 rounded-lg bg-violet-600 px-4 py-2 text-sm font-medium text-white hover:bg-violet-500 transition-colors shadow-[0_2px_8px_rgba(139,92,246,0.3)]"
-          >
-            <Plus className="h-3.5 w-3.5" />
-            Create Project
-          </button>
+          {isAdmin && (
+            <button
+              onClick={() => setNewProjectOpen(true)}
+              className="mt-5 inline-flex items-center gap-1.5 rounded-lg bg-violet-600 px-4 py-2 text-sm font-medium text-white hover:bg-violet-500 transition-colors shadow-[0_2px_8px_rgba(139,92,246,0.3)]"
+            >
+              <Plus className="h-3.5 w-3.5" />
+              Create Project
+            </button>
+          )}
         </div>
       ) : (
         <div

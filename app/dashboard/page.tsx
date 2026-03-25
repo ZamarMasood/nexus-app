@@ -1,5 +1,10 @@
-import { getRecentTasksWithAssignees, getTaskStats } from "@/lib/db/tasks";
-import { getProjects } from "@/lib/db/projects";
+import {
+  getRecentTasksWithAssignees,
+  getRecentTasksWithAssigneesByMember,
+  getTaskStats,
+  getTaskStatsByMember,
+} from "@/lib/db/tasks";
+import { getProjects, getProjectsByMember } from "@/lib/db/projects";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { getTeamMemberByEmail } from "@/lib/db/team-members";
 import DashboardClient from "./DashboardClient";
@@ -15,23 +20,22 @@ function greeting() {
 }
 
 export default async function DashboardPage() {
-  // Fetch lightweight stats + only 10 recent tasks (with joins) in parallel
-  const [recentTasks, taskStats, projects, userName] = await Promise.all([
-    getRecentTasksWithAssignees(10),
-    getTaskStats(),
-    getProjects(),
-    (async () => {
-      try {
-        const supabase = createSupabaseServerClient();
-        const { data: { user } } = await supabase.auth.getUser();
-        const email = user?.email;
-        if (!email) return null;
-        const member = await getTeamMemberByEmail(email);
-        return member?.name ?? null;
-      } catch {
-        return null;
-      }
-    })(),
+  const supabase = createSupabaseServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  const member = user?.email ? await getTeamMemberByEmail(user.email) : null;
+  const isAdmin = member?.user_role === 'admin';
+  const memberId = member?.id ?? '';
+
+  const [recentTasks, taskStats, projects] = await Promise.all([
+    isAdmin
+      ? getRecentTasksWithAssignees(10)
+      : getRecentTasksWithAssigneesByMember(memberId, 10),
+    isAdmin
+      ? getTaskStats()
+      : getTaskStatsByMember(memberId),
+    isAdmin
+      ? getProjects()
+      : getProjectsByMember(memberId),
   ]);
 
   const now = new Date();
@@ -43,7 +47,7 @@ export default async function DashboardPage() {
       recentTasks={recentTasks}
       taskStats={taskStats}
       projects={projects}
-      userName={userName}
+      userName={member?.name ?? null}
       dateLabel={dateLabel}
       greetingText={greetingText}
     />

@@ -22,11 +22,13 @@ import {
 } from "@/components/ui/select";
 
 interface TaskFormDialogProps {
-  open:             boolean;
-  onOpenChange:     (open: boolean) => void;
-  task?:            Task;
+  open:              boolean;
+  onOpenChange:      (open: boolean) => void;
+  task?:             Task;
   defaultProjectId?: string;
-  onSuccess?:       () => void;
+  defaultAssigneeId?: string;
+  isAdmin?:          boolean;
+  onSuccess?:        () => void;
 }
 
 interface FormErrors {
@@ -58,6 +60,8 @@ export function TaskFormDialog({
   onOpenChange,
   task,
   defaultProjectId,
+  defaultAssigneeId,
+  isAdmin = false,
   onSuccess,
 }: TaskFormDialogProps) {
   const isEdit = !!task;
@@ -83,7 +87,7 @@ export function TaskFormDialog({
     setTitle(task?.title ?? "");
     setDescription(task?.description ?? "");
     setProjectId(task?.project_id ?? defaultProjectId ?? "");
-    setAssigneeId(task?.assignee_id ?? "");
+    setAssigneeId(task?.assignee_id ?? defaultAssigneeId ?? "");
     setStatus((task?.status as TaskStatus) ?? "todo");
     setPriority((task?.priority as TaskPriority) ?? "normal");
     setDueDate(task?.due_date ?? "");
@@ -95,7 +99,7 @@ export function TaskFormDialog({
       .catch((err: unknown) => {
         setLoadError(err instanceof Error ? err.message : "Failed to load form data");
       });
-  }, [open, task, defaultProjectId]);
+  }, [open, task, defaultProjectId, defaultAssigneeId]);
 
   function validate(): boolean {
     const next: FormErrors = {};
@@ -224,12 +228,19 @@ export function TaskFormDialog({
                     Assignee
                   </span>
                 </label>
-                <Select value={assigneeId} onValueChange={setAssigneeId}>
+                <Select
+                  value={assigneeId}
+                  onValueChange={setAssigneeId}
+                  disabled={!isAdmin && !!defaultAssigneeId}
+                >
                   <SelectTrigger className={SELECT_TRIGGER}>
                     <SelectValue placeholder="Unassigned" />
                   </SelectTrigger>
                   <SelectContent className={SELECT_CONTENT}>
-                    {teamMembers.map((m) => (
+                    {(isAdmin
+                      ? teamMembers
+                      : teamMembers.filter((m) => !defaultAssigneeId || m.id === defaultAssigneeId)
+                    ).map((m) => (
                       <SelectItem key={m.id} value={m.id} className={SELECT_ITEM}>
                         {m.name}
                       </SelectItem>

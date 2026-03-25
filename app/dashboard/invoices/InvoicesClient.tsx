@@ -37,9 +37,10 @@ const STATUS_DOT: Record<InvoiceStatus, string> = {
 interface InvoicesClientProps {
   initialInvoices: Invoice[];
   clients: ClientListItem[];
+  isAdmin: boolean;
 }
 
-export default function InvoicesClient({ initialInvoices, clients }: InvoicesClientProps) {
+export default function InvoicesClient({ initialInvoices, clients, isAdmin }: InvoicesClientProps) {
   const router = useRouter();
   const [invoices, setInvoices] = useState<Invoice[]>(initialInvoices);
   const [filter, setFilter]     = useState<InvoiceStatus | "all">("all");
@@ -120,13 +121,15 @@ export default function InvoicesClient({ initialInvoices, clients }: InvoicesCli
             {invoices.length} invoice{invoices.length !== 1 ? "s" : ""} total
           </p>
         </div>
-        <Button
-          onClick={() => setCreateOpen(true)}
-          className="gap-1.5 bg-violet-600 hover:bg-violet-500 text-white shadow-[0_4px_24px_rgba(139,92,246,0.35),0_1px_4px_rgba(0,0,0,0.4)] hover:shadow-[0_4px_28px_rgba(139,92,246,0.5)] transition-[background-color,box-shadow] focus-visible:ring-violet-500"
-        >
-          <Plus className="h-4 w-4" />
-          Create Invoice
-        </Button>
+        {isAdmin && (
+          <Button
+            onClick={() => setCreateOpen(true)}
+            className="gap-1.5 bg-violet-600 hover:bg-violet-500 text-white shadow-[0_4px_24px_rgba(139,92,246,0.35),0_1px_4px_rgba(0,0,0,0.4)] hover:shadow-[0_4px_28px_rgba(139,92,246,0.5)] transition-[background-color,box-shadow] focus-visible:ring-violet-500"
+          >
+            <Plus className="h-4 w-4" />
+            Create Invoice
+          </Button>
+        )}
       </div>
 
       {/* Summary cards */}

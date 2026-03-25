@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import type { Task, TeamMember } from "@/lib/types";
-import { CalendarDays, AlertCircle, ArrowUp, Minus, ArrowDown } from "lucide-react";
+import { CalendarDays, AlertCircle, ArrowUp, Minus, ArrowDown, Lock } from "lucide-react";
 
 export type TaskWithAssignee = Task & {
   assignee?: Pick<TeamMember, "name" | "avatar_url"> | null;
@@ -12,6 +12,7 @@ interface TaskCardProps {
   task: TaskWithAssignee;
   onClick?: (task: TaskWithAssignee) => void;
   isDragging?: boolean;
+  isLocked?: boolean;
 }
 
 const PRIORITY_CONFIG = {
@@ -63,7 +64,7 @@ function isOverdue(dueDate: string | null): boolean {
   return new Date(dueDate) < new Date(new Date().toDateString());
 }
 
-export function TaskCard({ task, onClick, isDragging = false }: TaskCardProps) {
+export function TaskCard({ task, onClick, isDragging = false, isLocked = false }: TaskCardProps) {
   const priority = (task.priority as keyof typeof PRIORITY_CONFIG) ?? "normal";
   const config = PRIORITY_CONFIG[priority] ?? PRIORITY_CONFIG.normal;
   const PriorityIcon = config.icon;
@@ -79,27 +80,36 @@ export function TaskCard({ task, onClick, isDragging = false }: TaskCardProps) {
         "group relative flex flex-col gap-3 rounded-xl border border-surface bg-surface-page p-4",
         "border-l-4",
         config.border,
-        "cursor-pointer select-none",
+        "select-none",
+        isLocked ? "cursor-default opacity-60" : "cursor-pointer",
         "shadow-[0_2px_8px_rgba(0,0,0,0.5),0_1px_2px_rgba(0,0,0,0.7)]",
-        config.hoverGlow,
-        "hover:-translate-y-0.5",
+        isLocked ? "" : config.hoverGlow,
+        isLocked ? "" : "hover:-translate-y-0.5",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400/50",
-        "active:scale-[0.99]",
+        isLocked ? "" : "active:scale-[0.99]",
         "transition-[transform,box-shadow,border-color,opacity]",
-        isDragging ? "opacity-80 rotate-1 scale-[1.02] shadow-[0_20px_48px_rgba(0,0,0,0.7)]" : "opacity-100",
+        isDragging ? "opacity-80 rotate-1 scale-[1.02] shadow-[0_20px_48px_rgba(0,0,0,0.7)]" : "",
       ].join(" ")}
     >
       {/* Title + priority badge */}
       <div className="flex items-start justify-between gap-3">
-        <p className="text-sm font-semibold leading-snug tracking-[-0.01em] text-secondary-app line-clamp-2 group-hover:text-bright transition-colors duration-100">
+        <p className={[
+          "text-sm font-semibold leading-snug tracking-[-0.01em] line-clamp-2",
+          isLocked ? "text-muted-app" : "text-secondary-app group-hover:text-bright transition-colors duration-100",
+        ].join(" ")}>
           {task.title}
         </p>
-        <span
-          className={`inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium ${config.badge}`}
-        >
-          <PriorityIcon className={`h-2.5 w-2.5 ${config.iconColor}`} />
-          {config.label}
-        </span>
+        <div className="flex shrink-0 items-center gap-1.5">
+          {isLocked && (
+            <Lock className="h-3 w-3 text-faint-app" />
+          )}
+          <span
+            className={`inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium ${config.badge}`}
+          >
+            <PriorityIcon className={`h-2.5 w-2.5 ${config.iconColor}`} />
+            {config.label}
+          </span>
+        </div>
       </div>
 
       {/* Description */}

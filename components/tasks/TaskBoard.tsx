@@ -61,12 +61,20 @@ const COLUMNS: Column[] = [
 interface TaskBoardProps {
   initialTasks: TaskWithAssignee[];
   onTaskClick?: (task: TaskWithAssignee) => void;
+  isAdmin?: boolean;
 }
 
-export function TaskBoard({ initialTasks, onTaskClick }: TaskBoardProps) {
+export function TaskBoard({ initialTasks, onTaskClick, isAdmin = false }: TaskBoardProps) {
   const router = useRouter();
   const [tasks, setTasks] = useState<TaskWithAssignee[]>(initialTasks);
-  const { openTaskForm } = useTaskForm();
+  const { openTaskForm, currentMemberId } = useTaskForm();
+
+  /** A task is draggable if the user is admin, or the task is assigned to them. */
+  function canDrag(task: TaskWithAssignee): boolean {
+    if (isAdmin) return true;
+    if (!currentMemberId) return false;
+    return task.assignee_id === currentMemberId;
+  }
 
   // Track in-flight optimistic updates so revalidation doesn't overwrite them
   const pendingUpdatesRef = useRef<Map<string, TaskStatus>>(new Map());
@@ -98,6 +106,10 @@ export function TaskBoard({ initialTasks, onTaskClick }: TaskBoardProps) {
     const { source, destination, draggableId } = result;
     if (!destination) return;
     if (source.droppableId === destination.droppableId && source.index === destination.index) return;
+
+    // Safety guard: reject status updates for tasks the user doesn't own
+    const draggedTask = tasks.find((t) => t.id === draggableId);
+    if (draggedTask && !canDrag(draggedTask)) return;
 
     const newStatus = destination.droppableId as TaskStatus;
 
@@ -163,23 +175,32 @@ export function TaskBoard({ initialTasks, onTaskClick }: TaskBoardProps) {
                       "transition-[background-color,border-color,box-shadow]",
                     ].join(" ")}
                   >
-                    {colTasks.map((task, index) => (
-                      <Draggable key={task.id} draggableId={task.id} index={index}>
-                        {(dragProvided, dragSnapshot) => (
-                          <div
-                            ref={dragProvided.innerRef}
-                            {...dragProvided.draggableProps}
-                            {...dragProvided.dragHandleProps}
-                          >
-                            <TaskCard
-                              task={task}
-                              onClick={onTaskClick}
-                              isDragging={dragSnapshot.isDragging}
-                            />
-                          </div>
-                        )}
-                      </Draggable>
-                    ))}
+                    {colTasks.map((task, index) => {
+                      const locked = !canDrag(task);
+                      return (
+                        <Draggable
+                          key={task.id}
+                          draggableId={task.id}
+                          index={index}
+                          isDragDisabled={locked}
+                        >
+                          {(dragProvided, dragSnapshot) => (
+                            <div
+                              ref={dragProvided.innerRef}
+                              {...dragProvided.draggableProps}
+                              {...(locked ? {} : dragProvided.dragHandleProps)}
+                            >
+                              <TaskCard
+                                task={task}
+                                onClick={onTaskClick}
+                                isDragging={dragSnapshot.isDragging}
+                                isLocked={locked}
+                              />
+                            </div>
+                          )}
+                        </Draggable>
+                      );
+                    })}
                     {provided.placeholder}
 
                     {colTasks.length === 0 && !snapshot.isDraggingOver && (

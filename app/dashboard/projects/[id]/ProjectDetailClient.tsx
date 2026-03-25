@@ -150,6 +150,7 @@ interface ProjectDetailClientProps {
   clients: ClientListItem[];
   initialProject: Project;
   initialTasks: TaskWithAssignee[];
+  isAdmin: boolean;
 }
 
 function findClientInList(clientId: string | null, clients: ClientListItem[]) {
@@ -163,6 +164,7 @@ export default function ProjectDetailClient({
   clients,
   initialProject,
   initialTasks,
+  isAdmin,
 }: ProjectDetailClientProps) {
   const router = useRouter();
   const [selectedId, setSelectedId] = useState(projectId);
@@ -178,6 +180,14 @@ export default function ProjectDetailClient({
   const [editing, setEditing] = useState(false);
 
   const { openTaskForm } = useTaskForm();
+
+  // Sync tasks when server re-renders with fresh data (e.g. after task creation)
+  // Only apply if we're still viewing the original server-rendered project
+  useEffect(() => {
+    if (selectedId === projectId) {
+      setTasks(initialTasks);
+    }
+  }, [initialTasks, selectedId, projectId]);
 
   const clientMap = useMemo(() => {
     const m: Record<string, string> = {};
@@ -391,7 +401,7 @@ export default function ProjectDetailClient({
                     <span className={`h-1.5 w-1.5 rounded-full ${cfg.dot}`} />
                     {cfg.label}
                   </span>
-                  {!editing && (
+                  {isAdmin && !editing && (
                     <button onClick={() => setEditing(true)} className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-faint-app ring-1 ring-surface transition-[background-color,color] hover:bg-overlay-xs hover:text-secondary-app focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400">
                       <Pencil className="h-3.5 w-3.5" /> Edit
                     </button>
@@ -444,12 +454,14 @@ export default function ProjectDetailClient({
                   Tasks
                   <span className="ml-2 rounded-full bg-overlay-xs px-2 py-0.5 text-xs font-medium text-faint-app">{totalTasks}</span>
                 </h2>
-                <button
-                  onClick={() => openTaskForm(selectedId)}
-                  className="flex items-center gap-1.5 rounded-lg bg-violet-600 px-3 py-1.5 text-xs font-semibold text-white shadow-[0_2px_8px_rgba(139,92,246,0.3)] transition-[background-color,box-shadow] hover:bg-violet-700 hover:shadow-[0_4px_12px_rgba(139,92,246,0.4)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400 focus-visible:ring-offset-2"
-                >
-                  <Plus className="h-3.5 w-3.5" /> Add Task
-                </button>
+                {isAdmin && (
+                  <button
+                    onClick={() => openTaskForm(selectedId)}
+                    className="flex items-center gap-1.5 rounded-lg bg-violet-600 px-3 py-1.5 text-xs font-semibold text-white shadow-[0_2px_8px_rgba(139,92,246,0.3)] transition-[background-color,box-shadow] hover:bg-violet-700 hover:shadow-[0_4px_12px_rgba(139,92,246,0.4)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400 focus-visible:ring-offset-2"
+                  >
+                    <Plus className="h-3.5 w-3.5" /> Add Task
+                  </button>
+                )}
               </div>
 
               <div className="rounded-xl bg-surface-card border border-surface">

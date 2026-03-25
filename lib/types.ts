@@ -256,6 +256,7 @@ export type Database = {
           id: string
           name: string
           role: string | null
+          user_role: string | null
         }
         Insert: {
           avatar_url?: string | null
@@ -263,6 +264,7 @@ export type Database = {
           id?: string
           name: string
           role?: string | null
+          user_role?: string | null
         }
         Update: {
           avatar_url?: string | null
@@ -270,8 +272,48 @@ export type Database = {
           id?: string
           name?: string
           role?: string | null
+          user_role?: string | null
         }
         Relationships: []
+      }
+      project_members: {
+        Row: {
+          id: string
+          project_id: string
+          member_id: string
+          assigned_at: string
+          assigned_by: string | null
+        }
+        Insert: {
+          id?: string
+          project_id: string
+          member_id: string
+          assigned_at?: string
+          assigned_by?: string | null
+        }
+        Update: {
+          id?: string
+          project_id?: string
+          member_id?: string
+          assigned_at?: string
+          assigned_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'project_members_project_id_fkey'
+            columns: ['project_id']
+            isOneToOne: false
+            referencedRelation: 'projects'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'project_members_member_id_fkey'
+            columns: ['member_id']
+            isOneToOne: false
+            referencedRelation: 'team_members'
+            referencedColumns: ['id']
+          },
+        ]
       }
     }
     Views: {
@@ -313,6 +355,23 @@ export type InvoiceUpdate = Tables['invoices']['Update']
 
 export type Comment = Tables['comments']['Row']
 export type ProjectFile = Tables['files']['Row']
+
+// ─── project_members junction (not yet in generated DB type) ──────────────────
+export interface ProjectMember {
+  id: string
+  project_id: string
+  member_id: string
+  assigned_at: string
+  assigned_by: string | null
+}
+
+// ─── Team member enriched with their project assignments ──────────────────────
+export interface TeamMemberWithProjects extends TeamMember {
+  project_members: Array<{
+    project_id: string
+    projects: { id: string; name: string } | null
+  }>
+}
 
 // ─── Application-level enum literals ─────────────────────────────────────────
 // DB stores these as plain TEXT — use these when you need narrower types.

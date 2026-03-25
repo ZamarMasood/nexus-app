@@ -1,15 +1,23 @@
-import { getClients } from "@/lib/db/clients";
-import { getProjectsForList } from "@/lib/db/projects";
+import { getClients, getClientsByMember } from "@/lib/db/clients";
+import { getProjectsForList, getProjectsForListByMember } from "@/lib/db/projects";
+import { getTeamMemberByEmail } from "@/lib/db/team-members";
+import { createSupabaseServerClient } from "@/lib/supabase-server";
 import ClientsClient from "./ClientsClient";
 
 export const dynamic = "force-dynamic";
 
 export default async function ClientsPage() {
-  // Use lightweight project list (only need client_id + status for counting)
+  const supabase = createSupabaseServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  const member = user?.email ? await getTeamMemberByEmail(user.email) : null;
+  const isAdmin = member?.user_role === 'admin';
+  const memberId = member?.id ?? '';
+
   const [clients, projects] = await Promise.all([
-    getClients(),
-    getProjectsForList(),
+    isAdmin ? getClients() : getClientsByMember(memberId),
+    // Only need project list to count projects per client in the UI
+    isAdmin ? getProjectsForList() : getProjectsForListByMember(memberId),
   ]);
 
-  return <ClientsClient initialClients={clients} projects={projects} />;
+  return <ClientsClient initialClients={clients} projects={projects} isAdmin={isAdmin} />;
 }

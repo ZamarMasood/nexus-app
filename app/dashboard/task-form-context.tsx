@@ -6,10 +6,14 @@ import { TaskFormDialog } from "@/components/tasks/TaskForm";
 
 interface TaskFormContextValue {
   openTaskForm: (defaultProjectId?: string) => void;
+  currentMemberId?: string;
+  isAdmin?: boolean;
 }
 
 const TaskFormContext = createContext<TaskFormContextValue>({
   openTaskForm: () => {},
+  currentMemberId: undefined,
+  isAdmin: false,
 });
 
 export function useTaskForm() {
@@ -18,8 +22,12 @@ export function useTaskForm() {
 
 export function TaskFormProvider({
   children,
+  currentMemberId,
+  isAdmin,
 }: {
   children: ReactNode;
+  currentMemberId?: string;
+  isAdmin?: boolean;
 }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -47,12 +55,14 @@ export function TaskFormProvider({
   }, []);
 
   return (
-    <TaskFormContext.Provider value={{ openTaskForm }}>
+    <TaskFormContext.Provider value={{ openTaskForm, currentMemberId, isAdmin }}>
       {children}
       <TaskFormDialog
         open={open}
         onOpenChange={setOpen}
         defaultProjectId={defaultProjectId}
+        defaultAssigneeId={currentMemberId}
+        isAdmin={isAdmin}
         onSuccess={() => router.refresh()}
       />
     </TaskFormContext.Provider>

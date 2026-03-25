@@ -215,3 +215,27 @@ Always complete and test one phase before starting the next.
 - Don't add new npm packages without checking if shadcn/ui or Supabase already covers it
 - Don't query Supabase directly inside React components — use `lib/supabase.ts` helpers
 - Don't implement client-side filtering as a substitute for proper RLS (Row Level Security) in Supabase
+
+---
+
+## Supabase RLS
+
+Row Level Security is **enabled on all tables** (`clients`, `comments`, `files`, `invoices`, `projects`, `tasks`, `team_members`).
+
+Policy matrix per table:
+
+| Role | Access |
+|---|---|
+| `service_role` | Full (SELECT / INSERT / UPDATE / DELETE) — bypasses RLS |
+| `authenticated` | Full access — team members logged in via Supabase Auth |
+| `anon` | Blocked entirely — no reads or writes |
+
+**Environment variables** (Next.js):
+- `NEXT_PUBLIC_SUPABASE_URL` — project URL (safe to expose)
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY` — anon key, read-only by RLS (safe to expose in frontend)
+- `SUPABASE_SERVICE_ROLE_KEY` — service role key, **bypasses RLS — never expose in frontend code**
+
+**Rules:**
+- Always use `SUPABASE_SERVICE_ROLE_KEY` in server-side code (Server Components, API routes, Server Actions) that needs write access
+- Never import `SUPABASE_SERVICE_ROLE_KEY` into any `"use client"` component
+- Client portal data isolation is enforced at the query level (filter by `client_id`) — RLS policies are intentionally permissive for `authenticated` role because all authenticated requests go through the server
