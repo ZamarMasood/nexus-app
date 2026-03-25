@@ -86,7 +86,7 @@ async function getMemberClientIds(memberId: string): Promise<string[]> {
     .in('id', projectIds)
     .not('client_id', 'is', null);
 
-  return [...new Set((projects ?? []).map((p) => p.client_id).filter(Boolean))] as string[];
+  return Array.from(new Set((projects ?? []).map((p) => p.client_id).filter(Boolean))) as string[];
 }
 
 /** Fetch only clients whose projects are assigned to this member. */
