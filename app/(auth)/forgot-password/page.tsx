@@ -168,6 +168,26 @@ export default function ForgotPasswordPage() {
             </div>
           )}
 
+          {/* Reset link */}
+          {state.resetLink && (
+            <div className="s1 mb-5">
+              <a
+                href={state.resetLink}
+                className="group relative block w-full overflow-hidden rounded-xl py-3.5 text-center text-[14px] font-semibold text-white transition-[transform,box-shadow] duration-200 hover:scale-[1.015] hover:shadow-[0_8px_40px_rgba(124,58,237,0.5)] active:scale-[0.985] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/60"
+                style={{
+                  background: 'linear-gradient(135deg, #7c3aed 0%, #5b21b6 100%)',
+                  boxShadow: '0 4px 24px rgba(124,58,237,0.4), 0 1px 0 rgba(255,255,255,0.1) inset',
+                }}
+              >
+                <span
+                  className="pointer-events-none absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-in-out"
+                  style={{ background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent)' }}
+                />
+                Click Here to Reset Password
+              </a>
+            </div>
+          )}
+
           {/* Error */}
           {state.error && (
             <div className="s1 mb-5 rounded-xl px-4 py-3 text-[13px]"

@@ -44,14 +44,18 @@ export async function addTeamMemberAction(
 
     const name       = (formData.get('name')      as string)?.trim();
     const email      = (formData.get('email')     as string)?.trim().toLowerCase();
+    const password   = (formData.get('password')  as string)?.trim();
     const user_role  = (formData.get('user_role') as string)?.trim();
     const projectIds = formData.getAll('project_ids') as string[];
 
-    if (!name || !email || !user_role) {
-      return { error: 'Name, email, and role are required.', success: null };
+    if (!name || !email || !password || !user_role) {
+      return { error: 'Name, email, password, and role are required.', success: null };
     }
     if (!isValidEmail(email)) {
       return { error: 'Please enter a valid email address (e.g. name@company.com).', success: null };
+    }
+    if (password.length < 6) {
+      return { error: 'Password must be at least 6 characters.', success: null };
     }
 
     // Step 1 — check if email is already taken in team_members
@@ -60,19 +64,21 @@ export async function addTeamMemberAction(
       return { error: 'A team member with this email already exists.', success: null };
     }
 
-    // Step 2 — invite user via Supabase Auth
-    // inviteUserByEmail creates the auth user AND sends an invite email via SMTP.
-    // The member clicks the link to set up their account and confirm their email.
-    const { data: inviteData, error: inviteError } = await supabaseAdmin.auth.admin.inviteUserByEmail(email);
+    // Step 2 — create auth user with the password (email auto-confirmed, no invite email)
+    const { data: createData, error: createError } = await supabaseAdmin.auth.admin.createUser({
+      email,
+      password,
+      email_confirm: true,
+    });
 
-    if (inviteError) {
-      if (inviteError.message.toLowerCase().includes('already')) {
+    if (createError) {
+      if (createError.message.toLowerCase().includes('already')) {
         return { error: 'A user with this email already exists.', success: null };
       }
-      return { error: inviteError.message, success: null };
+      return { error: createError.message, success: null };
     }
 
-    const userId = inviteData.user.id;
+    const userId = createData.user.id;
 
     // Step 3 — insert into team_members with the admin's org_id
     const org_id = await getCallerOrgId();
@@ -83,7 +89,7 @@ export async function addTeamMemberAction(
       await replaceProjectAssignments(userId, projectIds);
     }
 
-    return { error: null, success: 'Team member added. A verification email has been sent — they must confirm before logging in.' };
+    return { error: null, success: 'Team member added successfully.' };
   } catch (err) {
     const msg = err instanceof Error ? err.message : 'Something went wrong. Please try again.';
     return { error: msg, success: null };

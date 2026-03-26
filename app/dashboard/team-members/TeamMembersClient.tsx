@@ -336,9 +336,10 @@ function AddMemberModal({
             <input id="add-email" name="email" type="email" required placeholder="jane@company.com" className={fieldCls} />
           </div>
 
-          <p className="rounded-lg bg-violet-500/10 border border-violet-500/20 px-4 py-3 text-xs text-violet-300">
-            An invite email will be sent. The member will set their own password when they accept the invitation.
-          </p>
+          <div className="space-y-1">
+            <label htmlFor="add-password" className={labelCls}>Password <span className="text-rose-400">*</span></label>
+            <input id="add-password" name="password" type="password" required minLength={6} placeholder="Min. 6 characters" className={fieldCls} />
+          </div>
 
           <input type="hidden" name="user_role" value="member" />
 

@@ -1,12 +1,13 @@
 'use server';
 
 import { headers } from 'next/headers';
-import { createSupabaseServerClient } from '@/lib/supabase-server';
+import { supabaseAdmin } from '@/lib/supabase-admin';
 import { checkRateLimit, formatResetTime } from '@/lib/rate-limit';
 
 export interface ForgotPasswordState {
   error: string | null;
   success: string | null;
+  resetLink?: string | null;
 }
 
 export async function forgotPasswordAction(
@@ -27,21 +28,34 @@ export async function forgotPasswordAction(
     return { error: `Too many attempts. Please try again in ${formatResetTime(resetMs)}.`, success: null };
   }
 
-  const supabase = createSupabaseServerClient();
-
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000';
 
-  const { error } = await supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: `${siteUrl}/auth/callback?next=/reset-password`,
+  // Generate the reset link server-side (no SMTP needed)
+  const { data: linkData, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
+    type: 'recovery',
+    email,
+    options: {
+      redirectTo: `${siteUrl}/auth/callback?next=/reset-password`,
+    },
   });
 
-  if (error) {
-    return { error: error.message, success: null };
+  if (linkError) {
+    // Don't reveal whether the email exists
+    if (linkError.message.toLowerCase().includes('user not found')) {
+      return {
+        error: null,
+        success: 'If an account with that email exists, a reset link has been generated.',
+        resetLink: null,
+      };
+    }
+    return { error: linkError.message, success: null };
   }
 
-  // Always show success even if email doesn't exist (prevents email enumeration)
+  const resetLink = linkData?.properties?.action_link ?? null;
+
   return {
     error: null,
-    success: 'If an account with that email exists, we\'ve sent a password reset link. Check your inbox.',
+    success: 'Use the link below to reset your password.',
+    resetLink,
   };
 }
