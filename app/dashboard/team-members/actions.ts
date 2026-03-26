@@ -118,14 +118,17 @@ export async function editTeamMemberAction(
       return { error: 'All fields are required.', success: null };
     }
 
-    // Check if target member is an owner — owners' roles cannot be changed
+    // Check if target member is the owner — only the owner can edit themselves
     const targetIsOwner = await getIsOwnerById(id);
+    const callerIsOwner = await getIsOwnerById(currentUserId);
+    if (targetIsOwner && !callerIsOwner) {
+      return { error: 'The workspace owner\'s details cannot be changed by other admins.', success: null };
+    }
     if (targetIsOwner && user_role !== 'admin') {
       return { error: 'The owner\'s role cannot be changed.', success: null };
     }
 
     // Only the owner can change roles
-    const callerIsOwner = await getIsOwnerById(currentUserId);
     const currentRole = (formData.get('original_user_role') as string)?.trim();
     if (user_role !== currentRole && !callerIsOwner) {
       return { error: 'Only the workspace owner can change roles.', success: null };

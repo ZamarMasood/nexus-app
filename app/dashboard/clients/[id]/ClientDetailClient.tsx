@@ -54,6 +54,7 @@ interface ClientDetailClientProps {
   initialClient: Client;
   initialProjects: ProjectListItem[];
   initialInvoices: InvoiceListItem[];
+  isAdmin: boolean;
 }
 
 export default function ClientDetailClient({
@@ -62,6 +63,7 @@ export default function ClientDetailClient({
   initialClient,
   initialProjects,
   initialInvoices,
+  isAdmin,
 }: ClientDetailClientProps) {
   const router = useRouter();
   const [selectedId, setSelectedId] = useState(clientId);
@@ -313,7 +315,7 @@ export default function ClientDetailClient({
                   </div>
                   {client.email && <p className="mt-0.5 text-sm text-faint-app">{client.email}</p>}
                 </div>
-                {!isEditing && (
+                {!isEditing && isAdmin && (
                   <Button variant="ghost" size="sm" onClick={() => setIsEditing(true)} className="gap-1.5 text-faint-app hover:text-secondary-app">
                     <Edit2 className="h-3.5 w-3.5" /> Edit
                   </Button>
@@ -381,12 +383,14 @@ export default function ClientDetailClient({
                     </div>
                   </div>
                 )}
-                <div className="mt-3 flex justify-end">
-                  <Button variant="outline" size="sm" onClick={handlePasswordReset} disabled={resetting} className="gap-1.5 text-muted-app border-surface bg-surface-subtle hover:bg-overlay-sm hover:text-primary-app">
-                    <RefreshCw className={`h-3.5 w-3.5 ${resetting ? "animate-spin" : ""}`} />
-                    {client.portal_password ? "Reset Password" : "Set Password"}
-                  </Button>
-                </div>
+                {isAdmin && (
+                  <div className="mt-3 flex justify-end">
+                    <Button variant="outline" size="sm" onClick={handlePasswordReset} disabled={resetting} className="gap-1.5 text-muted-app border-surface bg-surface-subtle hover:bg-overlay-sm hover:text-primary-app">
+                      <RefreshCw className={`h-3.5 w-3.5 ${resetting ? "animate-spin" : ""}`} />
+                      {client.portal_password ? "Reset Password" : "Set Password"}
+                    </Button>
+                  </div>
+                )}
               </div>
             </div>
           </div>

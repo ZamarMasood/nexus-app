@@ -3,7 +3,7 @@
 import bcrypt from 'bcryptjs';
 import { revalidatePath } from 'next/cache';
 import { createSupabaseServerClient } from '@/lib/supabase-server';
-import { getCallerOrgId } from '@/lib/db/team-members';
+import { getCallerOrgId, getIsAdminByEmail } from '@/lib/db/team-members';
 import type { Client, ClientInsert, ClientUpdate } from '@/lib/types';
 
 const BCRYPT_ROUNDS = 10;
@@ -116,6 +116,12 @@ export async function resetPortalPasswordAction(
   clientId: string
 ): Promise<{ client: Client; plainPassword: string }> {
   const supabase = createSupabaseServerClient();
+
+  // Only admins can reset client passwords
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user?.email) throw new Error('Not authenticated');
+  const isAdmin = await getIsAdminByEmail(user.email);
+  if (!isAdmin) throw new Error('Only admins can reset client passwords.');
 
   // 8-char alphanumeric — easy to share verbally
   const plainPassword = Math.random().toString(36).slice(2, 6).toUpperCase() +

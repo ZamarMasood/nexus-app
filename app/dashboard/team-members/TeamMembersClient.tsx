@@ -739,22 +739,27 @@ export default function TeamMembersClient({
                       {/* Actions */}
                       <td className="px-5 py-4">
                         <div className="flex items-center justify-end gap-1.5">
-                          <button
-                            onClick={() => { setEditMember(member); setEditKey((k) => k + 1); }}
-                            className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[12px] font-medium text-secondary-app bg-surface-subtle hover:bg-violet-500/10 hover:text-violet-400 border border-surface hover:border-violet-500/20 transition-[background-color,color,border-color] duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/40"
-                          >
-                            <Pencil className="h-3 w-3" />
-                            <span className="hidden sm:inline">Edit</span>
-                          </button>
-                          <button
-                            onClick={() => { setDeleteMember(member); setDeleteKey((k) => k + 1); }}
-                            disabled={member.id === currentUserId || member.is_owner}
-                            title={member.is_owner ? "The workspace owner cannot be removed" : member.id === currentUserId ? "You cannot remove your own account" : undefined}
-                            className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[12px] font-medium text-secondary-app bg-surface-subtle hover:bg-rose-500/10 hover:text-rose-400 border border-surface hover:border-rose-500/20 transition-[background-color,color,border-color] duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-surface-subtle disabled:hover:text-secondary-app disabled:hover:border-surface"
-                          >
-                            <Trash2 className="h-3 w-3" />
-                            <span className="hidden sm:inline">Delete</span>
-                          </button>
+                          {/* Hide edit/delete for the owner unless you ARE the owner */}
+                          {(!member.is_owner || isOwner) && (
+                            <button
+                              onClick={() => { setEditMember(member); setEditKey((k) => k + 1); }}
+                              className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[12px] font-medium text-secondary-app bg-surface-subtle hover:bg-violet-500/10 hover:text-violet-400 border border-surface hover:border-violet-500/20 transition-[background-color,color,border-color] duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/40"
+                            >
+                              <Pencil className="h-3 w-3" />
+                              <span className="hidden sm:inline">Edit</span>
+                            </button>
+                          )}
+                          {(!member.is_owner || isOwner) && (
+                            <button
+                              onClick={() => { setDeleteMember(member); setDeleteKey((k) => k + 1); }}
+                              disabled={member.id === currentUserId || member.is_owner}
+                              title={member.is_owner ? "The workspace owner cannot be removed" : member.id === currentUserId ? "You cannot remove your own account" : undefined}
+                              className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[12px] font-medium text-secondary-app bg-surface-subtle hover:bg-rose-500/10 hover:text-rose-400 border border-surface hover:border-rose-500/20 transition-[background-color,color,border-color] duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-surface-subtle disabled:hover:text-secondary-app disabled:hover:border-surface"
+                            >
+                              <Trash2 className="h-3 w-3" />
+                              <span className="hidden sm:inline">Delete</span>
+                            </button>
+                          )}
                         </div>
                       </td>
                     </tr>

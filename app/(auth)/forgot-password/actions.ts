@@ -4,20 +4,22 @@ import { headers } from 'next/headers';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 import { checkRateLimit, formatResetTime } from '@/lib/rate-limit';
 
-export interface ForgotPasswordState {
+// ── Step 1: Check user exists and send OTP via Supabase ──────────────────────
+
+export interface SendOtpState {
   error: string | null;
-  success: string | null;
-  resetLink?: string | null;
+  success: boolean;
+  email?: string;
 }
 
-export async function forgotPasswordAction(
-  _prevState: ForgotPasswordState,
+export async function sendOtpAction(
+  _prevState: SendOtpState,
   formData: FormData
-): Promise<ForgotPasswordState> {
+): Promise<SendOtpState> {
   const email = (formData.get('email') as string)?.trim().toLowerCase();
 
   if (!email) {
-    return { error: 'Please enter your email address.', success: null };
+    return { error: 'Please enter your email address.', success: false };
   }
 
   // Rate limiting
@@ -25,37 +27,19 @@ export async function forgotPasswordAction(
   const ip = headersList.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown';
   const { success, resetMs } = checkRateLimit('forgot-pw:' + ip);
   if (!success) {
-    return { error: `Too many attempts. Please try again in ${formatResetTime(resetMs)}.`, success: null };
+    return { error: `Too many attempts. Please try again in ${formatResetTime(resetMs)}.`, success: false };
   }
 
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000';
+  // Check if user exists in team_members
+  const { data: member } = await supabaseAdmin
+    .from('team_members')
+    .select('id, email, user_role')
+    .eq('email', email)
+    .single();
 
-  // Generate the reset link server-side (no SMTP needed)
-  const { data: linkData, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
-    type: 'recovery',
-    email,
-    options: {
-      redirectTo: `${siteUrl}/auth/callback?next=/reset-password`,
-    },
-  });
-
-  if (linkError) {
-    // Don't reveal whether the email exists
-    if (linkError.message.toLowerCase().includes('user not found')) {
-      return {
-        error: null,
-        success: 'If an account with that email exists, a reset link has been generated.',
-        resetLink: null,
-      };
-    }
-    return { error: linkError.message, success: null };
+  if (!member) {
+    return { error: 'No account found with this email address.', success: false };
   }
 
-  const resetLink = linkData?.properties?.action_link ?? null;
-
-  return {
-    error: null,
-    success: 'Use the link below to reset your password.',
-    resetLink,
-  };
+  return { error: null, success: true, email };
 }

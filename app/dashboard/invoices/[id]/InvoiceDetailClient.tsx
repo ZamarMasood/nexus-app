@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import {
   Search,
   CheckCircle,
-  Send,
   FileText,
   RefreshCw,
   Check,
@@ -38,6 +37,7 @@ interface InvoiceDetailClientProps {
   allInvoices: InvoiceListItem[];
   clients: ClientListItem[];
   initialInvoice: Invoice;
+  isAdmin: boolean;
 }
 
 function findClientInList(clientId: string | null, clients: ClientListItem[]) {
@@ -50,6 +50,7 @@ export default function InvoiceDetailClient({
   allInvoices,
   clients,
   initialInvoice,
+  isAdmin,
 }: InvoiceDetailClientProps) {
   const router = useRouter();
   const [selectedId, setSelectedId] = useState(invoiceId);
@@ -61,7 +62,6 @@ export default function InvoiceDetailClient({
   const [error, setError] = useState<string | null>(null);
   const [markingPaid, setMarkingPaid] = useState(false);
   const [generatingPdf, setGeneratingPdf] = useState(false);
-  const [copied, setCopied] = useState(false);
   const [showPdf, setShowPdf] = useState(false);
   const [pdfCacheBust, setPdfCacheBust] = useState(() => Date.now());
 
@@ -161,14 +161,6 @@ export default function InvoiceDetailClient({
     } finally {
       setGeneratingPdf(false);
     }
-  }
-
-  function copyPortalLink() {
-    const url = `${window.location.origin}/portal/login`;
-    navigator.clipboard.writeText(url).then(() => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1500);
-    });
   }
 
   const status = invoice ? ((invoice.status ?? "pending") as InvoiceStatus) : "pending";
@@ -339,20 +331,23 @@ export default function InvoiceDetailClient({
               <div className="border-t border-surface px-4 sm:px-6 py-3 sm:py-4 space-y-3">
                 {/* Status row */}
                 {invoice.status !== "paid" ? (
-                  <Button onClick={markAsPaid} disabled={markingPaid} size="sm" className="w-full sm:w-auto gap-1.5 bg-emerald-600 hover:bg-emerald-500 text-white focus-visible:ring-emerald-500">
-                    <CheckCircle className="h-3.5 w-3.5" />
-                    {markingPaid ? "Updating…" : "Mark as Paid"}
-                  </Button>
+                  isAdmin ? (
+                    <Button onClick={markAsPaid} disabled={markingPaid} size="sm" className="w-full sm:w-auto gap-1.5 bg-emerald-600 hover:bg-emerald-500 text-white focus-visible:ring-emerald-500">
+                      <CheckCircle className="h-3.5 w-3.5" />
+                      {markingPaid ? "Updating…" : "Mark as Paid"}
+                    </Button>
+                  ) : (
+                    <div className="flex items-center gap-1.5 text-sm font-medium text-amber-400">
+                      <CheckCircle className="h-4 w-4" /> Pending
+                    </div>
+                  )
                 ) : (
                   <div className="flex items-center gap-1.5 text-sm font-medium text-emerald-400">
                     <Check className="h-4 w-4" /> Paid
                   </div>
                 )}
                 {/* Action buttons — equal width on mobile */}
-                <div className="grid grid-cols-2 sm:flex gap-2">
-                  <Button variant="outline" size="sm" onClick={copyPortalLink} className="gap-1.5 border-surface bg-surface-subtle text-muted-app hover:bg-overlay-sm hover:text-primary-app justify-center">
-                    {copied ? (<><Check className="h-3.5 w-3.5 text-emerald-400" /> Copied!</>) : (<><Send className="h-3.5 w-3.5" /> Send to Client</>)}
-                  </Button>
+                <div className="flex gap-2">
                   {invoice.pdf_url ? (
                     <a href={invoice.pdf_url} download className="inline-flex items-center justify-center gap-1.5 rounded-md border border-surface bg-surface-subtle px-2.5 py-1.5 text-xs font-medium text-muted-app hover:bg-overlay-sm hover:text-primary-app transition-[background-color,color] duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500">
                       <Download className="h-3.5 w-3.5" /> Download PDF
