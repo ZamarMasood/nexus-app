@@ -5,11 +5,19 @@ import { supabaseAdmin } from '@/lib/supabase-admin';
 import {
   getTeamMemberByEmail,
   getIsAdminByEmail,
+  getIsOwnerById,
+  getCallerOrgId,
   insertTeamMember,
   updateTeamMemberFull,
   deleteTeamMember,
   replaceProjectAssignments,
 } from '@/lib/db/team-members';
+
+// ── Validation helpers ───────────────────────────────────────────────────────
+function isValidEmail(email: string): boolean {
+  const re = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)+$/;
+  return re.test(email);
+}
 
 // ── Guard helper ─────────────────────────────────────────────────────────────
 async function requireAdmin(): Promise<string> {
@@ -28,7 +36,7 @@ export interface AddMemberState {
 }
 
 export async function addTeamMemberAction(
-  prevState: AddMemberState,
+  _prevState: AddMemberState,
   formData: FormData
 ): Promise<AddMemberState> {
   try {
@@ -43,6 +51,9 @@ export async function addTeamMemberAction(
     if (!name || !email || !password || !user_role) {
       return { error: 'All fields are required.', success: null };
     }
+    if (!isValidEmail(email)) {
+      return { error: 'Please enter a valid email address (e.g. name@company.com).', success: null };
+    }
     if (password.length < 8) {
       return { error: 'Password must be at least 8 characters.', success: null };
     }
@@ -53,11 +64,12 @@ export async function addTeamMemberAction(
       return { error: 'A team member with this email already exists.', success: null };
     }
 
-    // Step 2 — create Supabase Auth user
+    // Step 2 — create Supabase Auth user (email_confirm: false so Supabase
+    // sends a verification email — the member must confirm before logging in)
     const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
       email,
       password,
-      email_confirm: true,
+      email_confirm: false,
     });
 
     if (authError) {
@@ -69,15 +81,16 @@ export async function addTeamMemberAction(
 
     const userId = authData.user.id;
 
-    // Step 3 — insert into team_members
-    await insertTeamMember({ id: userId, name, email, role: user_role, user_role });
+    // Step 3 — insert into team_members with the admin's org_id
+    const org_id = await getCallerOrgId();
+    await insertTeamMember({ id: userId, name, email, role: user_role, user_role, org_id });
 
     // Step 4 — assign projects
     if (projectIds.length > 0) {
       await replaceProjectAssignments(userId, projectIds);
     }
 
-    return { error: null, success: 'Team member added successfully.' };
+    return { error: null, success: 'Team member added. A verification email has been sent — they must confirm before logging in.' };
   } catch (err) {
     const msg = err instanceof Error ? err.message : 'Something went wrong. Please try again.';
     return { error: msg, success: null };
@@ -91,7 +104,7 @@ export interface EditMemberState {
 }
 
 export async function editTeamMemberAction(
-  prevState: EditMemberState,
+  _prevState: EditMemberState,
   formData: FormData
 ): Promise<EditMemberState> {
   try {
@@ -106,9 +119,17 @@ export async function editTeamMemberAction(
       return { error: 'All fields are required.', success: null };
     }
 
-    // Guard: cannot demote yourself
-    if (id === currentUserId && user_role !== 'admin') {
-      return { error: 'You cannot change your own role.', success: null };
+    // Check if target member is an owner — owners' roles cannot be changed
+    const targetIsOwner = await getIsOwnerById(id);
+    if (targetIsOwner && user_role !== 'admin') {
+      return { error: 'The owner\'s role cannot be changed.', success: null };
+    }
+
+    // Only the owner can change roles
+    const callerIsOwner = await getIsOwnerById(currentUserId);
+    const currentRole = (formData.get('original_user_role') as string)?.trim();
+    if (user_role !== currentRole && !callerIsOwner) {
+      return { error: 'Only the workspace owner can change roles.', success: null };
     }
 
     await updateTeamMemberFull(id, { name, user_role });
@@ -128,7 +149,7 @@ export interface DeleteMemberState {
 }
 
 export async function deleteTeamMemberAction(
-  prevState: DeleteMemberState,
+  _prevState: DeleteMemberState,
   formData: FormData
 ): Promise<DeleteMemberState> {
   try {
@@ -142,11 +163,24 @@ export async function deleteTeamMemberAction(
       return { error: 'You cannot remove your own account.', success: null };
     }
 
-    // Delete Auth user first (cascade not automatic for auth.users)
+    // Guard: cannot delete an owner
+    const targetIsOwner = await getIsOwnerById(id);
+    if (targetIsOwner) {
+      return { error: 'The workspace owner cannot be removed.', success: null };
+    }
+
+    // Delete Auth user first (cascade not automatic for auth.users).
+    // If the auth user doesn't exist (e.g. manually-inserted member), proceed anyway.
     const { error: authDeleteError } = await supabaseAdmin.auth.admin.deleteUser(id);
-    if (authDeleteError) {
+    if (authDeleteError && !authDeleteError.message.toLowerCase().includes('user not found')) {
       return { error: authDeleteError.message, success: null };
     }
+
+    // Unassign from tasks (FK tasks.assignee_id → team_members.id, no cascade)
+    await supabaseAdmin
+      .from('tasks')
+      .update({ assignee_id: null })
+      .eq('assignee_id', id);
 
     // Delete from team_members (cascade handles project_members)
     await deleteTeamMember(id);

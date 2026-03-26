@@ -242,20 +242,27 @@ function ProjectPills({ member }: { member: TeamMemberWithProjects }) {
 
 // ── Role badge ────────────────────────────────────────────────────────────────
 
-function RoleBadge({ userRole }: { userRole: string | null }) {
+function RoleBadge({ userRole, isOwner }: { userRole: string | null; isOwner?: boolean }) {
   const isAdmin = userRole === "admin";
   return (
-    <span
-      className={[
-        "inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[11px] font-semibold",
-        isAdmin
-          ? "bg-violet-500/15 text-violet-300 ring-1 ring-violet-500/25"
-          : "bg-surface-subtle text-muted-app ring-1 ring-surface",
-      ].join(" ")}
-    >
-      {isAdmin ? <ShieldCheck className="h-3 w-3" /> : <User className="h-3 w-3" />}
-      {isAdmin ? "Admin" : "Member"}
-    </span>
+    <div className="flex items-center gap-1.5">
+      <span
+        className={[
+          "inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[11px] font-semibold",
+          isAdmin
+            ? "bg-violet-500/15 text-violet-300 ring-1 ring-violet-500/25"
+            : "bg-surface-subtle text-muted-app ring-1 ring-surface",
+        ].join(" ")}
+      >
+        {isAdmin ? <ShieldCheck className="h-3 w-3" /> : <User className="h-3 w-3" />}
+        {isAdmin ? "Admin" : "Member"}
+      </span>
+      {isOwner && (
+        <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/15 text-amber-300 ring-1 ring-amber-500/25 px-2 py-0.5 text-[10px] font-semibold">
+          Owner
+        </span>
+      )}
+    </div>
   );
 }
 
@@ -380,12 +387,14 @@ function EditMemberModal({
   open,
   member,
   projects,
+  isOwner,
   onClose,
   onSuccess,
 }: {
   open: boolean;
   member: TeamMemberWithProjects | null;
   projects: Project[];
+  isOwner: boolean;
   onClose: () => void;
   onSuccess: (msg: string) => void;
 }) {
@@ -396,9 +405,11 @@ function EditMemberModal({
     .filter((id): id is string => !!id) ?? [];
 
   const [selectedProjects, setSelectedProjects] = useState<string[]>(currentProjectIds);
+  const [role, setRole] = useState<string>(member?.user_role ?? "member");
 
   useEffect(() => {
     setSelectedProjects(currentProjectIds);
+    setRole(member?.user_role ?? "member");
   }, [member?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
@@ -439,7 +450,36 @@ function EditMemberModal({
             <p className="text-[11px] text-dim-app">Email cannot be changed here.</p>
           </div>
 
-          <input type="hidden" name="user_role" value={member.user_role ?? "member"} />
+          {/* Role selector — only owner can change roles, and owner's own role is locked */}
+          <input type="hidden" name="original_user_role" value={member.user_role ?? 'member'} />
+          <div className="space-y-1">
+            <label htmlFor="edit-role" className={labelCls}>Role</label>
+            {isOwner && !member.is_owner ? (
+              <select
+                id="edit-role"
+                name="user_role"
+                value={role}
+                onChange={(e) => setRole(e.target.value)}
+                className={fieldCls}
+              >
+                <option value="admin">Admin</option>
+                <option value="member">Member</option>
+              </select>
+            ) : (
+              <>
+                <input type="hidden" name="user_role" value={role} />
+                <input
+                  type="text"
+                  value={member.is_owner ? 'Owner (Admin)' : role === 'admin' ? 'Admin' : 'Member'}
+                  readOnly
+                  className="w-full rounded-lg bg-surface-subtle border border-surface px-3 py-2.5 text-[13px] text-faint-app cursor-not-allowed select-none"
+                />
+                <p className="text-[11px] text-dim-app">
+                  {member.is_owner ? 'Owner role cannot be changed.' : 'Only the workspace owner can change roles.'}
+                </p>
+              </>
+            )}
+          </div>
 
           <div className="space-y-1.5">
             <label className={labelCls}>Assign Projects</label>
@@ -554,12 +594,14 @@ interface TeamMembersClientProps {
   initialMembers: TeamMemberWithProjects[];
   projects: Project[];
   currentUserId: string;
+  isOwner: boolean;
 }
 
 export default function TeamMembersClient({
   initialMembers,
   projects,
   currentUserId,
+  isOwner,
 }: TeamMembersClientProps) {
   const router = useRouter();
   const { toasts, push, dismiss } = useToast();
@@ -570,6 +612,7 @@ export default function TeamMembersClient({
   const [editMember, setEditMember] = useState<TeamMemberWithProjects | null>(null);
   const [editKey, setEditKey]     = useState(0);
   const [deleteMember, setDeleteMember] = useState<TeamMemberWithProjects | null>(null);
+  const [deleteKey, setDeleteKey] = useState(0);
 
   useEffect(() => { setMembers(initialMembers); }, [initialMembers]);
 
@@ -685,7 +728,7 @@ export default function TeamMembersClient({
 
                       {/* Role badge */}
                       <td className="px-5 py-4">
-                        <RoleBadge userRole={member.user_role} />
+                        <RoleBadge userRole={member.user_role} isOwner={member.is_owner} />
                       </td>
 
                       {/* Assigned projects */}
@@ -704,9 +747,9 @@ export default function TeamMembersClient({
                             <span className="hidden sm:inline">Edit</span>
                           </button>
                           <button
-                            onClick={() => setDeleteMember(member)}
-                            disabled={member.id === currentUserId}
-                            title={member.id === currentUserId ? "You cannot remove your own account" : undefined}
+                            onClick={() => { setDeleteMember(member); setDeleteKey((k) => k + 1); }}
+                            disabled={member.id === currentUserId || member.is_owner}
+                            title={member.is_owner ? "The workspace owner cannot be removed" : member.id === currentUserId ? "You cannot remove your own account" : undefined}
                             className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[12px] font-medium text-secondary-app bg-surface-subtle hover:bg-rose-500/10 hover:text-rose-400 border border-surface hover:border-rose-500/20 transition-[background-color,color,border-color] duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-surface-subtle disabled:hover:text-secondary-app disabled:hover:border-surface"
                           >
                             <Trash2 className="h-3 w-3" />
@@ -737,11 +780,13 @@ export default function TeamMembersClient({
         open={!!editMember}
         member={editMember}
         projects={projects}
+        isOwner={isOwner}
         onClose={() => setEditMember(null)}
         onSuccess={handleSuccess}
       />
 
       <DeleteMemberModal
+        key={deleteKey}
         open={!!deleteMember}
         member={deleteMember}
         onClose={() => setDeleteMember(null)}

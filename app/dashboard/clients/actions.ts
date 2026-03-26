@@ -3,17 +3,41 @@
 import bcrypt from 'bcryptjs';
 import { revalidatePath } from 'next/cache';
 import { createSupabaseServerClient } from '@/lib/supabase-server';
+import { getCallerOrgId } from '@/lib/db/team-members';
 import type { Client, ClientInsert, ClientUpdate } from '@/lib/types';
 
 const BCRYPT_ROUNDS = 10;
+
+/** Strict email format validation */
+function validateEmail(email: string): boolean {
+  // RFC 5322 simplified — covers real-world addresses
+  const re = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)+$/;
+  return re.test(email);
+}
+
+/** Validate required client fields */
+function validateClientPayload(payload: { name?: string | null; email?: string | null }) {
+  if (!payload.name || payload.name.trim().length === 0) {
+    throw new Error('Client name is required.');
+  }
+  if (!payload.email || payload.email.trim().length === 0) {
+    throw new Error('Client email is required.');
+  }
+  if (!validateEmail(payload.email.trim())) {
+    throw new Error('Please enter a valid email address (e.g. name@company.com).');
+  }
+}
 
 /**
  * Create a client with bcrypt-hashed portal_password.
  */
 export async function createClientAction(payload: ClientInsert): Promise<Client> {
-  const supabase = createSupabaseServerClient();
+  validateClientPayload(payload);
 
-  const data: ClientInsert = { ...payload };
+  const supabase = createSupabaseServerClient();
+  const org_id = await getCallerOrgId();
+
+  const data: ClientInsert = { ...payload, email: payload.email!.trim().toLowerCase(), org_id };
   if (data.portal_password) {
     data.portal_password = await bcrypt.hash(data.portal_password, BCRYPT_ROUNDS);
   }
@@ -42,9 +66,22 @@ export async function updateClientAction(
   id: string,
   updates: ClientUpdate
 ): Promise<Client> {
+  // Validate email if it's being updated
+  if (updates.email !== undefined) {
+    if (!updates.email || !validateEmail(updates.email.trim())) {
+      throw new Error('Please enter a valid email address (e.g. name@company.com).');
+    }
+  }
+  if (updates.name !== undefined && (!updates.name || updates.name.trim().length === 0)) {
+    throw new Error('Client name is required.');
+  }
+
   const supabase = createSupabaseServerClient();
 
-  const data: ClientUpdate = { ...updates };
+  const data: ClientUpdate = {
+    ...updates,
+    ...(updates.email ? { email: updates.email.trim().toLowerCase() } : {}),
+  };
 
   if (data.portal_password) {
     data.portal_password = await bcrypt.hash(data.portal_password, BCRYPT_ROUNDS);

@@ -2,7 +2,29 @@
 
 import { revalidatePath } from "next/cache";
 import { supabaseAdmin } from "@/lib/supabase-admin";
-import type { TaskStatus } from "@/lib/types";
+import { createTask } from "@/lib/db/tasks";
+import { getCallerOrgId } from "@/lib/db/team-members";
+import type { Task, TaskInsert, TaskStatus } from "@/lib/types";
+
+export async function createTaskAction(
+  payload: Omit<TaskInsert, "org_id">
+): Promise<Task> {
+  const org_id = await getCallerOrgId();
+  const task = await createTask({ ...payload, org_id });
+
+  // Auto-add assignee to project_members so they can see this task
+  if (payload.assignee_id && payload.project_id) {
+    await (supabaseAdmin as any)
+      .from("project_members")
+      .upsert(
+        { project_id: payload.project_id, member_id: payload.assignee_id, org_id },
+        { onConflict: "project_id,member_id", ignoreDuplicates: true }
+      );
+  }
+
+  revalidatePath("/dashboard", "layout");
+  return task;
+}
 
 export async function updateTaskStatusAction(
   taskId: string,

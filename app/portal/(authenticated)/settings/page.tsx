@@ -1,6 +1,7 @@
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { getClientById } from '@/lib/db/clients';
+import { getCsrfToken } from '@/lib/csrf';
 import PortalSettingsClient from './PortalSettingsClient';
 
 export default async function PortalSettingsPage() {
@@ -11,10 +12,13 @@ export default async function PortalSettingsPage() {
   const client = await getClientById(clientId).catch(() => null);
   if (!client) redirect('/portal/login');
 
+  const csrfToken = getCsrfToken() ?? '';
+
   return (
     <PortalSettingsClient
       initialName={client.name}
       email={client.email ?? ''}
+      csrfToken={csrfToken}
     />
   );
 }

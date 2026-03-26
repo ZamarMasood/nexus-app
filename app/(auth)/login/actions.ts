@@ -1,8 +1,12 @@
 'use server';
 
 import { redirect } from 'next/navigation';
-import { cookies } from 'next/headers';
+import { cookies, headers } from 'next/headers';
 import { createSupabaseServerClient } from '@/lib/supabase-server';
+import { supabaseAdmin } from '@/lib/supabase-admin';
+import { getTeamMemberByEmail } from '@/lib/db/team-members';
+import { checkRateLimit, formatResetTime } from '@/lib/rate-limit';
+import { generateCsrfToken, setCsrfCookie, deleteCsrfCookie } from '@/lib/csrf';
 import bcrypt from 'bcryptjs';
 
 export interface LoginState {
@@ -23,17 +27,36 @@ export async function signInAction(
     return { error: 'Email and password are required.' };
   }
 
+  // ── Rate limiting ────────────────────────────────────────────────────────────
+  const headersList = headers();
+  const ip = headersList.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown';
+  const { success, resetMs } = checkRateLimit('login:' + ip);
+  if (!success) {
+    return { error: `Too many attempts. Please try again in ${formatResetTime(resetMs)}.` };
+  }
+
   const supabase = createSupabaseServerClient();
 
   // ── Run both auth methods in parallel ──────────────────────────────────────
+  // Client lookup uses supabaseAdmin to bypass RLS (anon role blocks clients reads)
   const [authResult, clientResult] = await Promise.all([
     supabase.auth.signInWithPassword({ email, password }),
-    supabase.from('clients').select('id, portal_password').eq('email', email).maybeSingle(),
+    supabaseAdmin.from('clients').select('id, portal_password').eq('email', email).maybeSingle(),
   ]);
 
-  // 1. Team member auth succeeded → dashboard
+  // 1. Team member auth succeeded → check org_id then redirect
   if (!authResult.error) {
+    const member = await getTeamMemberByEmail(email);
+    if (!member?.org_id) {
+      // Old account with no org — redirect to migration page
+      redirect('/setup-org');
+    }
     redirect('/dashboard');
+  }
+
+  // 1b. Email not confirmed — give a clear message instead of "Invalid email or password"
+  if (authResult.error?.message?.toLowerCase().includes('email not confirmed')) {
+    return { error: 'Please verify your email before logging in. Check your inbox for a confirmation link.' };
   }
 
   // 2. Client portal auth — check bcrypt
@@ -48,6 +71,9 @@ export async function signInAction(
         path: '/',
         sameSite: 'lax',
       });
+      // Set CSRF token for portal session
+      const csrfToken = generateCsrfToken();
+      setCsrfCookie(csrfToken);
       redirect('/portal/tasks');
     }
   }
@@ -62,6 +88,7 @@ export async function signOutAction(): Promise<void> {
 
   const cookieStore = cookies();
   cookieStore.delete('portal_client_id');
+  deleteCsrfCookie();
 
   redirect('/login');
 }

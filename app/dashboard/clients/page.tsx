@@ -1,4 +1,7 @@
+import type { Metadata } from "next";
 import { getClients, getClientsByMember } from "@/lib/db/clients";
+
+export const metadata: Metadata = { title: "Clients" };
 import { getProjectsForList, getProjectsForListByMember } from "@/lib/db/projects";
 import { getTeamMemberByEmail } from "@/lib/db/team-members";
 import { createSupabaseServerClient } from "@/lib/supabase-server";

@@ -30,8 +30,8 @@ export async function getClientsForList(): Promise<ClientListItem[]> {
 }
 
 export async function getClientById(id: string): Promise<Client> {
-  const supabase = createSupabaseServerClient();
-  const { data, error } = await supabase
+  // Uses supabaseAdmin so this works in both team (RLS session) and portal (no session) contexts
+  const { data, error } = await supabaseAdmin
     .from('clients')
     .select('id, name, email, status, monthly_rate, project_type, start_date, created_at')
     .eq('id', id)

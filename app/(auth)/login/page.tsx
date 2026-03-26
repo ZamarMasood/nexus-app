@@ -2,10 +2,11 @@
 
 import { useFormState, useFormStatus } from 'react-dom';
 import { signInAction, type LoginState } from './actions';
-import { Eye, EyeOff, Layers, ArrowRight, Sun, Moon, ArrowLeft } from 'lucide-react';
+import { Eye, EyeOff, Layers, ArrowRight, Sun, Moon, ArrowLeft, CheckCircle, Mail } from 'lucide-react';
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { useTheme } from 'next-themes';
+import { useSearchParams } from 'next/navigation';
 
 /* ─── Submit button ───────────────────────────────────────────────────────── */
 function SubmitButton() {
@@ -45,8 +46,11 @@ const initialState: LoginState = { error: null };
 export default function LoginPage() {
   const [state, action] = useFormState<LoginState, FormData>(signInAction, initialState);
   const [showPassword, setShowPassword] = useState(false);
-  const { theme, setTheme, resolvedTheme } = useTheme();
+  const { setTheme, resolvedTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
+  const searchParams = useSearchParams();
+  const verifyEmail = searchParams.get('verify') === 'email';
+  const authError = searchParams.get('error') === 'auth_callback_failed';
   useEffect(() => setMounted(true), []);
 
   const isDark = mounted ? resolvedTheme === 'dark' : true;
@@ -189,47 +193,79 @@ export default function LoginPage() {
             </div>
           </div>
 
+          {/* Verify email banner */}
+          {verifyEmail && (
+            <div className="s1 mb-5 flex items-center gap-2.5 rounded-xl px-4 py-3 text-[13px]"
+              style={{ background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.2)', color: '#6ee7b7' }}>
+              <Mail size={16} className="shrink-0" />
+              Account created! Check your email to verify your address, then sign in.
+            </div>
+          )}
+
+          {/* Auth callback error */}
+          {authError && (
+            <div className="s1 mb-5 rounded-xl px-4 py-3 text-[13px]"
+              style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', color: '#fca5a5' }}>
+              Email verification failed or link expired. Please try again.
+            </div>
+          )}
+
           {/* Error */}
-          {state.error && (
+          {state?.error && (
             <div className="s1 mb-5 rounded-xl px-4 py-3 text-[13px]"
               style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', color: '#fca5a5' }}>
               {state.error}
             </div>
           )}
 
-          <form action={action} className="space-y-3">
+          <form action={action} className="space-y-4">
             {/* Email */}
             <div className="s2">
+              <label className="mb-1.5 block text-[12px] font-medium" style={{ color: textSub }}>Email Address</label>
               <input
                 id="email" name="email" type="email" required autoComplete="email"
-                placeholder="Email address"
+                placeholder="alex@acme.com"
                 className="login-input"
                 style={{ background: inputBg, border: `1px solid ${inputBdr}`, color: textH }}
               />
             </div>
 
             {/* Password */}
-            <div className="s3 relative">
-              <input
-                id="password" name="password"
-                type={showPassword ? 'text' : 'password'}
-                required autoComplete="current-password"
-                placeholder="Password"
-                className="login-input"
-                style={{ background: inputBg, border: `1px solid ${inputBdr}`, color: textH, paddingRight: '44px' }}
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(v => !v)}
-                className="absolute right-4 top-1/2 -translate-y-1/2 transition-opacity duration-150 hover:opacity-70 active:scale-90 focus-visible:outline-none"
-                style={{ color: textSub }}
-                aria-label={showPassword ? 'Hide password' : 'Show password'}
-              >
-                {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
-              </button>
+            <div className="s3">
+              <label className="mb-1.5 block text-[12px] font-medium" style={{ color: textSub }}>Password</label>
+              <div className="relative">
+                <input
+                  id="password" name="password"
+                  type={showPassword ? 'text' : 'password'}
+                  required autoComplete="current-password"
+                  placeholder="Your password"
+                  className="login-input"
+                  style={{ background: inputBg, border: `1px solid ${inputBdr}`, color: textH, paddingRight: '44px' }}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(v => !v)}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 transition-opacity duration-150 hover:opacity-70 active:scale-90 focus-visible:outline-none"
+                  style={{ color: textSub }}
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                >
+                  {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
+                </button>
+              </div>
             </div>
 
-            <div className="s4 pt-2">
+            {/* Forgot password */}
+            <div className="s3 flex justify-end">
+              <Link
+                href="/forgot-password"
+                className="text-[12px] font-medium transition-opacity duration-150 hover:opacity-70 focus-visible:outline-none focus-visible:underline"
+                style={{ color: isDark ? 'rgba(167,139,250,0.9)' : '#7c3aed' }}
+              >
+                Forgot password?
+              </Link>
+            </div>
+
+            <div className="s4 pt-1">
               <SubmitButton />
             </div>
           </form>
@@ -241,8 +277,15 @@ export default function LoginPage() {
             <div className="flex-1 h-px" style={{ background: isDark ? 'rgba(255,255,255,0.07)' : 'rgba(124,58,237,0.1)' }} />
           </div>
 
-          <p className="s5 mt-4 text-center text-[12px]" style={{ color: isDark ? 'rgba(255,255,255,0.18)' : 'rgba(24,10,46,0.3)' }}>
-            Team members &amp; clients share this login
+          <p className="s5 mt-4 text-center text-[13px]" style={{ color: textSub }}>
+            Don&apos;t have an account?{' '}
+            <Link
+              href="/signup"
+              className="font-medium transition-opacity duration-150 hover:opacity-70 focus-visible:outline-none focus-visible:underline"
+              style={{ color: isDark ? 'rgba(167,139,250,0.9)' : '#7c3aed' }}
+            >
+              Create your workspace →
+            </Link>
           </p>
         </div>
       </div>

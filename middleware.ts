@@ -13,6 +13,17 @@ export async function middleware(request: NextRequest) {
     if (!portalClientId?.value) {
       return NextResponse.redirect(new URL('/login', request.url));
     }
+
+    // Verify CSRF token cookie is present alongside the session cookie
+    const csrfToken = request.cookies.get('portal_csrf_token');
+    if (!csrfToken?.value) {
+      // Missing CSRF token — force re-login to get a fresh token pair
+      const loginUrl = new URL('/login', request.url);
+      const response = NextResponse.redirect(loginUrl);
+      response.cookies.delete('portal_client_id');
+      return response;
+    }
+
     return NextResponse.next();
   }
 
@@ -69,5 +80,7 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
+  // Public routes (not listed here, so middleware never runs on them):
+  //   /login, /signup, /setup-org, /portal/login, and all other non-dashboard/portal paths
   matcher: ['/dashboard/:path*', '/portal/:path*'],
 };

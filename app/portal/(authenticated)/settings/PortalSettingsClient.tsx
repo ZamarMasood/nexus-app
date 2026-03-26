@@ -11,6 +11,7 @@ import {
 interface PortalSettingsClientProps {
   initialName: string;
   email:       string;
+  csrfToken:   string;
 }
 
 function StatusBanner({ state }: { state: SettingsState }) {
@@ -37,7 +38,7 @@ function StatusBanner({ state }: { state: SettingsState }) {
 const fieldClass =
   'w-full rounded-lg bg-surface-inset border border-surface px-3 py-2.5 text-[13px] text-primary-app placeholder:text-dim-app outline-none focus:border-violet-500/50 focus:ring-1 focus:ring-violet-500/30 transition-[border-color,box-shadow] duration-150';
 
-export default function PortalSettingsClient({ initialName, email }: PortalSettingsClientProps) {
+export default function PortalSettingsClient({ initialName, email, csrfToken }: PortalSettingsClientProps) {
   const [name, setName]                   = useState(initialName);
   const [profileState, setProfileState]   = useState<SettingsState>({ error: null, success: null });
   const [profileLoading, setProfileLoading] = useState(false);
@@ -100,6 +101,7 @@ export default function PortalSettingsClient({ initialName, email }: PortalSetti
         </div>
 
         <form onSubmit={handleProfileSubmit} className="px-6 py-5 space-y-5">
+          <input type="hidden" name="csrf_token" value={csrfToken} />
           {/* Avatar preview */}
           <div className="flex items-center gap-4">
             <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-violet-500/30 to-violet-700/30 ring-2 ring-violet-500/20">
@@ -161,6 +163,7 @@ export default function PortalSettingsClient({ initialName, email }: PortalSetti
         </div>
 
         <form onSubmit={handlePasswordSubmit} className="px-6 py-5 space-y-5">
+          <input type="hidden" name="csrf_token" value={csrfToken} />
           <div className="space-y-1">
             <label htmlFor="current_password" className="block text-[11px] font-semibold uppercase tracking-widest text-faint-app">
               Current Password <span className="text-rose-400">*</span>

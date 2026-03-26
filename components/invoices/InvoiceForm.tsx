@@ -9,7 +9,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { createInvoice } from "@/lib/db/invoices";
+import { createInvoiceAction } from "@/app/dashboard/invoices/actions";
 import { getClients } from "@/lib/db/clients";
 import { revalidateDashboard } from "@/app/dashboard/actions";
 import type { Client, Invoice, InvoiceStatus } from "@/lib/types";
@@ -75,7 +75,7 @@ export function InvoiceForm({ onSuccess, onCancel }: InvoiceFormProps) {
     setStep("saving");
 
     try {
-      const invoice = await createInvoice({
+      const invoice = await createInvoiceAction({
         client_id:      form.client_id,
         invoice_number: form.invoice_number.trim(),
         amount:         parseFloat(form.amount),

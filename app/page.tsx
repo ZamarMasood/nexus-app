@@ -232,9 +232,14 @@ export default function LandingPage() {
                 {isDark ? <Sun size={16} /> : <Moon size={16} />}
               </button>
               <Link href="/login"
+                className="hidden md:flex items-center gap-1.5 rounded-xl px-4 py-2 text-[13px] font-medium transition-[background-color,color] duration-150 hover:bg-violet-500/8 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/40"
+                style={{ color: textSub }}>
+                Sign in
+              </Link>
+              <Link href="/signup"
                 className="hidden md:flex items-center gap-1.5 rounded-xl px-4 py-2 text-[13px] font-semibold text-white transition-[transform,box-shadow] duration-150 hover:scale-[1.02] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/60"
                 style={{ background: 'linear-gradient(135deg,#7c3aed,#5b21b6)', boxShadow: '0 4px 16px rgba(124,58,237,0.35)' }}>
-                Sign in <ArrowRight size={13} />
+                Get started <ArrowRight size={13} />
               </Link>
               <button className="flex md:hidden size-9 items-center justify-center rounded-xl transition-[background-color] duration-150 hover:bg-violet-500/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/40"
                 style={{ color: textSub }} onClick={() => setMenuOpen(v => !v)}>
@@ -256,9 +261,12 @@ export default function LandingPage() {
                   className="block rounded-xl px-4 py-3 text-[14px] font-medium transition-[background-color] duration-150 hover:bg-violet-500/8 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/40"
                   style={{ color: textSub }}>{l}</a>
               ))}
-              <Link href="/login" onClick={() => setMenuOpen(false)}
+              <Link href="/signup" onClick={() => setMenuOpen(false)}
                 className="block rounded-xl px-4 py-3 text-[14px] font-semibold text-white text-center mt-1 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/60"
-                style={{ background: 'linear-gradient(135deg,#7c3aed,#5b21b6)' }}>Sign in</Link>
+                style={{ background: 'linear-gradient(135deg,#7c3aed,#5b21b6)' }}>Get started free</Link>
+              <Link href="/login" onClick={() => setMenuOpen(false)}
+                className="block rounded-xl px-4 py-3 text-[14px] font-medium text-center active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/40"
+                style={{ color: textSub }}>Sign in</Link>
             </div>
           )}
         </header>
@@ -301,7 +309,7 @@ export default function LandingPage() {
             </p>
 
             <div className="hero-cta flex flex-col sm:flex-row items-center justify-center gap-3">
-              <Link href="/login"
+              <Link href="/signup"
                 className="group flex w-full sm:w-auto items-center justify-center gap-2 rounded-2xl px-7 py-3.5 text-[15px] font-semibold text-white transition-[transform,box-shadow] duration-200 hover:scale-[1.03] hover:shadow-[0_8px_40px_rgba(124,58,237,0.5)] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/60"
                 style={{ background: 'linear-gradient(135deg,#7c3aed,#5b21b6)', boxShadow: '0 4px 24px rgba(124,58,237,0.4)' }}>
                 Get started free
@@ -574,11 +582,18 @@ export default function LandingPage() {
                 <p className="mb-10 text-[16px] leading-[1.7] mx-auto max-w-[400px]" style={{ color: textSub }}>
                   Join your team on Nexus and never lose track of a task, invoice, or client again.
                 </p>
-                <Link href="/login"
-                  className="inline-flex items-center gap-2 rounded-2xl px-8 py-4 text-[15px] font-semibold text-white transition-[transform,box-shadow] duration-200 hover:scale-[1.03] hover:shadow-[0_8px_48px_rgba(124,58,237,0.55)] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/60"
-                  style={{ background: 'linear-gradient(135deg,#7c3aed,#5b21b6)', boxShadow: '0 4px 24px rgba(124,58,237,0.4)' }}>
-                  Get started — it&apos;s free <ArrowRight size={16} />
-                </Link>
+                <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+                  <Link href="/signup"
+                    className="inline-flex items-center gap-2 rounded-2xl px-8 py-4 text-[15px] font-semibold text-white transition-[transform,box-shadow] duration-200 hover:scale-[1.03] hover:shadow-[0_8px_48px_rgba(124,58,237,0.55)] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/60"
+                    style={{ background: 'linear-gradient(135deg,#7c3aed,#5b21b6)', boxShadow: '0 4px 24px rgba(124,58,237,0.4)' }}>
+                    Get started — it&apos;s free <ArrowRight size={16} />
+                  </Link>
+                  <Link href="/login"
+                    className="inline-flex items-center gap-2 rounded-2xl px-6 py-4 text-[14px] font-medium transition-[background-color,border-color] duration-150 hover:bg-violet-500/8 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/40"
+                    style={{ border: `1px solid ${isDark ? 'rgba(255,255,255,0.1)' : 'rgba(124,58,237,0.2)'}`, color: textH }}>
+                    Sign in
+                  </Link>
+                </div>
               </div>
             </div>
           </div>

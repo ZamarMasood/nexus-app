@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { Loader2, CalendarDays, AlignLeft, FolderKanban, UserCircle2, Flag, Hash } from "lucide-react";
-import { createTask, updateTask } from "@/lib/db/tasks";
+import { updateTask } from "@/lib/db/tasks";
+import { createTaskAction } from "@/app/dashboard/tasks/actions";
 import { getProjects } from "@/lib/db/projects";
 import { getTeamMembers } from "@/lib/db/team-members";
 import { revalidateDashboard } from "@/app/dashboard/actions";
@@ -130,7 +131,7 @@ export function TaskFormDialog({
       if (isEdit && task) {
         await updateTask(task.id, payload);
       } else {
-        await createTask(payload);
+        await createTaskAction(payload);
       }
 
       onOpenChange(false);

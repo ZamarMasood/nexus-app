@@ -1,4 +1,7 @@
+import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
+
+export const metadata: Metadata = { title: 'Settings' };
 import { createSupabaseServerClient } from '@/lib/supabase-server';
 import { getTeamMemberByEmail } from '@/lib/db/team-members';
 import SettingsClient from './SettingsClient';
@@ -14,8 +17,9 @@ export default async function DashboardSettingsPage() {
     <SettingsClient
       initialName={member?.name ?? ''}
       initialAvatarUrl={member?.avatar_url ?? ''}
-      initialRole={member?.role ?? ''}
+      userRole={member?.user_role ?? 'member'}
       email={user.email}
+      isOwner={member?.is_owner ?? false}
     />
   );
 }

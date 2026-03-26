@@ -23,6 +23,7 @@ export type Database = {
           id: string
           monthly_rate: number | null
           name: string
+          org_id: string | null
           portal_password: string | null
           project_type: string | null
           start_date: string | null
@@ -34,6 +35,7 @@ export type Database = {
           id?: string
           monthly_rate?: number | null
           name: string
+          org_id?: string | null
           portal_password?: string | null
           project_type?: string | null
           start_date?: string | null
@@ -45,6 +47,7 @@ export type Database = {
           id?: string
           monthly_rate?: number | null
           name?: string
+          org_id?: string | null
           portal_password?: string | null
           project_type?: string | null
           start_date?: string | null
@@ -127,6 +130,7 @@ export type Database = {
           due_date: string | null
           id: string
           invoice_number: string | null
+          org_id: string | null
           pdf_url: string | null
           status: string | null
         }
@@ -137,6 +141,7 @@ export type Database = {
           due_date?: string | null
           id?: string
           invoice_number?: string | null
+          org_id?: string | null
           pdf_url?: string | null
           status?: string | null
         }
@@ -147,6 +152,7 @@ export type Database = {
           due_date?: string | null
           id?: string
           invoice_number?: string | null
+          org_id?: string | null
           pdf_url?: string | null
           status?: string | null
         }
@@ -160,6 +166,75 @@ export type Database = {
           },
         ]
       }
+      organisations: {
+        Row: {
+          id: string
+          name: string
+          slug: string
+          plan: string | null
+          created_at: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          id?: string
+          name: string
+          slug: string
+          plan?: string | null
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          id?: string
+          name?: string
+          slug?: string
+          plan?: string | null
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      project_members: {
+        Row: {
+          id: string
+          project_id: string
+          member_id: string
+          org_id: string | null
+          assigned_at: string
+          assigned_by: string | null
+        }
+        Insert: {
+          id?: string
+          project_id: string
+          member_id: string
+          org_id?: string | null
+          assigned_at?: string
+          assigned_by?: string | null
+        }
+        Update: {
+          id?: string
+          project_id?: string
+          member_id?: string
+          org_id?: string | null
+          assigned_at?: string
+          assigned_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'project_members_project_id_fkey'
+            columns: ['project_id']
+            isOneToOne: false
+            referencedRelation: 'projects'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'project_members_member_id_fkey'
+            columns: ['member_id']
+            isOneToOne: false
+            referencedRelation: 'team_members'
+            referencedColumns: ['id']
+          },
+        ]
+      }
       projects: {
         Row: {
           client_id: string | null
@@ -167,6 +242,7 @@ export type Database = {
           deadline: string | null
           id: string
           name: string
+          org_id: string | null
           status: string | null
           total_value: number | null
         }
@@ -176,6 +252,7 @@ export type Database = {
           deadline?: string | null
           id?: string
           name: string
+          org_id?: string | null
           status?: string | null
           total_value?: number | null
         }
@@ -185,6 +262,7 @@ export type Database = {
           deadline?: string | null
           id?: string
           name?: string
+          org_id?: string | null
           status?: string | null
           total_value?: number | null
         }
@@ -205,6 +283,7 @@ export type Database = {
           description: string | null
           due_date: string | null
           id: string
+          org_id: string | null
           priority: string | null
           project_id: string | null
           status: string | null
@@ -216,6 +295,7 @@ export type Database = {
           description?: string | null
           due_date?: string | null
           id?: string
+          org_id?: string | null
           priority?: string | null
           project_id?: string | null
           status?: string | null
@@ -227,6 +307,7 @@ export type Database = {
           description?: string | null
           due_date?: string | null
           id?: string
+          org_id?: string | null
           priority?: string | null
           project_id?: string | null
           status?: string | null
@@ -254,7 +335,9 @@ export type Database = {
           avatar_url: string | null
           email: string
           id: string
+          is_owner: boolean
           name: string
+          org_id: string | null
           role: string | null
           user_role: string | null
         }
@@ -262,7 +345,9 @@ export type Database = {
           avatar_url?: string | null
           email: string
           id?: string
+          is_owner?: boolean
           name: string
+          org_id?: string | null
           role?: string | null
           user_role?: string | null
         }
@@ -270,50 +355,13 @@ export type Database = {
           avatar_url?: string | null
           email?: string
           id?: string
+          is_owner?: boolean
           name?: string
+          org_id?: string | null
           role?: string | null
           user_role?: string | null
         }
         Relationships: []
-      }
-      project_members: {
-        Row: {
-          id: string
-          project_id: string
-          member_id: string
-          assigned_at: string
-          assigned_by: string | null
-        }
-        Insert: {
-          id?: string
-          project_id: string
-          member_id: string
-          assigned_at?: string
-          assigned_by?: string | null
-        }
-        Update: {
-          id?: string
-          project_id?: string
-          member_id?: string
-          assigned_at?: string
-          assigned_by?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: 'project_members_project_id_fkey'
-            columns: ['project_id']
-            isOneToOne: false
-            referencedRelation: 'projects'
-            referencedColumns: ['id']
-          },
-          {
-            foreignKeyName: 'project_members_member_id_fkey'
-            columns: ['member_id']
-            isOneToOne: false
-            referencedRelation: 'team_members'
-            referencedColumns: ['id']
-          },
-        ]
       }
     }
     Views: {
@@ -339,6 +387,10 @@ export type Client = Tables['clients']['Row']
 export type ClientInsert = Tables['clients']['Insert']
 export type ClientUpdate = Tables['clients']['Update']
 
+export type Organisation = Tables['organisations']['Row']
+export type OrganisationInsert = Tables['organisations']['Insert']
+export type OrganisationUpdate = Tables['organisations']['Update']
+
 export type Project = Tables['projects']['Row']
 export type ProjectInsert = Tables['projects']['Insert']
 export type ProjectUpdate = Tables['projects']['Update']
@@ -356,11 +408,12 @@ export type InvoiceUpdate = Tables['invoices']['Update']
 export type Comment = Tables['comments']['Row']
 export type ProjectFile = Tables['files']['Row']
 
-// ─── project_members junction (not yet in generated DB type) ──────────────────
+// ─── project_members junction ─────────────────────────────────────────────────
 export interface ProjectMember {
   id: string
   project_id: string
   member_id: string
+  org_id: string | null
   assigned_at: string
   assigned_by: string | null
 }

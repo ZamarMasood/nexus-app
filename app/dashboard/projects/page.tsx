@@ -1,4 +1,7 @@
+import type { Metadata } from "next";
 import { getProjects, getProjectsByMember } from "@/lib/db/projects";
+
+export const metadata: Metadata = { title: "Projects" };
 import { getClients, getClientsByMember } from "@/lib/db/clients";
 import {
   getTaskCountsByProject,

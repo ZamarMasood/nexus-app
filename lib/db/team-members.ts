@@ -1,11 +1,27 @@
 'use server';
 import { supabaseAdmin as supabase } from '../supabase-admin';
+import { createSupabaseServerClient } from '../supabase-server';
 import type { TeamMember, TeamMemberWithProjects } from '../types';
 
+/**
+ * Returns the org_id for the currently authenticated user.
+ * Throws if not authenticated or member has no org.
+ */
+export async function getCallerOrgId(): Promise<string> {
+  const serverClient = createSupabaseServerClient();
+  const { data: { user } } = await serverClient.auth.getUser();
+  if (!user?.email) throw new Error('Not authenticated');
+  const member = await getTeamMemberByEmail(user.email);
+  if (!member?.org_id) throw new Error('No organisation found for this account. Please set up your workspace at /setup-org.');
+  return member.org_id;
+}
+
 export async function getTeamMembers(): Promise<TeamMember[]> {
+  const orgId = await getCallerOrgId();
   const { data, error } = await supabase
     .from('team_members')
     .select('*')
+    .eq('org_id', orgId)
     .order('name', { ascending: true });
 
   if (error) throw new Error(`Failed to fetch team members: ${error.message}`);
@@ -13,6 +29,7 @@ export async function getTeamMembers(): Promise<TeamMember[]> {
 }
 
 export async function getTeamMembersWithProjects(): Promise<TeamMemberWithProjects[]> {
+  const orgId = await getCallerOrgId();
   // project_members was added after DB type generation; cast to avoid type errors
   const adminAny = supabase as any; // noqa
   const { data, error } = await adminAny
@@ -24,6 +41,7 @@ export async function getTeamMembersWithProjects(): Promise<TeamMemberWithProjec
       role,
       avatar_url,
       user_role,
+      is_owner,
       project_members!project_members_member_id_fkey (
         project_id,
         projects (
@@ -32,6 +50,7 @@ export async function getTeamMembersWithProjects(): Promise<TeamMemberWithProjec
         )
       )
     `)
+    .eq('org_id', orgId)
     .order('name', { ascending: true });
 
   if (error) throw new Error(`Failed to fetch team members with projects: ${error.message}`);
@@ -39,9 +58,9 @@ export async function getTeamMembersWithProjects(): Promise<TeamMemberWithProjec
 }
 
 export async function getTeamMemberByEmail(email: string): Promise<TeamMember | null> {
-  const { data, error } = await supabase
+  const { data, error } = await (supabase as any)
     .from('team_members')
-    .select('*')
+    .select('id, name, email, role, avatar_url, user_role, org_id, is_owner')
     .eq('email', email)
     .maybeSingle();
 
@@ -56,6 +75,15 @@ export async function getIsAdminByEmail(email: string): Promise<boolean> {
     .eq('email', email)
     .maybeSingle();
   return data?.user_role === 'admin';
+}
+
+export async function getIsOwnerById(id: string): Promise<boolean> {
+  const { data } = await supabase
+    .from('team_members')
+    .select('is_owner')
+    .eq('id', id)
+    .maybeSingle();
+  return data?.is_owner === true;
 }
 
 export async function updateTeamMember(
@@ -79,6 +107,7 @@ export async function insertTeamMember(member: {
   email: string;
   role: string;
   user_role: string;
+  org_id?: string | null;
 }): Promise<TeamMember> {
   const { data, error } = await supabase
     .from('team_members')

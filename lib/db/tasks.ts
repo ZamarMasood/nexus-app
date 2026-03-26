@@ -171,6 +171,17 @@ export async function updateTask(id: string, updates: TaskUpdate): Promise<Task>
     .single();
 
   if (error) throw new Error(`Failed to update task ${id}: ${error.message}`);
+
+  // Auto-add new assignee to project_members so they can see this task
+  if (updates.assignee_id && data.project_id && data.org_id) {
+    await (supabaseAdmin as any)
+      .from('project_members')
+      .upsert(
+        { project_id: data.project_id, member_id: updates.assignee_id, org_id: data.org_id },
+        { onConflict: 'project_id,member_id', ignoreDuplicates: true }
+      );
+  }
+
   return data;
 }
 
@@ -234,35 +245,40 @@ async function getMemberProjectIds(memberId: string): Promise<string[]> {
   return (data ?? []).map((r: { project_id: string }) => r.project_id);
 }
 
-/** Fetch all tasks (with assignees) in the member's assigned projects. */
+/** Fetch all tasks (with assignees) visible to a member:
+ *  - tasks in projects the member is assigned to, OR
+ *  - tasks directly assigned to the member
+ */
 export async function getTasksWithAssigneesByMember(memberId: string): Promise<TaskWithAssignee[]> {
   const ids = await getMemberProjectIds(memberId);
-  if (ids.length === 0) return [];
 
   const supabase = createSupabaseServerClient();
   const { data, error } = await supabase
     .from('tasks')
     .select('*, assignee:team_members!tasks_assignee_id_fkey(id, name, avatar_url, role)')
-    .in('project_id', ids)
+    .or(ids.length > 0
+      ? `assignee_id.eq.${memberId},project_id.in.(${ids.join(',')})`
+      : `assignee_id.eq.${memberId}`)
     .order('created_at', { ascending: false });
 
   if (error) throw new Error(`Failed to fetch tasks for member: ${error.message}`);
   return data as TaskWithAssignee[];
 }
 
-/** Fetch recent N tasks (with assignees) in the member's assigned projects. */
+/** Fetch recent N tasks visible to a member (assigned to them or in their projects). */
 export async function getRecentTasksWithAssigneesByMember(
   memberId: string,
   limit: number = 10
 ): Promise<TaskWithAssignee[]> {
   const ids = await getMemberProjectIds(memberId);
-  if (ids.length === 0) return [];
 
   const supabase = createSupabaseServerClient();
   const { data, error } = await supabase
     .from('tasks')
     .select('*, assignee:team_members!tasks_assignee_id_fkey(id, name, avatar_url, role)')
-    .in('project_id', ids)
+    .or(ids.length > 0
+      ? `assignee_id.eq.${memberId},project_id.in.(${ids.join(',')})`
+      : `assignee_id.eq.${memberId}`)
     .order('created_at', { ascending: false })
     .limit(limit);
 
@@ -270,7 +286,7 @@ export async function getRecentTasksWithAssigneesByMember(
   return data as TaskWithAssignee[];
 }
 
-/** Task stats (total / done / overdue / dueSoon) scoped to the member's projects. */
+/** Task stats (total / done / overdue / dueSoon) for tasks visible to a member. */
 export async function getTaskStatsByMember(memberId: string): Promise<{
   total: number;
   done: number;
@@ -278,13 +294,14 @@ export async function getTaskStatsByMember(memberId: string): Promise<{
   dueSoon: number;
 }> {
   const ids = await getMemberProjectIds(memberId);
-  if (ids.length === 0) return { total: 0, done: 0, overdue: 0, dueSoon: 0 };
 
   const supabase = createSupabaseServerClient();
   const { data, error } = await supabase
     .from('tasks')
     .select('id, status, due_date')
-    .in('project_id', ids);
+    .or(ids.length > 0
+      ? `assignee_id.eq.${memberId},project_id.in.(${ids.join(',')})`
+      : `assignee_id.eq.${memberId}`);
 
   if (error) throw new Error(`Failed to fetch task stats for member: ${error.message}`);
 

@@ -39,6 +39,8 @@ interface DashboardShellProps {
   children: React.ReactNode;
   isAdmin: boolean;
   currentMemberId?: string;
+  orgName?: string;
+  memberName?: string;
 }
 
 function NavLink({
@@ -83,7 +85,7 @@ function NavLink({
   );
 }
 
-function BrandMark() {
+function BrandMark({ orgName }: { orgName?: string }) {
   return (
     <div className="flex items-center gap-2.5">
       <div className="relative flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-violet-500 to-violet-700 shadow-[0_0_20px_rgba(139,92,246,0.4)]">
@@ -91,15 +93,30 @@ function BrandMark() {
       </div>
       <div>
         <span className="block text-[15px] font-semibold tracking-[-0.03em] text-bright leading-none">Nexus</span>
-        <span className="block text-[10px] text-dim-app mt-0.5 font-medium tracking-wide uppercase">Workspace</span>
+        <span className="block text-[10px] text-dim-app mt-0.5 font-medium tracking-wide uppercase truncate max-w-[120px]">
+          {orgName ?? 'Workspace'}
+        </span>
       </div>
     </div>
   );
 }
 
-function BottomBar() {
+function BottomBar({ memberName }: { memberName?: string }) {
+  const initials = memberName
+    ? memberName.split(' ').map((w) => w[0]).slice(0, 2).join('').toUpperCase()
+    : '?';
+
   return (
     <div className="px-3 pb-5 pt-4 border-t border-surface mt-4 space-y-1">
+      {/* Member info */}
+      {memberName && (
+        <div className="flex items-center gap-2.5 rounded-lg px-3 py-2 mb-1">
+          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-violet-500/30 to-violet-700/30 ring-1 ring-violet-500/20">
+            <span className="text-[10px] font-bold text-violet-300">{initials}</span>
+          </div>
+          <span className="text-[12px] font-medium text-secondary-app truncate">{memberName}</span>
+        </div>
+      )}
       <div className="flex items-center gap-3 rounded-lg px-3 py-2">
         <span className="text-[13px] font-medium text-faint-app flex-1">Theme</span>
         <ThemeToggle />
@@ -117,7 +134,7 @@ function BottomBar() {
   );
 }
 
-export default function DashboardShell({ children, isAdmin, currentMemberId }: DashboardShellProps) {
+export default function DashboardShell({ children, isAdmin, currentMemberId, orgName, memberName }: DashboardShellProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const pathname = usePathname();
 
@@ -170,7 +187,7 @@ export default function DashboardShell({ children, isAdmin, currentMemberId }: D
           ].join(" ")}
         >
           <div className="flex items-center justify-between px-5 pt-5 pb-6">
-            <BrandMark />
+            <BrandMark orgName={orgName} />
             <button
               type="button"
               onClick={() => setMobileMenuOpen(false)}
@@ -186,13 +203,13 @@ export default function DashboardShell({ children, isAdmin, currentMemberId }: D
             {NAV.map((item) => <NavLink key={item.href} {...item} />)}
           </nav>
 
-          <BottomBar />
+          <BottomBar memberName={memberName} />
         </div>
 
         {/* ── Desktop sidebar ────────────────────────────────────────────── */}
         <aside className="hidden lg:flex w-[220px] shrink-0 flex-col bg-surface-sidebar border-r border-surface">
           <div className="px-5 pt-6 pb-7">
-            <BrandMark />
+            <BrandMark orgName={orgName} />
           </div>
 
           <nav className="flex flex-col gap-0.5 px-3 flex-1">
@@ -200,7 +217,7 @@ export default function DashboardShell({ children, isAdmin, currentMemberId }: D
             {NAV.map((item) => <NavLink key={item.href} {...item} />)}
           </nav>
 
-          <BottomBar />
+          <BottomBar memberName={memberName} />
         </aside>
 
         {/* ── Main content ───────────────────────────────────────────────── */}

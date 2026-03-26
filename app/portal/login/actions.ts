@@ -3,6 +3,7 @@
 import { redirect } from 'next/navigation';
 import { cookies } from 'next/headers';
 import { createSupabaseServerClient } from '@/lib/supabase-server';
+import { generateCsrfToken, setCsrfCookie } from '@/lib/csrf';
 import bcrypt from 'bcryptjs';
 
 export interface PortalLoginState {
@@ -44,6 +45,9 @@ export async function portalSignInAction(
     path: '/',
     sameSite: 'lax',
   });
+  // Set CSRF token for portal session
+  const csrfToken = generateCsrfToken();
+  setCsrfCookie(csrfToken);
 
   redirect('/portal/tasks');
 }

@@ -1,5 +1,6 @@
 'use server';
 
+import { revalidatePath } from 'next/cache';
 import { createSupabaseServerClient } from '@/lib/supabase-server';
 import { getTeamMemberByEmail, updateTeamMember } from '@/lib/db/team-members';
 
@@ -14,7 +15,6 @@ export async function updateProfileAction(
 ): Promise<SettingsState> {
   const name = (formData.get('name') as string)?.trim();
   const avatar_url = (formData.get('avatar_url') as string)?.trim() || null;
-  const role = (formData.get('role') as string)?.trim() || null;
 
   if (!name) return { error: 'Name is required.', success: null };
 
@@ -25,7 +25,10 @@ export async function updateProfileAction(
   const member = await getTeamMemberByEmail(user.email).catch(() => null);
   if (!member) return { error: 'Team member record not found.', success: null };
 
-  await updateTeamMember(member.id, { name, avatar_url, role });
+  await updateTeamMember(member.id, { name, avatar_url });
+
+  // Revalidate the dashboard layout so the sidebar picks up the new name
+  revalidatePath('/dashboard', 'layout');
 
   return { error: null, success: 'Profile updated successfully.' };
 }

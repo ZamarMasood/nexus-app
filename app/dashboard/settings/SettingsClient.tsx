@@ -4,28 +4,12 @@ import { useState } from 'react';
 import Image from 'next/image';
 import { User, Lock, Camera, CheckCircle, AlertCircle, Loader2, Sparkles } from 'lucide-react';
 import { updateProfileAction, updatePasswordAction, type SettingsState } from './actions';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-
-const ROLES = [
-  { value: 'admin',     label: 'Admin'       },
-  { value: 'manager',   label: 'Manager'     },
-  { value: 'developer', label: 'Developer'   },
-  { value: 'designer',  label: 'Designer'    },
-  { value: 'qa',        label: 'QA Engineer' },
-  { value: 'other',     label: 'Other'       },
-] as const;
-
 interface SettingsClientProps {
   initialName:      string;
   initialAvatarUrl: string;
-  initialRole:      string;
+  userRole:         string;
   email:            string;
+  isOwner:          boolean;
 }
 
 function StatusBanner({ state }: { state: SettingsState }) {
@@ -52,10 +36,10 @@ function StatusBanner({ state }: { state: SettingsState }) {
 const fieldClass =
   'w-full rounded-lg bg-surface-inset border border-surface px-3 py-2.5 text-[13px] text-primary-app placeholder:text-dim-app outline-none focus:border-violet-500/50 focus:ring-1 focus:ring-violet-500/30 transition-[border-color,box-shadow] duration-150';
 
-export default function SettingsClient({ initialName, initialAvatarUrl, initialRole, email }: SettingsClientProps) {
+export default function SettingsClient({ initialName, initialAvatarUrl, userRole, email, isOwner }: SettingsClientProps) {
   const [name, setName]           = useState(initialName);
   const [avatarUrl, setAvatarUrl] = useState(initialAvatarUrl);
-  const [role, setRole]           = useState(initialRole);
+  const roleLabel = isOwner ? 'Owner (Admin)' : userRole === 'admin' ? 'Admin' : 'Member';
   const [profileState, setProfileState]   = useState<SettingsState>({ error: null, success: null });
   const [profileLoading, setProfileLoading] = useState(false);
 
@@ -181,29 +165,18 @@ export default function SettingsClient({ initialName, initialAvatarUrl, initialR
             />
           </div>
 
-          {/* Role */}
+          {/* Role (read-only) */}
           <div className="space-y-1">
             <label className="block text-[11px] font-semibold uppercase tracking-widest text-faint-app">
               Role
             </label>
-            {/* hidden input so FormData picks up the value */}
-            <input type="hidden" name="role" value={role} />
-            <Select value={role} onValueChange={setRole}>
-              <SelectTrigger className="w-full rounded-lg bg-surface-inset border-surface text-[13px] text-primary-app focus:ring-1 focus:ring-violet-500/30 focus:border-violet-500/50 h-[42px]">
-                <SelectValue placeholder="Select a role…" />
-              </SelectTrigger>
-              <SelectContent className="bg-surface-card border-surface text-primary-app">
-                {ROLES.map(({ value, label }) => (
-                  <SelectItem
-                    key={value}
-                    value={value}
-                    className="text-[13px] text-primary-app focus:bg-violet-500/10 focus:text-violet-300 cursor-pointer"
-                  >
-                    {label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <input
+              type="text"
+              value={roleLabel}
+              readOnly
+              className="w-full rounded-lg bg-surface-subtle border border-surface px-3 py-2.5 text-[13px] text-faint-app cursor-not-allowed select-none"
+            />
+            <p className="text-[11px] text-dim-app">{isOwner ? 'You are the workspace owner.' : 'Role can only be changed by the workspace owner.'}</p>
           </div>
 
           {/* Email (read-only) */}

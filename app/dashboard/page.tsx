@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import {
   getRecentTasksWithAssignees,
   getRecentTasksWithAssigneesByMember,
@@ -9,6 +10,7 @@ import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { getTeamMemberByEmail } from "@/lib/db/team-members";
 import DashboardClient from "./DashboardClient";
 
+export const metadata: Metadata = { title: "Dashboard" };
 export const dynamic = "force-dynamic";
 
 function greeting() {

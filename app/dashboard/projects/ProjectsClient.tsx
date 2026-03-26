@@ -4,8 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Plus, FolderKanban, Calendar, ChevronRight, BarChart3 } from "lucide-react";
 import Link from "next/link";
-import { createProject } from "@/lib/db/projects";
-import { revalidateDashboard } from "@/app/dashboard/actions";
+import { createProjectAction } from "@/app/dashboard/projects/actions";
 import { formatDate } from "@/lib/utils";
 import {
   Dialog,
@@ -82,7 +81,7 @@ function NewProjectDialog({ open, onOpenChange, clients, onSuccess }: NewProject
     setSubmitting(true);
     setSubmitError(null);
     try {
-      await createProject({
+      await createProjectAction({
         name:        name.trim(),
         client_id:   clientId || null,
         status,
@@ -90,7 +89,6 @@ function NewProjectDialog({ open, onOpenChange, clients, onSuccess }: NewProject
         total_value: totalValue ? parseFloat(totalValue) : null,
       });
       onOpenChange(false);
-      await revalidateDashboard();
       onSuccess();
     } catch (err: unknown) {
       setSubmitError(err instanceof Error ? err.message : "Something went wrong");

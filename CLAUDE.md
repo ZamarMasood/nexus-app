@@ -24,6 +24,7 @@ Replaces ClickUp/Linear for internal task management and GetOrchestra for client
 - **Styling:** Tailwind CSS + shadcn/ui
 - **Database & Auth:** Supabase (PostgreSQL + Auth + Storage)
 - **Deployment:** Vercel (auto-deploy on push)
+- **Architecture:** Multi-tenant SaaS — every workspace is isolated by `org_id`
 
 ---
 
@@ -34,6 +35,38 @@ npm run build        # Production build
 npm run lint         # ESLint check
 npx tsc --noEmit     # TypeScript type check (run before every commit)
 ```
+
+---
+
+## SaaS Architecture
+
+This is a **multi-tenant SaaS** app. Each company that signs up gets an isolated workspace.
+
+**organisations table** is the root of all tenant data:
+- Every table (`clients`, `projects`, `tasks`, `invoices`, `team_members`, `project_members`) has an `org_id UUID` foreign key referencing `organisations.id`
+- RLS policies on all tables enforce `org_id = get_org_id()` isolation at the database level
+- `get_org_id()` is a SQL function: `SELECT org_id FROM team_members WHERE id = auth.uid()`
+- `is_admin()` is a SQL function: `SELECT EXISTS (SELECT 1 FROM team_members WHERE id = auth.uid() AND user_role = 'admin')`
+
+**Signup flow** (`/signup`):
+1. Validate inputs server-side
+2. Check slug uniqueness in `organisations`
+3. Check email uniqueness in `team_members`
+4. Create `organisations` row → get `orgId`
+5. Create Supabase Auth user with `email_confirm: true`
+6. Create `team_members` row with `id = auth_user.id`, `org_id = orgId`, `user_role = 'admin'`
+7. Auto sign in → redirect to `/dashboard`
+8. On any failure: roll back all created rows in reverse order
+
+**Existing users without org** (`/setup-org`):
+- If a team member logs in and `org_id IS NULL`, redirect to `/setup-org`
+- `/setup-org` creates an org and links it to the existing member row
+
+**Key rules for all future code:**
+- Every INSERT must include `org_id` — get it via `getCallerOrgId()` from `lib/db/team-members.ts`
+- Never allow cross-org data access — RLS enforces this at DB level, but also filter by `org_id` in queries
+- `getCallerOrgId()` gets the current user's org via their `team_members` row
+- Never accept `org_id` as user input — always derive it server-side from the authenticated user
 
 ---
 
@@ -139,17 +172,22 @@ lib/
 - Never expose internal team data (assignees, internal comments, full client list) in portal routes
 - All Supabase queries must go through `lib/supabase.ts` — no inline client instantiation
 - Use **Server Components** by default; only add `"use client"` when interactivity requires it
+- **Every INSERT must include `org_id`** — call `getCallerOrgId()` from `lib/db/team-members.ts` in the server action, never accept it from client input
+- **Never allow cross-org queries** — RLS enforces this, but always be explicit in code too
+- If a logged-in member has `org_id = null`, redirect to `/setup-org` before allowing dashboard access
 
 ---
 
 ## Database Tables (Supabase / PostgreSQL)
 | Table | Key Fields |
 |---|---|
-| `clients` | id, name, email, status, monthly_rate, portal_password (bcrypt hashed) |
-| `projects` | id, client_id, name, status, total_value, deadline |
-| `tasks` | id, project_id, title, status, priority, assignee_id, due_date |
-| `team_members` | id, name, email, role, avatar_url |
-| `invoices` | id, client_id, invoice_number, amount, status, due_date, pdf_url |
+| `organisations` | id, name, slug, plan (free/pro/enterprise), created_at |
+| `clients` | id, **org_id**, name, email, status, monthly_rate, portal_password (bcrypt hashed) |
+| `projects` | id, **org_id**, client_id, name, status, total_value, deadline |
+| `tasks` | id, **org_id**, project_id, title, status, priority, assignee_id, due_date |
+| `team_members` | id, **org_id**, name, email, role, user_role, avatar_url |
+| `invoices` | id, **org_id**, client_id, invoice_number, amount, status, due_date, pdf_url |
+| `project_members` | id, **org_id**, project_id, member_id, assigned_at |
 | `comments` | id, task_id, user_id, content |
 | `files` | id, task_id, filename, file_url |
 
@@ -220,14 +258,14 @@ Always complete and test one phase before starting the next.
 
 ## Supabase RLS
 
-Row Level Security is **enabled on all tables** (`clients`, `comments`, `files`, `invoices`, `projects`, `tasks`, `team_members`).
+Row Level Security is **enabled on all tables** (`organisations`, `clients`, `comments`, `files`, `invoices`, `projects`, `tasks`, `team_members`, `project_members`).
 
 Policy matrix per table:
 
 | Role | Access |
 |---|---|
 | `service_role` | Full (SELECT / INSERT / UPDATE / DELETE) — bypasses RLS |
-| `authenticated` | Full access — team members logged in via Supabase Auth |
+| `authenticated` | Scoped to own org — all policies enforce `org_id = get_org_id()` |
 | `anon` | Blocked entirely — no reads or writes |
 
 **Environment variables** (Next.js):
@@ -239,3 +277,4 @@ Policy matrix per table:
 - Always use `SUPABASE_SERVICE_ROLE_KEY` in server-side code (Server Components, API routes, Server Actions) that needs write access
 - Never import `SUPABASE_SERVICE_ROLE_KEY` into any `"use client"` component
 - Client portal data isolation is enforced at the query level (filter by `client_id`) — RLS policies are intentionally permissive for `authenticated` role because all authenticated requests go through the server
+- Multi-tenant isolation is enforced by `org_id = get_org_id()` in every `authenticated` RLS policy — one org can never read or write another org's data

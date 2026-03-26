@@ -1,4 +1,7 @@
+import type { Metadata } from "next";
 import { getTasksWithAssignees, getTasksWithAssigneesByMember } from "@/lib/db/tasks";
+
+export const metadata: Metadata = { title: "Tasks" };
 import { getTeamMemberByEmail } from "@/lib/db/team-members";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import TasksClient from "./TasksClient";
@@ -16,5 +19,5 @@ export default async function TasksPage() {
     ? await getTasksWithAssignees()
     : await getTasksWithAssigneesByMember(memberId);
 
-  return <TasksClient initialTasks={tasks} isAdmin={isAdmin} />;
+  return <TasksClient initialTasks={tasks} isAdmin={isAdmin} currentMemberId={memberId} />;
 }

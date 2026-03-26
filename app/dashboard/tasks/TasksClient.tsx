@@ -146,12 +146,18 @@ type ViewMode = "kanban" | "list";
 interface TasksClientProps {
   initialTasks: TaskWithAssignee[];
   isAdmin: boolean;
+  currentMemberId?: string;
 }
 
-export default function TasksClient({ initialTasks, isAdmin }: TasksClientProps) {
+export default function TasksClient({ initialTasks, isAdmin, currentMemberId }: TasksClientProps) {
   const router = useRouter();
   const { openTaskForm } = useTaskForm();
   const [view, setView] = useState<ViewMode>("kanban");
+  const [showMyTasks, setShowMyTasks] = useState(false);
+
+  const visibleTasks = showMyTasks && currentMemberId
+    ? initialTasks.filter((t) => t.assignee_id === currentMemberId)
+    : initialTasks;
 
   function handleTaskClick(task: TaskWithAssignee) {
     router.push(`/dashboard/tasks/${task.id}`);
@@ -164,11 +170,43 @@ export default function TasksClient({ initialTasks, isAdmin }: TasksClientProps)
         <div>
           <h1 className="text-2xl font-bold tracking-[-0.03em] text-bright">Tasks</h1>
           <p className="mt-0.5 text-sm text-faint-app">
-            {initialTasks.length} task{initialTasks.length !== 1 ? "s" : ""} across all projects
+            {visibleTasks.length} task{visibleTasks.length !== 1 ? "s" : ""}{showMyTasks ? " assigned to you" : " across all projects"}
           </p>
         </div>
 
         <div className="flex items-center gap-3">
+          {/* My Tasks / All Tasks toggle */}
+          {currentMemberId && (
+            <div className="flex items-center rounded-lg border border-surface bg-surface-card p-0.5">
+              <button
+                onClick={() => setShowMyTasks(false)}
+                className={[
+                  "flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium",
+                  "transition-[background-color,color,box-shadow]",
+                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400",
+                  !showMyTasks
+                    ? "bg-violet-600 text-white shadow-sm"
+                    : "text-muted-app hover:text-secondary-app",
+                ].join(" ")}
+              >
+                All Tasks
+              </button>
+              <button
+                onClick={() => setShowMyTasks(true)}
+                className={[
+                  "flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium",
+                  "transition-[background-color,color,box-shadow]",
+                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400",
+                  showMyTasks
+                    ? "bg-violet-600 text-white shadow-sm"
+                    : "text-muted-app hover:text-secondary-app",
+                ].join(" ")}
+              >
+                My Tasks
+              </button>
+            </div>
+          )}
+
           {/* View toggle */}
           <div className="flex items-center rounded-lg border border-surface bg-surface-card p-0.5">
             <button
@@ -216,9 +254,9 @@ export default function TasksClient({ initialTasks, isAdmin }: TasksClientProps)
 
       {/* Content */}
       {view === "kanban" ? (
-        <TaskBoard initialTasks={initialTasks} onTaskClick={handleTaskClick} isAdmin={isAdmin} />
+        <TaskBoard initialTasks={visibleTasks} onTaskClick={handleTaskClick} isAdmin={isAdmin} />
       ) : (
-        <ListView tasks={initialTasks} onTaskClick={handleTaskClick} />
+        <ListView tasks={visibleTasks} onTaskClick={handleTaskClick} />
       )}
     </div>
   );

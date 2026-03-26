@@ -1,7 +1,8 @@
 'use server';
 
 import { cookies } from 'next/headers';
-import { createSupabaseServerClient } from '@/lib/supabase-server';
+import { supabaseAdmin } from '@/lib/supabase-admin';
+import { verifyCsrfToken } from '@/lib/csrf';
 import bcrypt from 'bcryptjs';
 
 export interface SettingsState {
@@ -13,6 +14,10 @@ export async function updateClientProfileAction(
   _prevState: SettingsState,
   formData: FormData
 ): Promise<SettingsState> {
+  if (!verifyCsrfToken(formData)) {
+    return { error: 'Invalid or missing CSRF token. Please refresh and try again.', success: null };
+  }
+
   const name = (formData.get('name') as string)?.trim();
   if (!name) return { error: 'Name is required.', success: null };
 
@@ -20,8 +25,7 @@ export async function updateClientProfileAction(
   const clientId = cookieStore.get('portal_client_id')?.value;
   if (!clientId) return { error: 'Not authenticated.', success: null };
 
-  const supabase = createSupabaseServerClient();
-  const { error } = await supabase
+  const { error } = await supabaseAdmin
     .from('clients')
     .update({ name })
     .eq('id', clientId);
@@ -34,6 +38,10 @@ export async function updateClientPasswordAction(
   _prevState: SettingsState,
   formData: FormData
 ): Promise<SettingsState> {
+  if (!verifyCsrfToken(formData)) {
+    return { error: 'Invalid or missing CSRF token. Please refresh and try again.', success: null };
+  }
+
   const currentPassword = formData.get('current_password') as string;
   const newPassword = formData.get('password') as string;
   const confirm = formData.get('confirm') as string;
@@ -49,9 +57,7 @@ export async function updateClientPasswordAction(
   const clientId = cookieStore.get('portal_client_id')?.value;
   if (!clientId) return { error: 'Not authenticated.', success: null };
 
-  const supabase = createSupabaseServerClient();
-
-  const { data: client, error: fetchError } = await supabase
+  const { data: client, error: fetchError } = await supabaseAdmin
     .from('clients')
     .select('portal_password')
     .eq('id', clientId)
@@ -64,7 +70,7 @@ export async function updateClientPasswordAction(
   if (!match) return { error: 'Current password is incorrect.', success: null };
 
   const hashed = await bcrypt.hash(newPassword, 10);
-  const { error: updateError } = await supabase
+  const { error: updateError } = await supabaseAdmin
     .from('clients')
     .update({ portal_password: hashed })
     .eq('id', clientId);
