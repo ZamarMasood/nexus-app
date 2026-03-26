@@ -36,6 +36,35 @@ export async function setupOrgAction(
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { error: 'Not authenticated.' };
 
+  // Check if user already has an org via metadata (signup created it but
+  // team_members wasn't linked). If so, just link and redirect.
+  const metaOrgId = user.user_metadata?.org_id as string | undefined;
+  if (metaOrgId) {
+    const { data: existingMetaOrg } = await supabaseAdmin
+      .from('organisations')
+      .select('id')
+      .eq('id', metaOrgId)
+      .maybeSingle();
+
+    if (existingMetaOrg) {
+      // Org exists — just fix the team_members link
+      await supabaseAdmin
+        .from('team_members')
+        .upsert(
+          {
+            id: user.id,
+            org_id: metaOrgId,
+            name: (user.user_metadata?.full_name as string) || user.email?.split('@')[0] || 'User',
+            email: user.email!.toLowerCase(),
+            user_role: (user.user_metadata?.user_role as string) || 'admin',
+            is_owner: (user.user_metadata?.is_owner as boolean) ?? false,
+          },
+          { onConflict: 'id' }
+        );
+      redirect('/dashboard');
+    }
+  }
+
   // Check slug not taken
   const { data: existingOrg } = await supabaseAdmin
     .from('organisations')
@@ -60,17 +89,31 @@ export async function setupOrgAction(
 
   const orgId = (org as unknown as { id: string }).id;
 
-  // Link team_member to org
+  // Link team_member to org (upsert to handle missing rows too)
   const { error: updateError } = await supabaseAdmin
     .from('team_members')
-    .update({ org_id: orgId } as any)
-    .eq('id', user.id);
+    .upsert(
+      {
+        id: user.id,
+        org_id: orgId,
+        name: (user.user_metadata?.full_name as string) || user.email?.split('@')[0] || 'User',
+        email: user.email!.toLowerCase(),
+        user_role: (user.user_metadata?.user_role as string) || 'admin',
+        is_owner: (user.user_metadata?.is_owner as boolean) ?? false,
+      },
+      { onConflict: 'id' }
+    );
 
   if (updateError) {
     // Roll back org creation
     await supabaseAdmin.from('organisations').delete().eq('id', orgId);
     return { error: 'Failed to link your account to the organisation.' };
   }
+
+  // Update user metadata with org_id for future reference
+  await supabaseAdmin.auth.admin.updateUserById(user.id, {
+    user_metadata: { ...user.user_metadata, org_id: orgId },
+  });
 
   redirect('/dashboard');
 }

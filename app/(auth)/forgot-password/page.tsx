@@ -125,6 +125,8 @@ function OtpInput({ value, onChange, inputBg, inputBdr, textH }: {
           type="text"
           inputMode="numeric"
           maxLength={1}
+          autoComplete={i === 0 ? 'one-time-code' : 'off'}
+          aria-label={`Verification code digit ${i + 1} of 6`}
           value={value[i] ?? ''}
           onChange={(e) => handleChange(i, e.target.value)}
           onKeyDown={(e) => handleKeyDown(i, e)}
@@ -206,8 +208,8 @@ export default function ForgotPasswordPage() {
     const password = (formData.get('password') as string)?.trim();
     const confirmPassword = (formData.get('confirm_password') as string)?.trim();
 
-    if (!password || password.length < 6) {
-      setError('Password must be at least 6 characters.');
+    if (!password || password.length < 8) {
+      setError('Password must be at least 8 characters.');
       return;
     }
     if (password !== confirmPassword) {
@@ -477,8 +479,8 @@ export default function ForgotPasswordPage() {
                 <label className="mb-1.5 block text-[12px] font-medium" style={{ color: textSub }}>New Password</label>
                 <div className="relative">
                   <input
-                    name="password" type={showPassword ? 'text' : 'password'} required minLength={6}
-                    placeholder="Min. 6 characters"
+                    name="password" type={showPassword ? 'text' : 'password'} required minLength={8}
+                    placeholder="Min. 8 characters"
                     className="login-input"
                     style={{ background: inputBg, border: `1px solid ${inputBdr}`, color: textH, paddingRight: '44px' }}
                   />
@@ -496,7 +498,7 @@ export default function ForgotPasswordPage() {
               <div className="s3">
                 <label className="mb-1.5 block text-[12px] font-medium" style={{ color: textSub }}>Confirm Password</label>
                 <input
-                  name="confirm_password" type={showPassword ? 'text' : 'password'} required minLength={6}
+                  name="confirm_password" type={showPassword ? 'text' : 'password'} required minLength={8}
                   placeholder="Repeat new password"
                   className="login-input"
                   style={{ background: inputBg, border: `1px solid ${inputBdr}`, color: textH }}

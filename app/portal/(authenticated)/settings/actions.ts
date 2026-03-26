@@ -1,6 +1,7 @@
 'use server';
 
 import { cookies } from 'next/headers';
+import { revalidatePath } from 'next/cache';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 import { verifyCsrfToken } from '@/lib/csrf';
 import bcrypt from 'bcryptjs';
@@ -31,6 +32,7 @@ export async function updateClientProfileAction(
     .eq('id', clientId);
 
   if (error) return { error: error.message, success: null };
+  revalidatePath('/portal', 'layout');
   return { error: null, success: 'Profile updated successfully.' };
 }
 

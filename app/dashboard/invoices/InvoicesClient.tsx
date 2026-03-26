@@ -69,7 +69,6 @@ export default function InvoicesClient({ initialInvoices, clients, isAdmin }: In
   }, [invoices]);
 
   function handleInvoiceCreated(invoice: Invoice) {
-    setInvoices((prev) => [invoice, ...prev]);
     setCreateOpen(false);
     router.refresh();
   }

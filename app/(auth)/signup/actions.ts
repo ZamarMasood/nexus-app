@@ -1,13 +1,46 @@
 'use server';
 
-import { redirect } from 'next/navigation';
 import { headers } from 'next/headers';
-import { createSupabaseServerClient } from '@/lib/supabase-server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 import { checkRateLimit, formatResetTime } from '@/lib/rate-limit';
 
+// -- Helper: Send OTP via GoTrue Admin API (bypasses all rate limits) ---------
+
+async function sendOtpEmail(email: string): Promise<{ error: string | null }> {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+
+  // Use the GoTrue /otp endpoint with the service_role key in the Authorization
+  // header. This bypasses Supabase's email rate limit (which only applies to
+  // anon-key requests). create_user=true ensures the endpoint doesn't 404 for
+  // email addresses that don't have an auth user yet.
+  const res = await fetch(`${supabaseUrl}/auth/v1/otp`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'apikey': serviceRoleKey,
+      'Authorization': `Bearer ${serviceRoleKey}`,
+    },
+    body: JSON.stringify({
+      email,
+      create_user: true,
+    }),
+  });
+
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    return { error: body?.msg || body?.error_description || body?.message || 'Failed to send verification code.' };
+  }
+
+  return { error: null };
+}
+
+// -- Step 1: Validate form + send OTP (NO DB writes) -------------------------
+
 export interface SignupState {
   error: string | null;
+  success?: boolean;
+  email?: string;
   fieldErrors?: {
     companyName?: string;
     slug?: string;
@@ -18,8 +51,6 @@ export interface SignupState {
     terms?: string;
   };
 }
-
-// ── Validation helpers ─────────────────────────────────────────────────────────
 
 function validateInputs(
   companyName: string,
@@ -63,21 +94,19 @@ function validateInputs(
   return errors;
 }
 
-// ── Main action ────────────────────────────────────────────────────────────────
-
 export async function signupAction(
   _prevState: SignupState,
   formData: FormData
 ): Promise<SignupState> {
-  const companyName    = (formData.get('companyName')    as string | null) ?? '';
-  const slug           = (formData.get('slug')           as string | null) ?? '';
-  const fullName       = (formData.get('fullName')       as string | null) ?? '';
-  const email          = (formData.get('email')          as string | null) ?? '';
-  const password       = (formData.get('password')       as string | null) ?? '';
+  const companyName     = (formData.get('companyName')     as string | null) ?? '';
+  const slug            = (formData.get('slug')            as string | null) ?? '';
+  const fullName        = (formData.get('fullName')        as string | null) ?? '';
+  const email           = (formData.get('email')           as string | null) ?? '';
+  const password        = (formData.get('password')        as string | null) ?? '';
   const confirmPassword = (formData.get('confirmPassword') as string | null) ?? '';
-  const terms          = formData.get('terms') as string | null;
+  const terms           = formData.get('terms') as string | null;
 
-  // ── Rate limiting ────────────────────────────────────────────────────────────
+  // Rate limiting
   const headersList = headers();
   const ip = headersList.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown';
   const { success, resetMs } = checkRateLimit('signup:' + ip);
@@ -85,13 +114,13 @@ export async function signupAction(
     return { error: `Too many attempts. Please try again in ${formatResetTime(resetMs)}.` };
   }
 
-  // ── STEP A: Server-side validation ───────────────────────────────────────────
+  // STEP A: Server-side validation
   const fieldErrors = validateInputs(companyName, slug, fullName, email, password, confirmPassword, terms);
   if (Object.keys(fieldErrors ?? {}).length > 0) {
     return { error: null, fieldErrors };
   }
 
-  // ── STEP B: Check slug not taken ─────────────────────────────────────────────
+  // STEP B: Check slug not taken
   const { data: existingOrg } = await supabaseAdmin
     .from('organisations')
     .select('id')
@@ -102,7 +131,7 @@ export async function signupAction(
     return { error: null, fieldErrors: { slug: 'This workspace name is already taken.' } };
   }
 
-  // ── STEP C: Check email not already registered ────────────────────────────────
+  // STEP C: Check email not already registered
   const { data: existingMember } = await supabaseAdmin
     .from('team_members')
     .select('id')
@@ -113,9 +142,58 @@ export async function signupAction(
     return { error: null, fieldErrors: { email: 'An account with this email already exists.' } };
   }
 
-  let orgId = '';
+  // STEP D: Send OTP via GoTrue Admin API (bypasses email rate limits)
+  // NO org or user created yet -- that happens only after OTP is verified
+  const { error: otpError } = await sendOtpEmail(email.trim().toLowerCase());
 
-  // ── STEP D: Create organisation ───────────────────────────────────────────────
+  if (otpError) {
+    return { error: `Failed to send verification code: ${otpError}` };
+  }
+
+  return { error: null, success: true, email: email.trim().toLowerCase() };
+}
+
+// -- Step 2: Create org + user (called AFTER OTP verification) ----------------
+
+export interface CreateOrgState {
+  error: string | null;
+  success: boolean;
+}
+
+export async function createOrgAction(
+  companyName: string,
+  slug: string,
+  fullName: string,
+  email: string,
+  password: string
+): Promise<CreateOrgState> {
+  if (!companyName || !slug || !fullName || !email || !password) {
+    return { error: 'All fields are required.', success: false };
+  }
+
+  // Re-check slug uniqueness (could have been taken between OTP send and verify)
+  const { data: existingOrg } = await supabaseAdmin
+    .from('organisations')
+    .select('id')
+    .eq('slug', slug.trim())
+    .maybeSingle();
+
+  if (existingOrg) {
+    return { error: 'This workspace name was taken while you were verifying. Please go back and choose another.', success: false };
+  }
+
+  // Re-check email uniqueness
+  const { data: existingMember } = await supabaseAdmin
+    .from('team_members')
+    .select('id')
+    .eq('email', email.trim().toLowerCase())
+    .maybeSingle();
+
+  if (existingMember) {
+    return { error: 'An account with this email was created while you were verifying.', success: false };
+  }
+
+  // Create organisation
   const { data: org, error: orgError } = await supabaseAdmin
     .from('organisations' as any)
     .insert({ name: companyName.trim(), slug: slug.trim(), plan: 'free' })
@@ -123,40 +201,115 @@ export async function signupAction(
     .single();
 
   if (orgError || !org) {
-    return { error: `Failed to create organisation: ${orgError?.message ?? 'unknown error'}` };
+    return { error: `Failed to create organisation: ${orgError?.message ?? 'unknown error'}`, success: false };
   }
-  orgId = (org as unknown as { id: string }).id ?? '';
+  const orgId = (org as unknown as { id: string }).id ?? '';
 
-  // ── STEP E: Create Supabase Auth user (email NOT auto-confirmed) ─────────────
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000';
+  // The OTP flow (create_user: true) may have already created an auth user.
+  // The OTP flow (create_user: true) may have already created a passwordless
+  // auth user. Try creating first; if it fails with "already registered",
+  // look up that user and update them with password + metadata instead.
+  const trimmedEmail = email.trim().toLowerCase();
+  const metadata = { full_name: fullName.trim(), org_id: orgId, user_role: 'admin', is_owner: true };
+
+  let authUserId: string | null = null;
+
   const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
-    email: email.trim().toLowerCase(),
+    email: trimmedEmail,
     password,
-    email_confirm: false,
-    user_metadata: { full_name: fullName.trim(), org_id: orgId, user_role: 'admin', is_owner: true },
+    email_confirm: true,
+    user_metadata: metadata,
   });
 
-  if (authError || !authData?.user) {
-    // Roll back: delete organisation
+  if (authError) {
+    // User already exists (created by OTP flow) — find and update
+    if (authError.message?.toLowerCase().includes('already been registered') ||
+        authError.message?.toLowerCase().includes('already exists')) {
+      const { data: { users: allUsers } } = await supabaseAdmin.auth.admin.listUsers();
+      const existingUser = allUsers?.find((u) => u.email === trimmedEmail) ?? null;
+
+      if (!existingUser) {
+        await supabaseAdmin.from('organisations').delete().eq('id', orgId);
+        return { error: 'Could not locate your account. Please try again.', success: false };
+      }
+
+      const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(
+        existingUser.id,
+        { password, email_confirm: true, user_metadata: metadata }
+      );
+
+      if (updateError) {
+        await supabaseAdmin.from('organisations').delete().eq('id', orgId);
+        return { error: `Failed to set up account: ${updateError.message}`, success: false };
+      }
+
+      authUserId = existingUser.id;
+    } else {
+      await supabaseAdmin.from('organisations').delete().eq('id', orgId);
+      return { error: `Failed to create account: ${authError.message}`, success: false };
+    }
+  } else if (!authData?.user) {
     await supabaseAdmin.from('organisations').delete().eq('id', orgId);
-    return { error: `Failed to create account: ${authError?.message ?? 'unknown error'}` };
+    return { error: 'Failed to create account: unknown error', success: false };
+  } else {
+    authUserId = authData.user.id;
   }
 
-  // ── STEP F: (handled by trigger) ──────────────────────────────────────────────
-  // handle_new_auth_user fires on auth.users INSERT and creates the team_members
-  // row using org_id + user_role from the user_metadata we passed in Step E.
-  // No separate insert/update needed here.
+  // Ensure team_members row exists. The handle_new_auth_user trigger fires on
+  // auth.users INSERT, but when the OTP flow already created the user (before
+  // the org existed), the trigger either didn't create a row or created one
+  // without org_id. Upsert here to guarantee the row is correct.
+  if (authUserId) {
+    const { error: memberError } = await supabaseAdmin
+      .from('team_members')
+      .upsert(
+        {
+          id: authUserId,
+          org_id: orgId,
+          name: fullName.trim(),
+          email: trimmedEmail,
+          user_role: 'admin',
+          is_owner: true,
+        },
+        { onConflict: 'id' }
+      );
 
-  // ── STEP G: Send confirmation email ───────────────────────────────────────────
-  // Since email_confirm is false, Supabase won't auto-send a confirmation email
-  // when using admin.createUser. We trigger it manually via the OTP/signup flow.
-  const supabase = createSupabaseServerClient();
-  await supabase.auth.resend({
-    type: 'signup',
-    email: email.trim().toLowerCase(),
-    options: { emailRedirectTo: `${siteUrl}/auth/callback?next=/dashboard` },
-  });
+    if (memberError) {
+      // Non-fatal: log but don't fail signup — the trigger may have handled it
+      console.error('Failed to upsert team_members row:', memberError.message);
+    }
+  }
 
-  // Redirect to login with a verify-email message instead of auto sign-in
-  redirect('/login?verify=email');
+  return { error: null, success: true };
+}
+
+// -- Resend OTP action --------------------------------------------------------
+
+export interface ResendOtpState {
+  error: string | null;
+  success: boolean;
+}
+
+export async function resendSignupOtpAction(
+  email: string
+): Promise<ResendOtpState> {
+  if (!email) {
+    return { error: 'Email is required.', success: false };
+  }
+
+  // Rate limiting
+  const headersList = headers();
+  const ip = headersList.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown';
+  const { success, resetMs } = checkRateLimit('signup-otp:' + ip);
+  if (!success) {
+    return { error: `Too many attempts. Please try again in ${formatResetTime(resetMs)}.`, success: false };
+  }
+
+  const { error: otpError } = await sendOtpEmail(email.trim().toLowerCase());
+
+  if (otpError) {
+    return { error: otpError, success: false };
+  }
+
+  return { error: null, success: true };
 }

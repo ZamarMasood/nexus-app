@@ -28,16 +28,26 @@ export default async function DashboardPage() {
   const isAdmin = member?.user_role === 'admin';
   const memberId = member?.id ?? '';
 
+  // If no team_members row exists yet (e.g. DB trigger hasn't completed after
+  // signup), return empty data rather than querying with an invalid empty ID.
+  const hasMember = Boolean(member);
+
   const [recentTasks, taskStats, projects] = await Promise.all([
-    isAdmin
-      ? getRecentTasksWithAssignees(10)
-      : getRecentTasksWithAssigneesByMember(memberId, 10),
-    isAdmin
-      ? getTaskStats()
-      : getTaskStatsByMember(memberId),
-    isAdmin
-      ? getProjects()
-      : getProjectsByMember(memberId),
+    !hasMember
+      ? []
+      : isAdmin
+        ? getRecentTasksWithAssignees(10)
+        : getRecentTasksWithAssigneesByMember(memberId, 10),
+    !hasMember
+      ? { total: 0, done: 0, overdue: 0, dueSoon: 0 }
+      : isAdmin
+        ? getTaskStats()
+        : getTaskStatsByMember(memberId),
+    !hasMember
+      ? []
+      : isAdmin
+        ? getProjects()
+        : getProjectsByMember(memberId),
   ]);
 
   const now = new Date();

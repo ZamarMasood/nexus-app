@@ -48,7 +48,39 @@ export async function signInAction(
   if (!authResult.error) {
     const member = await getTeamMemberByEmail(email);
     if (!member?.org_id) {
-      // Old account with no org — redirect to migration page
+      // team_members row has no org — check if auth user_metadata has one
+      // (e.g. signup created the org but the trigger didn't link it properly)
+      const user = authResult.data?.user;
+      const metaOrgId = user?.user_metadata?.org_id as string | undefined;
+
+      if (metaOrgId && user) {
+        // Verify the org actually exists before linking
+        const { data: orgExists } = await supabaseAdmin
+          .from('organisations')
+          .select('id')
+          .eq('id', metaOrgId)
+          .maybeSingle();
+
+        if (orgExists) {
+          // Auto-fix: upsert team_members row with correct org_id
+          await supabaseAdmin
+            .from('team_members')
+            .upsert(
+              {
+                id: user.id,
+                org_id: metaOrgId,
+                name: (user.user_metadata?.full_name as string) || email.split('@')[0],
+                email: email.toLowerCase(),
+                user_role: (user.user_metadata?.user_role as string) || 'admin',
+                is_owner: (user.user_metadata?.is_owner as boolean) ?? false,
+              },
+              { onConflict: 'id' }
+            );
+          redirect('/dashboard');
+        }
+      }
+
+      // No org_id in metadata either — redirect to setup page
       redirect('/setup-org');
     }
     redirect('/dashboard');

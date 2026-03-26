@@ -19,13 +19,15 @@ import {
   Upload,
   Search,
   ListTodo,
+  Pencil,
 } from "lucide-react";
-import { uploadFileToTask, getTaskByIdWithAssignee, getCommentsByTaskId, getFilesByTaskId } from "@/lib/db/tasks";
+import { getTaskByIdWithAssignee, getCommentsByTaskId, getFilesByTaskId } from "@/lib/db/tasks";
 import { getProjectById } from "@/lib/db/projects";
+import { TaskFormDialog } from "@/components/tasks/TaskForm";
 import type { TaskWithAssignee, CommentWithAuthor, TaskSidebarItem } from "@/lib/db/tasks";
 import type { ProjectFile, TaskStatus, TaskPriority } from "@/lib/types";
 import { formatDate } from "@/lib/utils";
-import { createCommentAction } from "./actions";
+import { createCommentAction, uploadFileAction } from "./actions";
 
 // ── Config ───────────────────────────────────────────────────────────────────
 
@@ -101,6 +103,8 @@ interface TaskDetailClientProps {
   initialFiles: ProjectFile[];
   sidebarTasks: TaskSidebarItem[];
   projectName: string | null;
+  isAdmin?: boolean;
+  currentMemberId?: string;
 }
 
 export default function TaskDetailClient({
@@ -109,6 +113,8 @@ export default function TaskDetailClient({
   initialFiles,
   sidebarTasks,
   projectName: initialProjectName,
+  isAdmin = false,
+  currentMemberId,
 }: TaskDetailClientProps) {
   const router = useRouter();
   const [selectedId, setSelectedId] = useState(initialTask.id);
@@ -121,6 +127,7 @@ export default function TaskDetailClient({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const [editOpen, setEditOpen] = useState(false);
   const [commentText, setCommentText] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [commentError, setCommentError] = useState<string | null>(null);
@@ -185,7 +192,10 @@ export default function TaskDetailClient({
     setUploading(true);
     setUploadError(null);
     try {
-      const newFile = await uploadFileToTask(task.id, file);
+      const formData = new FormData();
+      formData.append('taskId', task.id);
+      formData.append('file', file);
+      const newFile = await uploadFileAction(formData);
       setFiles((prev) => [newFile, ...prev]);
     } catch (err) {
       setUploadError(err instanceof Error ? err.message : "Upload failed.");
@@ -216,8 +226,6 @@ export default function TaskDetailClient({
   const PriorityIcon = priorityConfig?.icon;
   const status = task.status as keyof typeof STATUS_CONFIG | undefined;
   const statusConfig = status ? STATUS_CONFIG[status] : null;
-
-  const assigneeName = task.assignee?.name ?? "Unassigned";
 
   return (
     <div className="p-4 sm:p-6 lg:p-8">
@@ -397,6 +405,15 @@ export default function TaskDetailClient({
                         {priorityConfig.label}
                       </span>
                     )}
+                    {isAdmin && (
+                      <button
+                        onClick={() => setEditOpen(true)}
+                        className="ml-auto inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold text-violet-400 bg-violet-500/10 ring-1 ring-violet-500/20 hover:bg-violet-500/20 active:scale-[0.97] transition-[background-color,transform]"
+                      >
+                        <Pencil className="h-3 w-3" />
+                        Edit Task
+                      </button>
+                    )}
                   </div>
 
                   <h1 className="font-display text-xl sm:text-2xl font-bold tracking-[-0.03em] text-bright leading-tight mb-6">
@@ -557,6 +574,28 @@ export default function TaskDetailClient({
           )}
         </div>
       </div>
+
+      {/* Edit task dialog (admin only) */}
+      {isAdmin && (
+        <TaskFormDialog
+          open={editOpen}
+          onOpenChange={setEditOpen}
+          task={task}
+          defaultAssigneeId={currentMemberId}
+          isAdmin={isAdmin}
+          onSuccess={async () => {
+            // Reload the current task to reflect changes
+            const updated = await getTaskByIdWithAssignee(task.id);
+            setTask(updated);
+            if (updated.project_id) {
+              try {
+                const p = await getProjectById(updated.project_id);
+                setProjectName(p.name);
+              } catch { setProjectName(null); }
+            }
+          }}
+        />
+      )}
     </div>
   );
 }

@@ -30,7 +30,7 @@ export async function sendOtpAction(
     return { error: `Too many attempts. Please try again in ${formatResetTime(resetMs)}.`, success: false };
   }
 
-  // Check if user exists in team_members
+  // Check if user exists in team_members (but don't reveal to the user)
   const { data: member } = await supabaseAdmin
     .from('team_members')
     .select('id, email, user_role')
@@ -38,7 +38,9 @@ export async function sendOtpAction(
     .single();
 
   if (!member) {
-    return { error: 'No account found with this email address.', success: false };
+    // Return success to prevent email enumeration — the client will attempt
+    // to send an OTP via Supabase which will silently fail for unknown emails
+    return { error: null, success: true, email };
   }
 
   return { error: null, success: true, email };

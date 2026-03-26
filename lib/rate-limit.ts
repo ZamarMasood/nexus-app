@@ -42,8 +42,10 @@ interface RateLimitResult {
 }
 
 const RATE_LIMIT_CONFIGS: Record<string, RateLimitConfig> = {
-  login: { maxAttempts: 5, windowMs: 15 * 60 * 1000 },   // 5 per 15 min
-  signup: { maxAttempts: 3, windowMs: 60 * 60 * 1000 },   // 3 per hour
+  login: { maxAttempts: 5, windowMs: 15 * 60 * 1000 },       // 5 per 15 min
+  signup: { maxAttempts: 10, windowMs: 15 * 60 * 1000 },     // 10 per 15 min
+  'signup-otp': { maxAttempts: 5, windowMs: 5 * 60 * 1000 }, // 5 resends per 5 min
+  'forgot-pw': { maxAttempts: 5, windowMs: 15 * 60 * 1000 }, // 5 per 15 min
 };
 
 export function checkRateLimit(

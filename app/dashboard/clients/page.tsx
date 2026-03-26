@@ -15,11 +15,15 @@ export default async function ClientsPage() {
   const member = user?.email ? await getTeamMemberByEmail(user.email) : null;
   const isAdmin = member?.user_role === 'admin';
   const memberId = member?.id ?? '';
+  const hasMember = Boolean(member);
 
   const [clients, projects] = await Promise.all([
-    isAdmin ? getClients() : getClientsByMember(memberId),
-    // Only need project list to count projects per client in the UI
-    isAdmin ? getProjectsForList() : getProjectsForListByMember(memberId),
+    !hasMember
+      ? []
+      : isAdmin ? getClients() : getClientsByMember(memberId),
+    !hasMember
+      ? []
+      : isAdmin ? getProjectsForList() : getProjectsForListByMember(memberId),
   ]);
 
   return <ClientsClient initialClients={clients} projects={projects} isAdmin={isAdmin} />;

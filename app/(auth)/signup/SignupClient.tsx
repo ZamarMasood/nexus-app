@@ -1,13 +1,24 @@
 'use client';
 
 import { useFormState, useFormStatus } from 'react-dom';
-import { signupAction, type SignupState } from './actions';
-import { Eye, EyeOff, Layers, ArrowRight, Sun, Moon, ArrowLeft } from 'lucide-react';
+import { signupAction, resendSignupOtpAction, createOrgAction, type SignupState } from './actions';
+import { Eye, EyeOff, Layers, ArrowRight, Sun, Moon, ArrowLeft, KeyRound, CheckCircle } from 'lucide-react';
 import Link from 'next/link';
 import { useState, useEffect, useRef } from 'react';
 import { useTheme } from 'next-themes';
+import { useRouter } from 'next/navigation';
+import { createBrowserClient } from '@supabase/ssr';
 
-/* ─── Submit button ───────────────────────────────────────────────────────── */
+/* --- Supabase browser client ------------------------------------------------ */
+
+function getSupabase() {
+  return createBrowserClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  );
+}
+
+/* --- Submit button ---------------------------------------------------------- */
 function SubmitButton() {
   const { pending } = useFormStatus();
   return (
@@ -27,11 +38,11 @@ function SubmitButton() {
       {pending ? (
         <span className="flex items-center justify-center gap-2.5">
           <span className="size-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-          Setting up your workspace…
+          Sending verification code...
         </span>
       ) : (
         <span className="flex items-center justify-center gap-2">
-          Create your workspace
+          Continue
           <ArrowRight className="size-4 transition-transform duration-200 group-hover:translate-x-0.5" />
         </span>
       )}
@@ -39,7 +50,38 @@ function SubmitButton() {
   );
 }
 
-/* ─── Field error ─────────────────────────────────────────────────────────── */
+/* --- Loading button (for client-side actions) ------------------------------- */
+function LoadingButton({ label, pendingLabel, loading, onClick }: {
+  label: string; pendingLabel: string; loading: boolean; onClick?: () => void;
+}) {
+  return (
+    <button
+      type={onClick ? 'button' : 'submit'}
+      disabled={loading}
+      onClick={onClick}
+      className="group relative w-full overflow-hidden rounded-xl py-3.5 text-[14px] font-semibold text-white transition-[transform,box-shadow] duration-200 disabled:opacity-60 hover:scale-[1.015] hover:shadow-[0_8px_40px_rgba(124,58,237,0.5)] active:scale-[0.985] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/60"
+      style={{
+        background: 'linear-gradient(135deg, #7c3aed 0%, #5b21b6 100%)',
+        boxShadow: '0 4px 24px rgba(124,58,237,0.4), 0 1px 0 rgba(255,255,255,0.1) inset',
+      }}
+    >
+      <span
+        className="pointer-events-none absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-in-out"
+        style={{ background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent)' }}
+      />
+      {loading ? (
+        <span className="flex items-center justify-center gap-2.5">
+          <span className="size-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+          {pendingLabel}
+        </span>
+      ) : (
+        <span className="flex items-center justify-center gap-2">{label}</span>
+      )}
+    </button>
+  );
+}
+
+/* --- Field error ------------------------------------------------------------ */
 function FieldError({ message }: { message?: string }) {
   if (!message) return null;
   return (
@@ -49,27 +91,65 @@ function FieldError({ message }: { message?: string }) {
   );
 }
 
-/* ─── Section label ───────────────────────────────────────────────────────── */
-function SectionLabel({
-  icon: Icon,
-  label,
-  textSub,
-}: {
-  icon: React.ElementType;
-  label: string;
-  textSub: string;
+/* --- OTP Input (6 individual boxes) ----------------------------------------- */
+function OtpInput({ value, onChange, inputBg, inputBdr, textH }: {
+  value: string;
+  onChange: (val: string) => void;
+  inputBg: string;
+  inputBdr: string;
+  textH: string;
 }) {
+  const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
+
+  function handleChange(index: number, char: string) {
+    if (!/^\d*$/.test(char)) return;
+    const arr = value.split('');
+    arr[index] = char;
+    const next = arr.join('').slice(0, 6);
+    onChange(next);
+    if (char && index < 5) {
+      inputRefs.current[index + 1]?.focus();
+    }
+  }
+
+  function handleKeyDown(index: number, e: React.KeyboardEvent) {
+    if (e.key === 'Backspace' && !value[index] && index > 0) {
+      inputRefs.current[index - 1]?.focus();
+    }
+  }
+
+  function handlePaste(e: React.ClipboardEvent) {
+    e.preventDefault();
+    const pasted = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6);
+    onChange(pasted);
+    const focusIdx = Math.min(pasted.length, 5);
+    inputRefs.current[focusIdx]?.focus();
+  }
+
   return (
-    <div className="flex items-center gap-2 mb-3">
-      <Icon size={13} style={{ color: textSub }} />
-      <span className="text-[11px] font-mono tracking-widest uppercase" style={{ color: textSub }}>
-        {label}
-      </span>
+    <div className="flex justify-center gap-2.5">
+      {[0, 1, 2, 3, 4, 5].map((i) => (
+        <input
+          key={i}
+          ref={(el) => { inputRefs.current[i] = el; }}
+          type="text"
+          inputMode="numeric"
+          maxLength={1}
+          autoComplete={i === 0 ? 'one-time-code' : 'off'}
+          aria-label={`Verification code digit ${i + 1} of 6`}
+          value={value[i] ?? ''}
+          onChange={(e) => handleChange(i, e.target.value)}
+          onKeyDown={(e) => handleKeyDown(i, e)}
+          onPaste={i === 0 ? handlePaste : undefined}
+          className="size-12 rounded-xl text-center text-xl font-bold outline-none transition-[border-color,box-shadow] duration-200 focus:border-violet-500/65 focus:shadow-[0_0_0_3px_rgba(124,58,237,0.15)]"
+          style={{ background: inputBg, border: `1px solid ${inputBdr}`, color: textH }}
+        />
+      ))}
     </div>
   );
 }
 
-/* ─── Slug generator ──────────────────────────────────────────────────────── */
+/* --- Slug generator --------------------------------------------------------- */
 function generateSlug(name: string): string {
   return name
     .toLowerCase()
@@ -80,38 +160,152 @@ function generateSlug(name: string): string {
     .replace(/^-|-$/g, '');
 }
 
-/* ─── Page ────────────────────────────────────────────────────────────────── */
+/* --- Stored form data type -------------------------------------------------- */
+interface FormDataSnapshot {
+  companyName: string;
+  slug: string;
+  fullName: string;
+  email: string;
+  password: string;
+}
+
+/* --- Page ------------------------------------------------------------------- */
 const initialState: SignupState = { error: null, fieldErrors: {} };
 
 export default function SignupClient() {
+  const router = useRouter();
   const [state, action] = useFormState<SignupState, FormData>(signupAction, initialState);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [slug, setSlug] = useState('');
   const [slugManuallyEdited, setSlugManuallyEdited] = useState(false);
   const [termsChecked, setTermsChecked] = useState(false);
-  const { theme, setTheme, resolvedTheme } = useTheme();
+  const { setTheme, resolvedTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
   const slugRef = useRef<HTMLInputElement>(null);
 
+  // OTP state
+  const [step, setStep] = useState<'form' | 'otp' | 'success'>('form');
+  const [email, setEmail] = useState('');
+  const [otp, setOtp] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [otpError, setOtpError] = useState<string | null>(null);
+
+  // Store form data so we can create the org after OTP verification
+  const formSnapshotRef = useRef<FormDataSnapshot | null>(null);
+
   useEffect(() => setMounted(true), []);
+
+  // After server action validates + sends OTP, capture form data and move to OTP step
+  useEffect(() => {
+    if (state.success && state.email && step === 'form') {
+      setEmail(state.email);
+      // Snapshot already captured in the form's onSubmit handler
+      setStep('otp');
+    }
+  }, [state.success, state.email]);
+
+  // Capture form values before the server action runs
+  function handleFormSubmit(e: React.FormEvent<HTMLFormElement>) {
+    const form = e.currentTarget;
+    formSnapshotRef.current = {
+      companyName: (form.elements.namedItem('companyName') as HTMLInputElement)?.value ?? '',
+      slug: (form.elements.namedItem('slug') as HTMLInputElement)?.value ?? '',
+      fullName: (form.elements.namedItem('fullName') as HTMLInputElement)?.value ?? '',
+      email: (form.elements.namedItem('email') as HTMLInputElement)?.value ?? '',
+      password: (form.elements.namedItem('password') as HTMLInputElement)?.value ?? '',
+    };
+    // Don't prevent default — let the server action run
+  }
+
+  async function handleVerifyOtp() {
+    if (otp.length !== 6) {
+      setOtpError('Please enter the full 6-digit code.');
+      return;
+    }
+    setLoading(true);
+    setOtpError(null);
+
+    // Step 1: Verify OTP with Supabase
+    const supabase = getSupabase();
+    const { error } = await supabase.auth.verifyOtp({
+      email,
+      token: otp,
+      type: 'email',
+    });
+
+    if (error) {
+      setLoading(false);
+      setOtpError(error.message);
+      return;
+    }
+
+    // Step 2: OTP verified — now create org + user via server action
+    const snap = formSnapshotRef.current;
+    if (!snap) {
+      setLoading(false);
+      setOtpError('Session expired. Please start over.');
+      return;
+    }
+
+    const result = await createOrgAction(
+      snap.companyName,
+      snap.slug,
+      snap.fullName,
+      snap.email,
+      snap.password
+    );
+
+    if (result.error) {
+      setLoading(false);
+      setOtpError(result.error);
+      return;
+    }
+
+    // Step 3: Org created — sign in with password and redirect
+    const { error: signInError } = await supabase.auth.signInWithPassword({
+      email: snap.email,
+      password: snap.password,
+    });
+
+    if (signInError) {
+      setLoading(false);
+      setOtpError(signInError.message);
+      return;
+    }
+
+    // Navigate immediately — don't update state after this point
+    // to avoid "Node cannot be found" errors from unmounted DOM nodes
+    router.replace('/dashboard');
+  }
+
+  async function handleResendOtp() {
+    setOtp('');
+    setOtpError(null);
+    setLoading(true);
+    const result = await resendSignupOtpAction(email);
+    setLoading(false);
+    if (result.error) {
+      setOtpError(result.error);
+    }
+  }
 
   const isDark = mounted ? resolvedTheme === 'dark' : true;
 
-  const bg         = mounted ? (isDark ? '#120828'                      : '#f5f3ff')     : '#120828';
-  const cardBg     = mounted ? (isDark ? 'rgba(255,255,255,0.07)'       : 'rgba(255,255,255,0.72)') : 'rgba(255,255,255,0.07)';
-  const cardBdr    = mounted ? (isDark ? 'rgba(255,255,255,0.12)'       : 'rgba(124,58,237,0.18)')  : 'rgba(255,255,255,0.12)';
+  const bg         = mounted ? (isDark ? '#120828' : '#f5f3ff') : '#120828';
+  const cardBg     = mounted ? (isDark ? 'rgba(255,255,255,0.07)' : 'rgba(255,255,255,0.72)') : 'rgba(255,255,255,0.07)';
+  const cardBdr    = mounted ? (isDark ? 'rgba(255,255,255,0.12)' : 'rgba(124,58,237,0.18)') : 'rgba(255,255,255,0.12)';
   const cardShadow = mounted
     ? (isDark
         ? '0 8px 64px rgba(0,0,0,0.4), 0 1px 0 rgba(255,255,255,0.1) inset'
         : '0 8px 64px rgba(124,58,237,0.15), 0 1px 0 rgba(255,255,255,0.95) inset')
     : '0 8px 64px rgba(0,0,0,0.4), 0 1px 0 rgba(255,255,255,0.1) inset';
-  const textH      = mounted ? (isDark ? '#ffffff'                      : '#180a2e')     : '#ffffff';
-  const textSub    = mounted ? (isDark ? 'rgba(255,255,255,0.45)'       : 'rgba(24,10,46,0.45)') : 'rgba(255,255,255,0.45)';
-  const inputBg    = mounted ? (isDark ? 'rgba(255,255,255,0.07)'       : 'rgba(255,255,255,0.7)') : 'rgba(255,255,255,0.07)';
-  const inputBdr   = mounted ? (isDark ? 'rgba(255,255,255,0.12)'       : 'rgba(124,58,237,0.18)') : 'rgba(255,255,255,0.12)';
-  const orbHigh    = mounted ? (isDark ? 'rgba(109,40,217,0.7)'         : 'rgba(124,58,237,0.22)') : 'rgba(109,40,217,0.7)';
-  const orbMid     = mounted ? (isDark ? 'rgba(124,58,237,0.6)'         : 'rgba(99,45,220,0.14)') : 'rgba(124,58,237,0.6)';
+  const textH      = mounted ? (isDark ? '#ffffff' : '#180a2e') : '#ffffff';
+  const textSub    = mounted ? (isDark ? 'rgba(255,255,255,0.45)' : 'rgba(24,10,46,0.45)') : 'rgba(255,255,255,0.45)';
+  const inputBg    = mounted ? (isDark ? 'rgba(255,255,255,0.07)' : 'rgba(255,255,255,0.7)') : 'rgba(255,255,255,0.07)';
+  const inputBdr   = mounted ? (isDark ? 'rgba(255,255,255,0.12)' : 'rgba(124,58,237,0.18)') : 'rgba(255,255,255,0.12)';
+  const orbHigh    = mounted ? (isDark ? 'rgba(109,40,217,0.7)' : 'rgba(124,58,237,0.22)') : 'rgba(109,40,217,0.7)';
+  const orbMid     = mounted ? (isDark ? 'rgba(124,58,237,0.6)' : 'rgba(99,45,220,0.14)') : 'rgba(124,58,237,0.6)';
 
   function handleCompanyNameChange(e: React.ChangeEvent<HTMLInputElement>) {
     if (!slugManuallyEdited) {
@@ -126,7 +320,6 @@ export default function SignupClient() {
 
   return (
     <>
-      {/* suppressHydrationWarning: content:'' in CSS is HTML-entity-encoded on server but literal on client */}
       <style suppressHydrationWarning>{`
         @keyframes orb-a { 0%,100%{transform:translate(0,0) scale(1)}40%{transform:translate(50px,-70px) scale(1.07)}70%{transform:translate(-30px,35px) scale(0.95)} }
         @keyframes orb-b { 0%,100%{transform:translate(0,0) scale(1)}35%{transform:translate(-55px,45px) scale(1.05)}70%{transform:translate(38px,-22px) scale(0.97)} }
@@ -255,8 +448,10 @@ export default function SignupClient() {
 
         {/* Glass card */}
         <div
-          className="card-in relative z-10 w-full max-w-[820px] rounded-3xl p-8"
+          className="card-in relative z-10 w-full rounded-3xl p-8"
           style={{
+            maxWidth: step === 'form' ? '820px' : '420px',
+            transition: 'max-width 0.4s cubic-bezier(0.16,1,0.3,1)',
             background: cardBg,
             border: `1px solid ${cardBdr}`,
             backdropFilter: 'blur(28px)',
@@ -268,212 +463,333 @@ export default function SignupClient() {
           <div className="pointer-events-none absolute inset-x-10 top-0 h-px rounded-full"
             style={{ background: `linear-gradient(90deg, transparent, ${isDark ? 'rgba(255,255,255,0.18)' : 'rgba(255,255,255,0.9)'}, transparent)` }} />
 
-          {/* Logo + heading */}
-          <div className="s1 mb-7 flex flex-col items-center gap-4 text-center">
-            <div
-              className="flex size-12 items-center justify-center rounded-2xl"
-              style={{
-                background: 'linear-gradient(135deg, #7c3aed 0%, #5b21b6 100%)',
-                boxShadow: '0 0 0 1px rgba(124,58,237,0.5), 0 8px 32px rgba(124,58,237,0.4)',
-              }}
-            >
-              <Layers size={20} className="text-white" />
-            </div>
-            <div>
-              <h1 className="text-[26px] font-semibold leading-tight tracking-[-0.03em]"
-                style={{ color: textH, fontFamily: 'var(--font-display)' }}>
-                Create your workspace
-              </h1>
-              <p className="mt-1 text-[13px]" style={{ color: textSub }}>
-                Set up Nexus for your team in seconds
-              </p>
-            </div>
-          </div>
+          {/* ================================================================ */}
+          {/* STEP: Signup form                                                */}
+          {/* ================================================================ */}
+          {step === 'form' && (
+            <>
+              {/* Logo + heading */}
+              <div className="s1 mb-7 flex flex-col items-center gap-4 text-center">
+                <div
+                  className="flex size-12 items-center justify-center rounded-2xl"
+                  style={{
+                    background: 'linear-gradient(135deg, #7c3aed 0%, #5b21b6 100%)',
+                    boxShadow: '0 0 0 1px rgba(124,58,237,0.5), 0 8px 32px rgba(124,58,237,0.4)',
+                  }}
+                >
+                  <Layers size={20} className="text-white" />
+                </div>
+                <div>
+                  <h1 className="text-[26px] font-semibold leading-tight tracking-[-0.03em]"
+                    style={{ color: textH, fontFamily: 'var(--font-display)' }}>
+                    Create your workspace
+                  </h1>
+                  <p className="mt-1 text-[13px]" style={{ color: textSub }}>
+                    Set up Nexus for your team in seconds
+                  </p>
+                </div>
+              </div>
 
-          {/* Global error */}
-          {state.error && (
-            <div className="s1 mb-5 rounded-xl px-4 py-3 text-[13px]"
-              style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', color: '#fca5a5' }}>
-              {state.error}
+              {/* Global error */}
+              {state.error && (
+                <div className="s1 mb-5 rounded-xl px-4 py-3 text-[13px]"
+                  style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', color: '#fca5a5' }}>
+                  {state.error}
+                </div>
+              )}
+
+              <form action={action} onSubmit={handleFormSubmit}>
+                <div className="s2 grid grid-cols-1 gap-x-6 gap-y-4 sm:grid-cols-2">
+                  <div>
+                    <label className="mb-1.5 block text-[12px] font-medium" style={{ color: textSub }}>Company Name</label>
+                    <input
+                      id="companyName"
+                      name="companyName"
+                      type="text"
+                      required
+                      autoComplete="organization"
+                      placeholder="Acme Ltd"
+                      onChange={handleCompanyNameChange}
+                      className={`signup-input${state.fieldErrors?.companyName ? ' has-error' : ''}`}
+                      style={{ background: inputBg, border: `1px solid ${inputBdr}`, color: textH }}
+                    />
+                    <FieldError message={state.fieldErrors?.companyName} />
+                  </div>
+
+                  <div>
+                    <label className="mb-1.5 block text-[12px] font-medium" style={{ color: textSub }}>Workspace URL</label>
+                    <input
+                      ref={slugRef}
+                      id="slug"
+                      name="slug"
+                      type="text"
+                      required
+                      placeholder="acme-ltd"
+                      value={slug}
+                      onChange={handleSlugChange}
+                      className={`signup-input${state.fieldErrors?.slug ? ' has-error' : ''}`}
+                      style={{ background: inputBg, border: `1px solid ${inputBdr}`, color: textH }}
+                    />
+                    {slug && (
+                      <p className="mt-1.5 text-[12px]" style={{ color: textSub }}>
+                        app.nexus.com/<span style={{ color: isDark ? 'rgba(167,139,250,0.9)' : '#7c3aed' }}>{slug}</span>
+                      </p>
+                    )}
+                    <FieldError message={state.fieldErrors?.slug} />
+                  </div>
+
+                  <div>
+                    <label className="mb-1.5 block text-[12px] font-medium" style={{ color: textSub }}>Full Name</label>
+                    <input
+                      id="fullName"
+                      name="fullName"
+                      type="text"
+                      required
+                      autoComplete="name"
+                      placeholder="Alex Johnson"
+                      className={`signup-input${state.fieldErrors?.fullName ? ' has-error' : ''}`}
+                      style={{ background: inputBg, border: `1px solid ${inputBdr}`, color: textH }}
+                    />
+                    <FieldError message={state.fieldErrors?.fullName} />
+                  </div>
+
+                  <div>
+                    <label className="mb-1.5 block text-[12px] font-medium" style={{ color: textSub }}>Email Address</label>
+                    <input
+                      id="email"
+                      name="email"
+                      type="email"
+                      required
+                      autoComplete="email"
+                      placeholder="alex@acme.com"
+                      className={`signup-input${state.fieldErrors?.email ? ' has-error' : ''}`}
+                      style={{ background: inputBg, border: `1px solid ${inputBdr}`, color: textH }}
+                    />
+                    <FieldError message={state.fieldErrors?.email} />
+                  </div>
+
+                  <div>
+                    <label className="mb-1.5 block text-[12px] font-medium" style={{ color: textSub }}>Password</label>
+                    <div className="relative">
+                      <input
+                        id="password"
+                        name="password"
+                        type={showPassword ? 'text' : 'password'}
+                        required
+                        autoComplete="new-password"
+                        placeholder="Min. 8 characters"
+                        className={`signup-input${state.fieldErrors?.password ? ' has-error' : ''}`}
+                        style={{ background: inputBg, border: `1px solid ${inputBdr}`, color: textH, paddingRight: '44px' }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(v => !v)}
+                        className="absolute right-4 top-1/2 -translate-y-1/2 transition-opacity duration-150 hover:opacity-70 active:scale-90 focus-visible:outline-none"
+                        style={{ color: textSub }}
+                        aria-label={showPassword ? 'Hide password' : 'Show password'}
+                      >
+                        {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
+                      </button>
+                    </div>
+                    <FieldError message={state.fieldErrors?.password} />
+                  </div>
+
+                  <div>
+                    <label className="mb-1.5 block text-[12px] font-medium" style={{ color: textSub }}>Confirm Password</label>
+                    <div className="relative">
+                      <input
+                        id="confirmPassword"
+                        name="confirmPassword"
+                        type={showConfirm ? 'text' : 'password'}
+                        required
+                        autoComplete="new-password"
+                        placeholder="Repeat password"
+                        className={`signup-input${state.fieldErrors?.confirmPassword ? ' has-error' : ''}`}
+                        style={{ background: inputBg, border: `1px solid ${inputBdr}`, color: textH, paddingRight: '44px' }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowConfirm(v => !v)}
+                        className="absolute right-4 top-1/2 -translate-y-1/2 transition-opacity duration-150 hover:opacity-70 active:scale-90 focus-visible:outline-none"
+                        style={{ color: textSub }}
+                        aria-label={showConfirm ? 'Hide confirm password' : 'Show confirm password'}
+                      >
+                        {showConfirm ? <EyeOff size={15} /> : <Eye size={15} />}
+                      </button>
+                    </div>
+                    <FieldError message={state.fieldErrors?.confirmPassword} />
+                  </div>
+                </div>
+
+                <div className="mt-5 space-y-4">
+                  <div className="s5">
+                    {/* Hidden native checkbox for form submission */}
+                    <input type="hidden" name="terms" value={termsChecked ? 'on' : ''} />
+                    <button
+                      type="button"
+                      onClick={() => setTermsChecked(v => !v)}
+                      className="flex cursor-pointer items-start gap-3 select-none text-left w-full"
+                    >
+                      {/* Visual checkbox */}
+                      <div
+                        className="mt-0.5 flex-shrink-0 flex items-center justify-center rounded-[5px] transition-all duration-150"
+                        style={{
+                          width: 16,
+                          height: 16,
+                          border: termsChecked ? 'none' : `1.5px solid ${inputBdr}`,
+                          background: termsChecked
+                            ? 'linear-gradient(135deg, #7c3aed, #5b21b6)'
+                            : inputBg,
+                          boxShadow: termsChecked ? '0 0 0 2px rgba(124,58,237,0.3)' : 'none',
+                        }}
+                      >
+                        {termsChecked && (
+                          <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
+                            <path d="M1 4L3.5 6.5L9 1" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                          </svg>
+                        )}
+                      </div>
+                      <span className="text-[13px] leading-relaxed" style={{ color: textSub }}>
+                        I agree to the{' '}
+                        <span className="transition-opacity duration-150 hover:opacity-70" style={{ color: isDark ? 'rgba(167,139,250,0.9)' : '#7c3aed' }}>
+                          Terms of Service
+                        </span>
+                        {' '}and{' '}
+                        <span className="transition-opacity duration-150 hover:opacity-70" style={{ color: isDark ? 'rgba(167,139,250,0.9)' : '#7c3aed' }}>
+                          Privacy Policy
+                        </span>
+                      </span>
+                    </button>
+                    <FieldError message={state.fieldErrors?.terms} />
+                  </div>
+
+                  <div className="s6">
+                    <SubmitButton />
+                  </div>
+                </div>
+              </form>
+
+              {/* Sign in link */}
+              <div className="s7 mt-6 flex items-center gap-3">
+                <div className="divider-line" style={{ background: isDark ? 'rgba(255,255,255,0.07)' : 'rgba(124,58,237,0.1)' }} />
+                <span className="text-[11px] font-mono tracking-widest uppercase" style={{ color: textSub }}>Nexus</span>
+                <div className="divider-line" style={{ background: isDark ? 'rgba(255,255,255,0.07)' : 'rgba(124,58,237,0.1)' }} />
+              </div>
+
+              <p className="s7 mt-4 text-center text-[13px]" style={{ color: textSub }}>
+                Already have an account?{' '}
+                <Link
+                  href="/login"
+                  className="font-medium transition-opacity duration-150 hover:opacity-70 focus-visible:outline-none focus-visible:underline"
+                  style={{ color: isDark ? 'rgba(167,139,250,0.9)' : '#7c3aed' }}
+                >
+                  Sign in
+                </Link>
+              </p>
+            </>
+          )}
+
+          {/* ================================================================ */}
+          {/* STEP: OTP verification                                           */}
+          {/* ================================================================ */}
+          {step === 'otp' && (
+            <div className="relative z-[1]">
+              {/* Step indicators */}
+              <div className="s1 mb-6 flex items-center justify-center gap-2">
+                {(['details', 'verify'] as const).map((s, i) => (
+                  <div key={s} className="flex items-center gap-2">
+                    <div
+                      className="flex size-7 items-center justify-center rounded-full text-[11px] font-bold transition-colors duration-300"
+                      style={{
+                        background: (i === 0) ? 'linear-gradient(135deg, #10b981, #059669)' : 'linear-gradient(135deg, #7c3aed, #5b21b6)',
+                        color: '#fff',
+                        boxShadow: (i === 1) ? '0 2px 12px rgba(124,58,237,0.4)' : '0 2px 12px rgba(16,185,129,0.4)',
+                      }}
+                    >
+                      {i === 0 ? <CheckCircle size={13} /> : (i + 1)}
+                    </div>
+                    {i < 1 && (
+                      <div className="h-px w-8" style={{ background: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)' }} />
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              {/* Heading */}
+              <div className="s1 mb-7 flex flex-col items-center gap-4 text-center">
+                <div
+                  className="flex size-12 items-center justify-center rounded-2xl"
+                  style={{
+                    background: 'linear-gradient(135deg, #7c3aed 0%, #5b21b6 100%)',
+                    boxShadow: '0 0 0 1px rgba(124,58,237,0.5), 0 8px 32px rgba(124,58,237,0.4)',
+                  }}
+                >
+                  <KeyRound size={20} className="text-white" />
+                </div>
+                <div>
+                  <h1 className="text-[26px] font-semibold leading-tight tracking-[-0.03em]"
+                    style={{ color: textH, fontFamily: 'var(--font-display)' }}>
+                    Verify your email
+                  </h1>
+                  <p className="mt-1 text-[13px]" style={{ color: textSub }}>
+                    We sent a 6-digit code to {email}
+                  </p>
+                </div>
+              </div>
+
+              {/* Error */}
+              {otpError && (
+                <div className="s1 mb-5 rounded-xl px-4 py-3 text-[13px]"
+                  style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', color: '#fca5a5' }}>
+                  {otpError}
+                </div>
+              )}
+
+              {/* OTP input + verify button */}
+              <div className="s2 space-y-5">
+                <OtpInput value={otp} onChange={setOtp} inputBg={inputBg} inputBdr={inputBdr} textH={textH} />
+                <div className="pt-1">
+                  <LoadingButton label="Verify & Create Workspace" pendingLabel="Verifying..." loading={loading} onClick={handleVerifyOtp} />
+                </div>
+              </div>
+
+              {/* Resend */}
+              <button
+                onClick={handleResendOtp}
+                disabled={loading}
+                className="s4 mt-4 w-full text-center text-[13px] font-medium transition-opacity duration-150 hover:opacity-70 disabled:opacity-40"
+                style={{ color: isDark ? 'rgba(167,139,250,0.9)' : '#7c3aed' }}
+              >
+                Didn&apos;t receive a code? Send again
+              </button>
             </div>
           )}
 
-          <form action={action}>
-            {/* ── Field label helper ───────────────────────────────────────── */}
-            {/* Row 1: Company Name | Full Name */}
-            <div className="s2 grid grid-cols-1 gap-x-6 gap-y-4 sm:grid-cols-2">
-              <div>
-                <label className="mb-1.5 block text-[12px] font-medium" style={{ color: textSub }}>Company Name</label>
-                <input
-                  id="companyName"
-                  name="companyName"
-                  type="text"
-                  required
-                  autoComplete="organization"
-                  placeholder="Acme Ltd"
-                  onChange={handleCompanyNameChange}
-                  className={`signup-input${state.fieldErrors?.companyName ? ' has-error' : ''}`}
-                  style={{ background: inputBg, border: `1px solid ${inputBdr}`, color: textH }}
-                />
-                <FieldError message={state.fieldErrors?.companyName} />
+          {/* ================================================================ */}
+          {/* STEP: Success (redirecting)                                       */}
+          {/* ================================================================ */}
+          {step === 'success' && (
+            <div className="s1 flex flex-col items-center gap-4 text-center py-4">
+              <div
+                className="flex size-12 items-center justify-center rounded-2xl"
+                style={{ background: 'linear-gradient(135deg, #10b981, #059669)', boxShadow: '0 8px 32px rgba(16,185,129,0.4)' }}
+              >
+                <CheckCircle size={20} className="text-white" />
               </div>
-
               <div>
-                <label className="mb-1.5 block text-[12px] font-medium" style={{ color: textSub }}>Workspace URL</label>
-                <input
-                  ref={slugRef}
-                  id="slug"
-                  name="slug"
-                  type="text"
-                  required
-                  placeholder="acme-ltd"
-                  value={slug}
-                  onChange={handleSlugChange}
-                  className={`signup-input${state.fieldErrors?.slug ? ' has-error' : ''}`}
-                  style={{ background: inputBg, border: `1px solid ${inputBdr}`, color: textH }}
-                />
-                {slug && (
-                  <p className="mt-1.5 text-[12px]" style={{ color: textSub }}>
-                    app.nexus.com/<span style={{ color: isDark ? 'rgba(167,139,250,0.9)' : '#7c3aed' }}>{slug}</span>
-                  </p>
-                )}
-                <FieldError message={state.fieldErrors?.slug} />
+                <h1 className="text-[26px] font-semibold leading-tight tracking-[-0.03em]"
+                  style={{ color: textH, fontFamily: 'var(--font-display)' }}>
+                  Workspace created!
+                </h1>
+                <p className="mt-1 text-[13px]" style={{ color: textSub }}>
+                  Redirecting to your dashboard...
+                </p>
               </div>
-
-              {/* Row 2: Full Name | Email */}
-              <div>
-                <label className="mb-1.5 block text-[12px] font-medium" style={{ color: textSub }}>Full Name</label>
-                <input
-                  id="fullName"
-                  name="fullName"
-                  type="text"
-                  required
-                  autoComplete="name"
-                  placeholder="Alex Johnson"
-                  className={`signup-input${state.fieldErrors?.fullName ? ' has-error' : ''}`}
-                  style={{ background: inputBg, border: `1px solid ${inputBdr}`, color: textH }}
-                />
-                <FieldError message={state.fieldErrors?.fullName} />
-              </div>
-
-              <div>
-                <label className="mb-1.5 block text-[12px] font-medium" style={{ color: textSub }}>Email Address</label>
-                <input
-                  id="email"
-                  name="email"
-                  type="email"
-                  required
-                  autoComplete="email"
-                  placeholder="alex@acme.com"
-                  className={`signup-input${state.fieldErrors?.email ? ' has-error' : ''}`}
-                  style={{ background: inputBg, border: `1px solid ${inputBdr}`, color: textH }}
-                />
-                <FieldError message={state.fieldErrors?.email} />
-              </div>
-
-              {/* Row 3: Password | Confirm Password */}
-              <div>
-                <label className="mb-1.5 block text-[12px] font-medium" style={{ color: textSub }}>Password</label>
-                <div className="relative">
-                  <input
-                    id="password"
-                    name="password"
-                    type={showPassword ? 'text' : 'password'}
-                    required
-                    autoComplete="new-password"
-                    placeholder="Min. 8 characters"
-                    className={`signup-input${state.fieldErrors?.password ? ' has-error' : ''}`}
-                    style={{ background: inputBg, border: `1px solid ${inputBdr}`, color: textH, paddingRight: '44px' }}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(v => !v)}
-                    className="absolute right-4 top-1/2 -translate-y-1/2 transition-opacity duration-150 hover:opacity-70 active:scale-90 focus-visible:outline-none"
-                    style={{ color: textSub }}
-                    aria-label={showPassword ? 'Hide password' : 'Show password'}
-                  >
-                    {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
-                  </button>
-                </div>
-                <FieldError message={state.fieldErrors?.password} />
-              </div>
-
-              <div>
-                <label className="mb-1.5 block text-[12px] font-medium" style={{ color: textSub }}>Confirm Password</label>
-                <div className="relative">
-                  <input
-                    id="confirmPassword"
-                    name="confirmPassword"
-                    type={showConfirm ? 'text' : 'password'}
-                    required
-                    autoComplete="new-password"
-                    placeholder="Repeat password"
-                    className={`signup-input${state.fieldErrors?.confirmPassword ? ' has-error' : ''}`}
-                    style={{ background: inputBg, border: `1px solid ${inputBdr}`, color: textH, paddingRight: '44px' }}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowConfirm(v => !v)}
-                    className="absolute right-4 top-1/2 -translate-y-1/2 transition-opacity duration-150 hover:opacity-70 active:scale-90 focus-visible:outline-none"
-                    style={{ color: textSub }}
-                    aria-label={showConfirm ? 'Hide confirm password' : 'Show confirm password'}
-                  >
-                    {showConfirm ? <EyeOff size={15} /> : <Eye size={15} />}
-                  </button>
-                </div>
-                <FieldError message={state.fieldErrors?.confirmPassword} />
+              <div className="mt-2">
+                <span className="size-5 animate-spin rounded-full border-2 border-violet-400/30 border-t-violet-400 inline-block" />
               </div>
             </div>
-
-            {/* ── Terms + Submit (full width) ──────────────────────────────── */}
-            <div className="mt-5 space-y-4">
-              <div className="s5">
-                <label className="flex cursor-pointer items-start gap-3">
-                  <input
-                    type="checkbox"
-                    name="terms"
-                    checked={termsChecked}
-                    onChange={e => setTermsChecked(e.target.checked)}
-                    className="terms-checkbox mt-0.5"
-                    style={{ border: `1.5px solid ${inputBdr}`, background: inputBg }}
-                  />
-                  <span className="text-[13px] leading-relaxed" style={{ color: textSub }}>
-                    I agree to the{' '}
-                    <span className="transition-opacity duration-150 hover:opacity-70" style={{ color: isDark ? 'rgba(167,139,250,0.9)' : '#7c3aed' }}>
-                      Terms of Service
-                    </span>
-                    {' '}and{' '}
-                    <span className="transition-opacity duration-150 hover:opacity-70" style={{ color: isDark ? 'rgba(167,139,250,0.9)' : '#7c3aed' }}>
-                      Privacy Policy
-                    </span>
-                  </span>
-                </label>
-                <FieldError message={state.fieldErrors?.terms} />
-              </div>
-
-              <div className="s6">
-                <SubmitButton />
-              </div>
-            </div>
-          </form>
-
-          {/* Sign in link */}
-          <div className="s7 mt-6 flex items-center gap-3">
-            <div className="divider-line" style={{ background: isDark ? 'rgba(255,255,255,0.07)' : 'rgba(124,58,237,0.1)' }} />
-            <span className="text-[11px] font-mono tracking-widest uppercase" style={{ color: textSub }}>Nexus</span>
-            <div className="divider-line" style={{ background: isDark ? 'rgba(255,255,255,0.07)' : 'rgba(124,58,237,0.1)' }} />
-          </div>
-
-          <p className="s7 mt-4 text-center text-[13px]" style={{ color: textSub }}>
-            Already have an account?{' '}
-            <Link
-              href="/login"
-              className="font-medium transition-opacity duration-150 hover:opacity-70 focus-visible:outline-none focus-visible:underline"
-              style={{ color: isDark ? 'rgba(167,139,250,0.9)' : '#7c3aed' }}
-            >
-              Sign in
-            </Link>
-          </p>
+          )}
         </div>
       </div>
     </>

@@ -14,10 +14,13 @@ export default async function TasksPage() {
   const member = user?.email ? await getTeamMemberByEmail(user.email) : null;
   const isAdmin = member?.user_role === 'admin';
   const memberId = member?.id ?? '';
+  const hasMember = Boolean(member);
 
-  const tasks = isAdmin
-    ? await getTasksWithAssignees()
-    : await getTasksWithAssigneesByMember(memberId);
+  const tasks = !hasMember
+    ? []
+    : isAdmin
+      ? await getTasksWithAssignees()
+      : await getTasksWithAssigneesByMember(memberId);
 
   return <TasksClient initialTasks={tasks} isAdmin={isAdmin} currentMemberId={memberId} />;
 }

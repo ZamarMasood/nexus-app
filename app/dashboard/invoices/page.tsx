@@ -15,11 +15,15 @@ export default async function InvoicesPage() {
   const member = user?.email ? await getTeamMemberByEmail(user.email) : null;
   const isAdmin = member?.user_role === 'admin';
   const memberId = member?.id ?? '';
+  const hasMember = Boolean(member);
 
   const [invoices, clients] = await Promise.all([
-    isAdmin ? getInvoices() : getInvoicesByMember(memberId),
-    // Admin needs all clients for the "New Invoice" dropdown; members see only their clients
-    isAdmin ? getClientsForList() : getClientsForListByMember(memberId),
+    !hasMember
+      ? []
+      : isAdmin ? getInvoices() : getInvoicesByMember(memberId),
+    !hasMember
+      ? []
+      : isAdmin ? getClientsForList() : getClientsForListByMember(memberId),
   ]);
 
   return <InvoicesClient initialInvoices={invoices} clients={clients} isAdmin={isAdmin} />;

@@ -19,19 +19,25 @@ export default async function ProjectsPage() {
   const member = user?.email ? await getTeamMemberByEmail(user.email) : null;
   const isAdmin = member?.user_role === 'admin';
   const memberId = member?.id ?? '';
+  const hasMember = Boolean(member);
 
-  const projects = isAdmin
-    ? await getProjects()
-    : await getProjectsByMember(memberId);
+  const projects = !hasMember
+    ? []
+    : isAdmin
+      ? await getProjects()
+      : await getProjectsByMember(memberId);
 
   // For task counts: admin gets all, member gets only their projects
   const projectIds = projects.map((p) => p.id);
   const [clients, taskCounts] = await Promise.all([
-    // Admin needs all clients for the "New Project" dropdown
-    isAdmin ? getClients() : getClientsByMember(memberId),
-    isAdmin
-      ? getTaskCountsByProject()
-      : getTaskCountsByProjectFiltered(projectIds),
+    !hasMember
+      ? []
+      : isAdmin ? getClients() : getClientsByMember(memberId),
+    !hasMember
+      ? {}
+      : isAdmin
+        ? getTaskCountsByProject()
+        : getTaskCountsByProjectFiltered(projectIds),
   ]);
 
   return (
