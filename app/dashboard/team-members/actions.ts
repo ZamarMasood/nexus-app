@@ -44,18 +44,14 @@ export async function addTeamMemberAction(
 
     const name       = (formData.get('name')      as string)?.trim();
     const email      = (formData.get('email')     as string)?.trim().toLowerCase();
-    const password   = formData.get('password')   as string;
     const user_role  = (formData.get('user_role') as string)?.trim();
     const projectIds = formData.getAll('project_ids') as string[];
 
-    if (!name || !email || !password || !user_role) {
-      return { error: 'All fields are required.', success: null };
+    if (!name || !email || !user_role) {
+      return { error: 'Name, email, and role are required.', success: null };
     }
     if (!isValidEmail(email)) {
       return { error: 'Please enter a valid email address (e.g. name@company.com).', success: null };
-    }
-    if (password.length < 8) {
-      return { error: 'Password must be at least 8 characters.', success: null };
     }
 
     // Step 1 — check if email is already taken in team_members
@@ -64,22 +60,19 @@ export async function addTeamMemberAction(
       return { error: 'A team member with this email already exists.', success: null };
     }
 
-    // Step 2 — create Supabase Auth user (email_confirm: false so Supabase
-    // sends a verification email — the member must confirm before logging in)
-    const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
-      email,
-      password,
-      email_confirm: false,
-    });
+    // Step 2 — invite user via Supabase Auth
+    // inviteUserByEmail creates the auth user AND sends an invite email via SMTP.
+    // The member clicks the link to set up their account and confirm their email.
+    const { data: inviteData, error: inviteError } = await supabaseAdmin.auth.admin.inviteUserByEmail(email);
 
-    if (authError) {
-      if (authError.message.toLowerCase().includes('already')) {
+    if (inviteError) {
+      if (inviteError.message.toLowerCase().includes('already')) {
         return { error: 'A user with this email already exists.', success: null };
       }
-      return { error: authError.message, success: null };
+      return { error: inviteError.message, success: null };
     }
 
-    const userId = authData.user.id;
+    const userId = inviteData.user.id;
 
     // Step 3 — insert into team_members with the admin's org_id
     const org_id = await getCallerOrgId();

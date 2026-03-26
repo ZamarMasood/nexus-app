@@ -13,6 +13,8 @@ export async function GET(request: NextRequest) {
   const code = searchParams.get('code');
   const next = searchParams.get('next') ?? '/dashboard';
 
+  const type = searchParams.get('type');
+
   if (code) {
     const cookieStore = cookies();
     const supabase = createServerClient(
@@ -34,6 +36,10 @@ export async function GET(request: NextRequest) {
 
     const { error } = await supabase.auth.exchangeCodeForSession(code);
     if (!error) {
+      // Invited users need to set their password first
+      if (type === 'invite') {
+        return NextResponse.redirect(new URL('/reset-password', origin));
+      }
       return NextResponse.redirect(new URL(next, origin));
     }
   }
