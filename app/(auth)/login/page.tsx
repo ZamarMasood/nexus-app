@@ -2,9 +2,9 @@
 
 import { useFormState, useFormStatus } from 'react-dom';
 import { signInAction, type LoginState } from './actions';
-import { Eye, EyeOff, Layers, ArrowRight, Sun, Moon, ArrowLeft, CheckCircle, Mail } from 'lucide-react';
+import { Eye, EyeOff, Layers, ArrowRight, Sun, Moon, ArrowLeft, Mail } from 'lucide-react';
 import Link from 'next/link';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useTheme } from 'next-themes';
 import { useSearchParams } from 'next/navigation';
 
@@ -44,6 +44,14 @@ function SubmitButton() {
 const initialState: LoginState = { error: null };
 
 export default function LoginPage() {
+  return (
+    <Suspense fallback={null}>
+      <LoginContent />
+    </Suspense>
+  );
+}
+
+function LoginContent() {
   const [state, action] = useFormState<LoginState, FormData>(signInAction, initialState);
   const [showPassword, setShowPassword] = useState(false);
   const { setTheme, resolvedTheme } = useTheme();
