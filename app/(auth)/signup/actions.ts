@@ -1,6 +1,7 @@
 'use server';
 
 import { headers } from 'next/headers';
+import { createClient } from '@supabase/supabase-js';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 import { checkRateLimit, formatResetTime } from '@/lib/rate-limit';
 
@@ -130,42 +131,38 @@ export async function signupAction(
   const existingAuthUser = allUsers?.find((u) => u.email === trimmedEmail) ?? null;
 
   if (existingAuthUser) {
-    // Update existing auth user with new password and metadata
-    const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(
-      existingAuthUser.id,
-      { password, email_confirm: false, user_metadata: metadata }
-    );
-    if (updateError) {
-      return { error: `Failed to set up account: ${updateError.message}` };
+    // Clean up previous incomplete signup so we can recreate via signUp()
+    await supabaseAdmin.from('team_members').delete().eq('id', existingAuthUser.id);
+    const { error: deleteError } = await supabaseAdmin.auth.admin.deleteUser(existingAuthUser.id);
+    if (deleteError) {
+      return { error: `Failed to set up account: ${deleteError.message}` };
     }
+  }
 
-    // Re-send confirmation email via generateLink
-    await supabaseAdmin.auth.admin.generateLink({
-      type: 'signup',
-      email: trimmedEmail,
-      password,
-      options: { redirectTo: `${siteUrl}/auth/callback?next=/dashboard&type=signup` },
-    });
-  } else {
-    // Create new auth user — Supabase automatically sends confirmation email
-    const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
-      email: trimmedEmail,
-      password,
-      email_confirm: false, // User must click confirmation link
-      user_metadata: metadata,
-    });
+  // Use anon-key client for signUp() — this triggers Supabase to actually send
+  // the confirmation email. The admin API's generateLink() only generates links
+  // without sending any email.
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    { auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false } }
+  );
 
-    if (authError) {
-      return { error: `Failed to create account: ${authError.message}` };
+  const { error: signUpError } = await supabase.auth.signUp({
+    email: trimmedEmail,
+    password,
+    options: {
+      data: metadata,
+      emailRedirectTo: `${siteUrl}/auth/callback?next=/dashboard&type=signup`,
+    },
+  });
+
+  if (signUpError) {
+    const msg = signUpError.message.toLowerCase();
+    if (signUpError.status === 429 || msg.includes('rate') || msg.includes('security purposes')) {
+      return { error: 'Email rate limit reached. Please try again in a few minutes.' };
     }
-
-    // Generate and "send" the confirmation link via Supabase
-    await supabaseAdmin.auth.admin.generateLink({
-      type: 'signup',
-      email: trimmedEmail,
-      password,
-      options: { redirectTo: `${siteUrl}/auth/callback?next=/dashboard&type=signup` },
-    });
+    return { error: `Failed to create account: ${signUpError.message}` };
   }
 
   // Org + team_member will be created in /auth/callback after email verification

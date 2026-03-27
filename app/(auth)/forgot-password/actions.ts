@@ -29,12 +29,24 @@ export async function forgotPasswordAction(
 
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
 
-  // Use admin (service_role) client — the server-side anon client has no user
-  // session in this context and may silently fail to send.
-  await supabaseAdmin.auth.resetPasswordForEmail(email, {
+  // Use admin (service_role) client to send password reset email
+  const { error: resetError } = await supabaseAdmin.auth.resetPasswordForEmail(email, {
     redirectTo: `${siteUrl}/auth/callback?next=/reset-password`,
   });
 
-  // Always return success to prevent email enumeration
+  // Surface rate-limit errors from Supabase; suppress other errors to prevent email enumeration
+  if (resetError) {
+    const msg = resetError.message.toLowerCase();
+    if (
+      resetError.status === 429 ||
+      msg.includes('rate') ||
+      msg.includes('security purposes') ||
+      msg.includes('request this once')
+    ) {
+      return { error: 'Email rate limit exceeded. Please wait a few minutes before trying again.', success: false };
+    }
+    // Suppress non-rate-limit errors (prevents email enumeration)
+  }
+
   return { error: null, success: true };
 }
