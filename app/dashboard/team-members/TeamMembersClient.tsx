@@ -14,6 +14,7 @@ import {
   AlertCircle,
   ShieldCheck,
   User,
+  Send,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -319,11 +320,15 @@ function AddMemberModal({
         <DialogHeader>
           <DialogTitle className="text-lg font-semibold tracking-[-0.02em] text-bright flex items-center gap-2">
             <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-violet-500/10">
-              <UserCog className="h-3.5 w-3.5 text-violet-400" />
+              <Send className="h-3.5 w-3.5 text-violet-400" />
             </div>
-            Add Team Member
+            Invite Team Member
           </DialogTitle>
         </DialogHeader>
+
+        <p className="text-[13px] text-muted-app mt-1">
+          An email invitation will be sent so they can set their own password and join the workspace.
+        </p>
 
         <form action={formAction} className="mt-4 space-y-4">
           <div className="space-y-1">
@@ -334,11 +339,6 @@ function AddMemberModal({
           <div className="space-y-1">
             <label htmlFor="add-email" className={labelCls}>Email <span className="text-rose-400">*</span></label>
             <input id="add-email" name="email" type="email" required placeholder="jane@company.com" className={fieldCls} />
-          </div>
-
-          <div className="space-y-1">
-            <label htmlFor="add-password" className={labelCls}>Password <span className="text-rose-400">*</span></label>
-            <input id="add-password" name="password" type="password" required minLength={6} placeholder="Min. 6 characters" className={fieldCls} />
           </div>
 
           <input type="hidden" name="user_role" value="member" />
@@ -368,8 +368,8 @@ function AddMemberModal({
               Cancel
             </button>
             <SubmitButton
-              label="Add Member"
-              pendingLabel="Adding…"
+              label="Send Invite"
+              pendingLabel="Sending…"
               className="flex items-center gap-2 rounded-lg bg-violet-600 hover:bg-violet-500 px-5 py-2.5 text-[13px] font-semibold text-white shadow-[0_4px_16px_rgba(139,92,246,0.3)] hover:shadow-[0_4px_20px_rgba(139,92,246,0.45)] transition-[background-color,box-shadow] duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/60 active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed"
             />
           </div>
@@ -647,8 +647,8 @@ export default function TeamMembersClient({
             onClick={() => { setAddOpen(true); setAddKey((k) => k + 1); }}
             className="gap-1.5 bg-violet-600 hover:bg-violet-500 text-white shadow-[0_4px_24px_rgba(139,92,246,0.35),0_1px_4px_rgba(0,0,0,0.4)] hover:shadow-[0_4px_28px_rgba(139,92,246,0.5)] transition-[background-color,box-shadow] focus-visible:ring-violet-500"
           >
-            <Plus className="h-4 w-4" />
-            Add Member
+            <Send className="h-4 w-4" />
+            Invite Member
           </Button>
         </div>
 
@@ -665,13 +665,13 @@ export default function TeamMembersClient({
                 </div>
                 <div>
                   <p className="text-sm font-medium text-muted-app">No team members yet.</p>
-                  <p className="text-xs text-dim-app mt-0.5">Add your first member to get started.</p>
+                  <p className="text-xs text-dim-app mt-0.5">Invite your first member to get started.</p>
                 </div>
                 <button
                   onClick={() => setAddOpen(true)}
                   className="mt-1 text-xs font-semibold text-violet-400 hover:text-violet-300 transition-colors"
                 >
-                  + Add Member
+                  + Invite Member
                 </button>
               </div>
             ) : (

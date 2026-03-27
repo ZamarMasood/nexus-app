@@ -90,10 +90,12 @@ export async function updateTeamMember(
   id: string,
   updates: { name?: string; avatar_url?: string | null; role?: string | null }
 ): Promise<TeamMember> {
+  const orgId = await getCallerOrgId();
   const { data, error } = await supabase
     .from('team_members')
     .update(updates)
     .eq('id', id)
+    .eq('org_id', orgId)
     .select()
     .single();
 
@@ -120,10 +122,12 @@ export async function insertTeamMember(member: {
 }
 
 export async function deleteTeamMember(id: string): Promise<void> {
+  const orgId = await getCallerOrgId();
   const { error } = await supabase
     .from('team_members')
     .delete()
-    .eq('id', id);
+    .eq('id', id)
+    .eq('org_id', orgId);
 
   if (error) throw new Error(`Failed to delete team member: ${error.message}`);
 }
@@ -132,10 +136,12 @@ export async function updateTeamMemberFull(
   id: string,
   updates: { name: string; user_role: string }
 ): Promise<TeamMember> {
+  const orgId = await getCallerOrgId();
   const { data, error } = await supabase
     .from('team_members')
     .update(updates)
     .eq('id', id)
+    .eq('org_id', orgId)
     .select()
     .single();
 
@@ -147,6 +153,7 @@ export async function replaceProjectAssignments(
   memberId: string,
   projectIds: string[]
 ): Promise<void> {
+  const orgId = await getCallerOrgId();
   // project_members was added after DB type generation; cast to avoid type errors
   const adminAny = supabase as any; // noqa
 
@@ -159,6 +166,20 @@ export async function replaceProjectAssignments(
 
   const uniqueProjectIds = projectIds.filter((id, index) => projectIds.indexOf(id) === index);
   if (uniqueProjectIds.length > 0) {
+    // Verify all projects belong to the caller's org
+    const { data: validProjects, error: verifyError } = await supabase
+      .from('projects')
+      .select('id')
+      .eq('org_id', orgId)
+      .in('id', uniqueProjectIds);
+
+    if (verifyError) throw new Error(`Failed to verify projects: ${verifyError.message}`);
+    const validIds = new Set((validProjects ?? []).map((p) => p.id));
+    const invalidIds = uniqueProjectIds.filter((id) => !validIds.has(id));
+    if (invalidIds.length > 0) {
+      throw new Error('One or more projects do not belong to your organisation.');
+    }
+
     const rows = uniqueProjectIds.map((project_id) => ({ project_id, member_id: memberId }));
     const { error: insertError } = await adminAny
       .from('project_members')

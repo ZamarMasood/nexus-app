@@ -75,7 +75,7 @@ export function TaskCard({ task, onClick, isDragging = false, isLocked = false }
       role="button"
       tabIndex={0}
       onClick={() => onClick?.(task)}
-      onKeyDown={(e) => e.key === "Enter" && onClick?.(task)}
+      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onClick?.(task); } }}
       className={[
         "group relative flex flex-col gap-3 rounded-xl border border-surface bg-surface-page p-4",
         "border-l-4",
@@ -155,7 +155,7 @@ export function TaskCard({ task, onClick, isDragging = false, isLocked = false }
           >
             <CalendarDays className="h-3 w-3" />
             <span>
-              {new Date(task.due_date).toLocaleDateString("en-US", {
+              {new Date(task.due_date).toLocaleDateString(undefined, {
                 month: "short",
                 day: "numeric",
               })}

@@ -52,7 +52,7 @@ function CommentItem({ comment }: { comment: CommentWithAuthor }) {
   const raw = comment.created_at ?? "";
   const utc = raw && !raw.endsWith("Z") && !raw.includes("+") ? raw + "Z" : raw;
   const date = utc
-    ? new Date(utc).toLocaleString("en-US", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit", hour12: true, timeZone: "Asia/Karachi" })
+    ? new Date(utc).toLocaleString("en-US", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit", hour12: true })
     : "";
 
   return (

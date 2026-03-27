@@ -1,8 +1,10 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
+import { headers } from 'next/headers';
 import { createSupabaseServerClient } from '@/lib/supabase-server';
 import { getTeamMemberByEmail, updateTeamMember } from '@/lib/db/team-members';
+import { checkRateLimit, formatResetTime } from '@/lib/rate-limit';
 
 export interface SettingsState {
   error: string | null;
@@ -37,11 +39,19 @@ export async function updatePasswordAction(
   _prevState: SettingsState,
   formData: FormData
 ): Promise<SettingsState> {
+  // Rate limiting
+  const headersList = headers();
+  const ip = headersList.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown';
+  const { success: rlOk, resetMs } = checkRateLimit('change-pw:' + ip);
+  if (!rlOk) {
+    return { error: `Too many attempts. Please try again in ${formatResetTime(resetMs)}.`, success: null };
+  }
+
   const password = formData.get('password') as string;
   const confirm = formData.get('confirm') as string;
 
-  if (!password || password.length < 6)
-    return { error: 'Password must be at least 6 characters.', success: null };
+  if (!password || password.length < 8)
+    return { error: 'Password must be at least 8 characters.', success: null };
   if (password !== confirm)
     return { error: 'Passwords do not match.', success: null };
 

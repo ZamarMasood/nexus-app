@@ -190,11 +190,32 @@ export default function SignupClient() {
   const [otp, setOtp] = useState('');
   const [loading, setLoading] = useState(false);
   const [otpError, setOtpError] = useState<string | null>(null);
+  const [secondsLeft, setSecondsLeft] = useState(900);
 
   // Store form data so we can create the org after OTP verification
   const formSnapshotRef = useRef<FormDataSnapshot | null>(null);
 
   useEffect(() => setMounted(true), []);
+
+  // OTP countdown timer
+  useEffect(() => {
+    if (step !== 'otp') return;
+    setSecondsLeft(900);
+    const interval = setInterval(() => {
+      setSecondsLeft(prev => {
+        if (prev <= 1) { clearInterval(interval); return 0; }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [step]);
+
+  const otpMinutes = Math.floor(secondsLeft / 60);
+  const otpSeconds = secondsLeft % 60;
+  const otpTimerDisplay = secondsLeft > 0
+    ? `Code expires in ${otpMinutes}:${otpSeconds.toString().padStart(2, '0')}`
+    : 'Code has expired — request a new one';
+  const otpExpired = secondsLeft === 0;
 
   // After server action validates + sends OTP, capture form data and move to OTP step
   useEffect(() => {
@@ -203,6 +224,7 @@ export default function SignupClient() {
       // Snapshot already captured in the form's onSubmit handler
       setStep('otp');
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- step is intentionally excluded to prevent re-firing when step changes
   }, [state.success, state.email]);
 
   // Capture form values before the server action runs
@@ -287,6 +309,8 @@ export default function SignupClient() {
     setLoading(false);
     if (result.error) {
       setOtpError(result.error);
+    } else {
+      setSecondsLeft(900);
     }
   }
 
@@ -748,15 +772,21 @@ export default function SignupClient() {
               {/* OTP input + verify button */}
               <div className="s2 space-y-5">
                 <OtpInput value={otp} onChange={setOtp} inputBg={inputBg} inputBdr={inputBdr} textH={textH} />
+
+                {/* Countdown timer */}
+                <p className="text-center text-[12px] font-medium" style={{ color: otpExpired ? '#fca5a5' : textSub }}>
+                  {otpTimerDisplay}
+                </p>
+
                 <div className="pt-1">
-                  <LoadingButton label="Verify & Create Workspace" pendingLabel="Verifying..." loading={loading} onClick={handleVerifyOtp} />
+                  <LoadingButton label="Verify & Create Workspace" pendingLabel="Verifying..." loading={loading || otpExpired} onClick={handleVerifyOtp} />
                 </div>
               </div>
 
               {/* Resend */}
               <button
                 onClick={handleResendOtp}
-                disabled={loading}
+                disabled={loading && !otpExpired}
                 className="s4 mt-4 w-full text-center text-[13px] font-medium transition-opacity duration-150 hover:opacity-70 disabled:opacity-40"
                 style={{ color: isDark ? 'rgba(167,139,250,0.9)' : '#7c3aed' }}
               >

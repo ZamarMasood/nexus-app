@@ -1,14 +1,15 @@
 'use server';
 import { supabaseAdmin } from '../supabase-admin';
 import { createSupabaseServerClient } from '../supabase-server';
+import { getCallerOrgId } from './team-members';
 import type { Project, ProjectInsert, ProjectUpdate } from '../types';
 
 // Lightweight type for sidebar/list views
 export type ProjectListItem = Pick<Project, 'id' | 'name' | 'client_id' | 'status' | 'total_value' | 'deadline'>;
 
 export async function getProjects(clientId?: string): Promise<Project[]> {
-  const supabase = createSupabaseServerClient();
-  let query = supabase.from('projects').select('*').order('created_at', { ascending: false });
+  const orgId = await getCallerOrgId();
+  let query = supabaseAdmin.from('projects').select('*').eq('org_id', orgId).order('created_at', { ascending: false });
 
   if (clientId) {
     query = query.eq('client_id', clientId);
@@ -22,10 +23,11 @@ export async function getProjects(clientId?: string): Promise<Project[]> {
 
 /** Fetch only the columns needed for list/sidebar display. */
 export async function getProjectsForList(clientId?: string): Promise<ProjectListItem[]> {
-  const supabase = createSupabaseServerClient();
-  let query = supabase
+  const orgId = await getCallerOrgId();
+  let query = supabaseAdmin
     .from('projects')
     .select('id, name, client_id, status, total_value, deadline')
+    .eq('org_id', orgId)
     .order('created_at', { ascending: false });
 
   if (clientId) {
@@ -39,11 +41,12 @@ export async function getProjectsForList(clientId?: string): Promise<ProjectList
 }
 
 export async function getProjectById(id: string): Promise<Project> {
-  const supabase = createSupabaseServerClient();
-  const { data, error } = await supabase
+  const orgId = await getCallerOrgId();
+  const { data, error } = await supabaseAdmin
     .from('projects')
     .select('*')
     .eq('id', id)
+    .eq('org_id', orgId)
     .single();
 
   if (error) throw new Error(`Failed to fetch project ${id}: ${error.message}`);
@@ -62,10 +65,12 @@ export async function createProject(project: ProjectInsert): Promise<Project> {
 }
 
 export async function updateProject(id: string, updates: ProjectUpdate): Promise<Project> {
+  const orgId = await getCallerOrgId();
   const { data, error } = await supabaseAdmin
     .from('projects')
     .update(updates)
     .eq('id', id)
+    .eq('org_id', orgId)
     .select()
     .single();
 

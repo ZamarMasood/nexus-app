@@ -12,7 +12,6 @@ import {
   deleteTeamMember,
   replaceProjectAssignments,
 } from '@/lib/db/team-members';
-
 // ── Validation helpers ───────────────────────────────────────────────────────
 function isValidEmail(email: string): boolean {
   const re = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)+$/;
@@ -20,16 +19,17 @@ function isValidEmail(email: string): boolean {
 }
 
 // ── Guard helper ─────────────────────────────────────────────────────────────
-async function requireAdmin(): Promise<string> {
+async function requireAdmin(): Promise<{ id: string; email: string; name: string }> {
   const supabase = createSupabaseServerClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user?.email) throw new Error('Not authenticated');
   const isAdmin = await getIsAdminByEmail(user.email);
   if (!isAdmin) throw new Error('Admin access required');
-  return user.id;
+  const member = await getTeamMemberByEmail(user.email);
+  return { id: user.id, email: user.email, name: member?.name ?? 'Your admin' };
 }
 
-// ── Add member ───────────────────────────────────────────────────────────────
+// ── Invite member ────────────────────────────────────────────────────────────
 export interface AddMemberState {
   error: string | null;
   success: string | null;
@@ -40,22 +40,18 @@ export async function addTeamMemberAction(
   formData: FormData
 ): Promise<AddMemberState> {
   try {
-    await requireAdmin();
+    const admin = await requireAdmin();
 
     const name       = (formData.get('name')      as string)?.trim();
     const email      = (formData.get('email')     as string)?.trim().toLowerCase();
-    const password   = (formData.get('password')  as string)?.trim();
     const user_role  = (formData.get('user_role') as string)?.trim();
     const projectIds = formData.getAll('project_ids') as string[];
 
-    if (!name || !email || !password || !user_role) {
-      return { error: 'Name, email, password, and role are required.', success: null };
+    if (!name || !email || !user_role) {
+      return { error: 'Name and email are required.', success: null };
     }
     if (!isValidEmail(email)) {
       return { error: 'Please enter a valid email address (e.g. name@company.com).', success: null };
-    }
-    if (password.length < 6) {
-      return { error: 'Password must be at least 6 characters.', success: null };
     }
 
     // Step 1 — check if email is already taken in team_members
@@ -64,21 +60,21 @@ export async function addTeamMemberAction(
       return { error: 'A team member with this email already exists.', success: null };
     }
 
-    // Step 2 — create auth user with the password (email auto-confirmed, no invite email)
-    const { data: createData, error: createError } = await supabaseAdmin.auth.admin.createUser({
+    // Step 2 — invite via Supabase (creates auth user + sends invite email via Supabase SMTP)
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
+    const { data: inviteData, error: inviteError } = await supabaseAdmin.auth.admin.inviteUserByEmail(
       email,
-      password,
-      email_confirm: true,
-    });
+      { redirectTo: `${siteUrl}/auth/callback?type=invite` }
+    );
 
-    if (createError) {
-      if (createError.message.toLowerCase().includes('already')) {
+    if (inviteError) {
+      if (inviteError.message.toLowerCase().includes('already')) {
         return { error: 'A user with this email already exists.', success: null };
       }
-      return { error: createError.message, success: null };
+      return { error: inviteError.message, success: null };
     }
 
-    const userId = createData.user.id;
+    const userId = inviteData.user.id;
 
     // Step 3 — insert into team_members with the admin's org_id
     const org_id = await getCallerOrgId();
@@ -89,7 +85,7 @@ export async function addTeamMemberAction(
       await replaceProjectAssignments(userId, projectIds);
     }
 
-    return { error: null, success: 'Team member added successfully.' };
+    return { error: null, success: `Invitation sent to ${email}` };
   } catch (err) {
     const msg = err instanceof Error ? err.message : 'Something went wrong. Please try again.';
     return { error: msg, success: null };
@@ -107,7 +103,7 @@ export async function editTeamMemberAction(
   formData: FormData
 ): Promise<EditMemberState> {
   try {
-    const currentUserId = await requireAdmin();
+    const admin = await requireAdmin();
 
     const id         = formData.get('id')        as string;
     const name       = (formData.get('name')      as string)?.trim();
@@ -120,7 +116,7 @@ export async function editTeamMemberAction(
 
     // Check if target member is the owner — only the owner can edit themselves
     const targetIsOwner = await getIsOwnerById(id);
-    const callerIsOwner = await getIsOwnerById(currentUserId);
+    const callerIsOwner = await getIsOwnerById(admin.id);
     if (targetIsOwner && !callerIsOwner) {
       return { error: 'The workspace owner\'s details cannot be changed by other admins.', success: null };
     }
@@ -155,13 +151,13 @@ export async function deleteTeamMemberAction(
   formData: FormData
 ): Promise<DeleteMemberState> {
   try {
-    const currentUserId = await requireAdmin();
+    const admin = await requireAdmin();
 
     const id = formData.get('id') as string;
     if (!id) return { error: 'Member ID is required.', success: null };
 
     // Guard: cannot delete yourself
-    if (id === currentUserId) {
+    if (id === admin.id) {
       return { error: 'You cannot remove your own account.', success: null };
     }
 

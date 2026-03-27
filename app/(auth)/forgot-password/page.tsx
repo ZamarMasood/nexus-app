@@ -156,6 +156,27 @@ export default function ForgotPasswordPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [resetDone, setResetDone] = useState(false);
+  const [secondsLeft, setSecondsLeft] = useState(900);
+
+  // OTP countdown timer
+  useEffect(() => {
+    if (step !== 'otp') return;
+    setSecondsLeft(900);
+    const interval = setInterval(() => {
+      setSecondsLeft(prev => {
+        if (prev <= 1) { clearInterval(interval); return 0; }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [step]);
+
+  const otpMinutes = Math.floor(secondsLeft / 60);
+  const otpSeconds = secondsLeft % 60;
+  const otpTimerDisplay = secondsLeft > 0
+    ? `Code expires in ${otpMinutes}:${otpSeconds.toString().padStart(2, '0')}`
+    : 'Code has expired — request a new one';
+  const otpExpired = secondsLeft === 0;
 
   // Server action for user check
   const [sendState, sendAction] = useFormState(sendOtpAction, SEND_INITIAL);
@@ -236,6 +257,7 @@ export default function ForgotPasswordPage() {
   async function handleResendOtp() {
     setOtp('');
     setError(null);
+    setSecondsLeft(900);
     await sendSupabaseOtp(email);
   }
 
@@ -457,13 +479,19 @@ export default function ForgotPasswordPage() {
             <>
               <div className="s2 space-y-5">
                 <OtpInput value={otp} onChange={setOtp} inputBg={inputBg} inputBdr={inputBdr} textH={textH} />
+
+                {/* Countdown timer */}
+                <p className="text-center text-[12px] font-medium" style={{ color: otpExpired ? '#fca5a5' : textSub }}>
+                  {otpTimerDisplay}
+                </p>
+
                 <div className="pt-1">
-                  <LoadingButton label="Verify Code" pendingLabel="Verifying…" loading={loading} onClick={handleVerifyOtp} />
+                  <LoadingButton label="Verify Code" pendingLabel="Verifying…" loading={loading || otpExpired} onClick={handleVerifyOtp} />
                 </div>
               </div>
               <button
                 onClick={handleResendOtp}
-                disabled={loading}
+                disabled={loading && !otpExpired}
                 className="s4 mt-4 w-full text-center text-[13px] font-medium transition-opacity duration-150 hover:opacity-70 disabled:opacity-40"
                 style={{ color: isDark ? 'rgba(167,139,250,0.9)' : '#7c3aed' }}
               >

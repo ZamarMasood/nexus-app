@@ -3,17 +3,23 @@
 import { headers } from 'next/headers';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 import { checkRateLimit, formatResetTime } from '@/lib/rate-limit';
+import { sendEmail } from '@/lib/email';
+import { getWelcomeEmail } from '@/lib/email-templates';
 
-// -- Helper: Send OTP via GoTrue Admin API (bypasses all rate limits) ---------
+// -- Helper: Send OTP via GoTrue /otp endpoint --------------------------------
+// Uses service_role key to bypass API-level rate limits.
+// Supabase sends the actual email (no custom email service needed).
+//
+// IMPORTANT: This endpoint uses different email templates depending on user state:
+//   - NEW user (create_user:true)  → "Confirm signup" template
+//   - EXISTING user (resend/retry) → "Magic Link" template
+// Both templates MUST be configured in Supabase Dashboard → Auth → Email Templates
+// with the {{ .Token }} variable so the 6-digit OTP code is included.
 
 async function sendOtpEmail(email: string): Promise<{ error: string | null }> {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 
-  // Use the GoTrue /otp endpoint with the service_role key in the Authorization
-  // header. This bypasses Supabase's email rate limit (which only applies to
-  // anon-key requests). create_user=true ensures the endpoint doesn't 404 for
-  // email addresses that don't have an auth user yet.
   const res = await fetch(`${supabaseUrl}/auth/v1/otp`, {
     method: 'POST',
     headers: {
@@ -131,23 +137,25 @@ export async function signupAction(
     return { error: null, fieldErrors: { slug: 'This workspace name is already taken.' } };
   }
 
-  // STEP C: Check email not already registered
+  // STEP C: Check email not already registered (only flag completed signups with org_id)
+  // The OTP flow's create_user:true triggers handle_new_auth_user which inserts a
+  // team_members row with org_id=null. We must ignore those incomplete rows.
   const { data: existingMember } = await supabaseAdmin
     .from('team_members')
     .select('id')
     .eq('email', email.trim().toLowerCase())
+    .not('org_id', 'is', null)
     .maybeSingle();
 
   if (existingMember) {
     return { error: null, fieldErrors: { email: 'An account with this email already exists.' } };
   }
 
-  // STEP D: Send OTP via GoTrue Admin API (bypasses email rate limits)
-  // NO org or user created yet -- that happens only after OTP is verified
+  // STEP D: Send OTP — Supabase sends the actual email
   const { error: otpError } = await sendOtpEmail(email.trim().toLowerCase());
 
   if (otpError) {
-    return { error: `Failed to send verification code: ${otpError}` };
+    return { error: 'Failed to send verification code. Please try again.' };
   }
 
   return { error: null, success: true, email: email.trim().toLowerCase() };
@@ -182,15 +190,16 @@ export async function createOrgAction(
     return { error: 'This workspace name was taken while you were verifying. Please go back and choose another.', success: false };
   }
 
-  // Re-check email uniqueness
+  // Re-check email uniqueness (only flag completed signups with org_id)
   const { data: existingMember } = await supabaseAdmin
     .from('team_members')
     .select('id')
     .eq('email', email.trim().toLowerCase())
+    .not('org_id', 'is', null)
     .maybeSingle();
 
   if (existingMember) {
-    return { error: 'An account with this email was created while you were verifying.', success: false };
+    return { error: 'An account with this email already exists. Please log in instead.', success: false };
   }
 
   // Create organisation
@@ -278,6 +287,20 @@ export async function createOrgAction(
       // Non-fatal: log but don't fail signup — the trigger may have handled it
       console.error('Failed to upsert team_members row:', memberError.message);
     }
+  }
+
+  // Send welcome email — never block signup on email failure
+  try {
+    await sendEmail({
+      to: trimmedEmail,
+      subject: 'Welcome to Nexus — your workspace is ready',
+      html: getWelcomeEmail({
+        memberName: fullName.trim(),
+        companyName: companyName.trim(),
+      }),
+    });
+  } catch (emailError) {
+    console.error('Failed to send welcome email:', emailError);
   }
 
   return { error: null, success: true };

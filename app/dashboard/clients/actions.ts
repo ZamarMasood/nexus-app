@@ -77,6 +77,7 @@ export async function updateClientAction(
   }
 
   const supabase = createSupabaseServerClient();
+  const org_id = await getCallerOrgId();
 
   const data: ClientUpdate = {
     ...updates,
@@ -94,6 +95,7 @@ export async function updateClientAction(
     .from('clients')
     .update(data)
     .eq('id', id)
+    .eq('org_id', org_id)
     .select()
     .single();
 
@@ -129,10 +131,12 @@ export async function resetPortalPasswordAction(
 
   const hashed = await bcrypt.hash(plainPassword, BCRYPT_ROUNDS);
 
+  const org_id = await getCallerOrgId();
   const { data: result, error } = await supabase
     .from('clients')
     .update({ portal_password: hashed })
     .eq('id', clientId)
+    .eq('org_id', org_id)
     .select()
     .single();
 

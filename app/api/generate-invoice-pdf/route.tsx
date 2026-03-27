@@ -2,25 +2,50 @@ import { NextRequest, NextResponse } from 'next/server';
 import React from 'react';
 import { renderToBuffer } from '@react-pdf/renderer';
 import { getInvoiceById, updateInvoice } from '@/lib/db/invoices';
-import { getClientById } from '@/lib/db/clients';
+import { getClientByIdForPortal } from '@/lib/db/clients';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 import { InvoicePDFTemplate } from '@/components/invoices/InvoicePDFTemplate';
+import { createSupabaseServerClient } from '@/lib/supabase-server';
+import { checkRateLimit, formatResetTime } from '@/lib/rate-limit';
 
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json() as { invoiceId?: string };
+    // Authenticate: only logged-in team members can generate PDFs
+    const supabase = createSupabaseServerClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Rate limit by user ID
+    const { success: allowed, resetMs } = checkRateLimit('generate-pdf:' + user.id);
+    if (!allowed) {
+      return NextResponse.json(
+        { error: `Too many PDF requests. Please try again in ${formatResetTime(resetMs)}.` },
+        { status: 429 }
+      );
+    }
+
+    let body: { invoiceId?: string };
+    try {
+      body = await req.json();
+    } catch {
+      return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
+    }
     const { invoiceId } = body;
 
-    if (!invoiceId) {
+    if (!invoiceId || typeof invoiceId !== 'string') {
       return NextResponse.json({ error: 'invoiceId is required' }, { status: 400 });
     }
 
+    // getInvoiceById now enforces org_id scoping internally
     const invoice = await getInvoiceById(invoiceId);
     if (!invoice.client_id) {
       return NextResponse.json({ error: 'Invoice has no associated client' }, { status: 400 });
     }
 
-    const client = await getClientById(invoice.client_id);
+    // Invoice is already org-scoped; fetch client without double org check
+    const client = await getClientByIdForPortal(invoice.client_id);
 
     // Cast needed: renderToBuffer expects DocumentProps element; our wrapper satisfies the contract at runtime
     const element = React.createElement(InvoicePDFTemplate, { invoice, client }) as Parameters<typeof renderToBuffer>[0];

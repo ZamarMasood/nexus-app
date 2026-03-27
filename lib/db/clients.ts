@@ -1,16 +1,18 @@
 'use server';
 import { supabaseAdmin } from '../supabase-admin';
 import { createSupabaseServerClient } from '../supabase-server';
+import { getCallerOrgId } from './team-members';
 import type { Client, ClientInsert, ClientUpdate } from '../types';
 
 // Lightweight type for sidebar/list views — excludes portal_password
 export type ClientListItem = Pick<Client, 'id' | 'name' | 'email' | 'status' | 'monthly_rate' | 'project_type' | 'start_date'>;
 
 export async function getClients(): Promise<Client[]> {
-  const supabase = createSupabaseServerClient();
-  const { data, error } = await supabase
+  const orgId = await getCallerOrgId();
+  const { data, error } = await supabaseAdmin
     .from('clients')
     .select('id, name, email, status, monthly_rate, project_type, start_date, created_at')
+    .eq('org_id', orgId)
     .order('created_at', { ascending: false });
 
   if (error) throw new Error(`Failed to fetch clients: ${error.message}`);
@@ -19,10 +21,11 @@ export async function getClients(): Promise<Client[]> {
 
 /** Fetch only the columns needed for list/sidebar display (no portal_password). */
 export async function getClientsForList(): Promise<ClientListItem[]> {
-  const supabase = createSupabaseServerClient();
-  const { data, error } = await supabase
+  const orgId = await getCallerOrgId();
+  const { data, error } = await supabaseAdmin
     .from('clients')
     .select('id, name, email, status, monthly_rate, project_type, start_date')
+    .eq('org_id', orgId)
     .order('created_at', { ascending: false });
 
   if (error) throw new Error(`Failed to fetch clients: ${error.message}`);
@@ -30,7 +33,20 @@ export async function getClientsForList(): Promise<ClientListItem[]> {
 }
 
 export async function getClientById(id: string): Promise<Client> {
-  // Uses supabaseAdmin so this works in both team (RLS session) and portal (no session) contexts
+  const orgId = await getCallerOrgId();
+  const { data, error } = await supabaseAdmin
+    .from('clients')
+    .select('id, name, email, status, monthly_rate, project_type, start_date, created_at')
+    .eq('id', id)
+    .eq('org_id', orgId)
+    .single();
+
+  if (error) throw new Error(`Failed to fetch client ${id}: ${error.message}`);
+  return data as Client;
+}
+
+/** Fetch a client by ID without org scoping — for portal contexts where there is no team session. */
+export async function getClientByIdForPortal(id: string): Promise<Client> {
   const { data, error } = await supabaseAdmin
     .from('clients')
     .select('id, name, email, status, monthly_rate, project_type, start_date, created_at')
@@ -53,10 +69,12 @@ export async function createClient(client: ClientInsert): Promise<Client> {
 }
 
 export async function updateClient(id: string, updates: ClientUpdate): Promise<Client> {
+  const orgId = await getCallerOrgId();
   const { data, error } = await supabaseAdmin
     .from('clients')
     .update(updates)
     .eq('id', id)
+    .eq('org_id', orgId)
     .select()
     .single();
 

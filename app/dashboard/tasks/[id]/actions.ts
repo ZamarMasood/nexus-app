@@ -2,8 +2,23 @@
 
 import { createSupabaseServerClient } from '@/lib/supabase-server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
+import { getCallerOrgId } from '@/lib/db/team-members';
 import type { CommentWithAuthor } from '@/lib/db/tasks';
 import type { ProjectFile } from '@/lib/types';
+
+/**
+ * Verifies the task belongs to the caller's org before allowing mutations.
+ */
+async function verifyTaskOwnership(taskId: string): Promise<void> {
+  const orgId = await getCallerOrgId();
+  const { data: task, error } = await supabaseAdmin
+    .from('tasks')
+    .select('org_id')
+    .eq('id', taskId)
+    .single();
+  if (error || !task) throw new Error('Task not found.');
+  if (task.org_id !== orgId) throw new Error('Access denied.');
+}
 
 /**
  * Creates a comment on a task, storing the team member's name in author_name.
@@ -15,18 +30,22 @@ export async function createCommentAction(
   const supabase = createSupabaseServerClient();
 
   const { data: { user } } = await supabase.auth.getUser();
+  if (!user?.email) throw new Error('Not authenticated');
 
+  // Verify task belongs to caller's org
+  await verifyTaskOwnership(taskId);
+
+  const orgId = await getCallerOrgId();
   let authorName: string | null = null;
   let teamMemberId: string | null = null;
-  if (user?.email) {
-    const { data: member } = await supabase
-      .from('team_members')
-      .select('id, name')
-      .eq('email', user.email)
-      .maybeSingle();
-    teamMemberId = member?.id ?? null;
-    authorName   = member?.name ?? null;
-  }
+  const { data: member } = await supabase
+    .from('team_members')
+    .select('id, name')
+    .eq('email', user.email)
+    .eq('org_id', orgId)
+    .maybeSingle();
+  teamMemberId = member?.id ?? null;
+  authorName   = member?.name ?? null;
 
   const { data, error } = await supabase
     .from('comments')
@@ -43,10 +62,17 @@ export async function createCommentAction(
  * passed directly to Server Actions — they must be wrapped in FormData).
  */
 export async function uploadFileAction(formData: FormData): Promise<ProjectFile> {
+  const supabase = createSupabaseServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('Not authenticated');
+
   const taskId = formData.get('taskId') as string;
   const file = formData.get('file') as File;
 
   if (!taskId || !file) throw new Error('Task ID and file are required.');
+
+  // Verify task belongs to caller's org
+  await verifyTaskOwnership(taskId);
 
   const path = `tasks/${taskId}/${Date.now()}-${file.name}`;
 

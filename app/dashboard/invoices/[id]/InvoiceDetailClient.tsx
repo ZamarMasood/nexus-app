@@ -11,9 +11,24 @@ import {
   Download,
   Receipt,
   ArrowLeft,
+  Pencil,
+  X,
+  Loader2,
+  Users,
+  Hash,
+  DollarSign,
+  CalendarDays,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { getInvoiceById, updateInvoice } from "@/lib/db/invoices";
+import { updateInvoiceAction } from "@/app/dashboard/invoices/actions";
 import { revalidateDashboard } from "@/app/dashboard/actions";
 import type { InvoiceListItem } from "@/lib/db/invoices";
 import type { ClientListItem } from "@/lib/db/clients";
@@ -31,6 +46,18 @@ const STATUS_DOT: Record<InvoiceStatus, string> = {
   pending: "bg-amber-400",
   overdue: "bg-rose-400",
 };
+
+const EDIT_STATUS_OPTIONS: { value: InvoiceStatus; label: string; color: string }[] = [
+  { value: "pending", label: "Pending", color: "text-amber-400" },
+  { value: "paid",    label: "Paid",    color: "text-emerald-400" },
+  { value: "overdue", label: "Overdue", color: "text-rose-400" },
+];
+
+const LABEL = "block text-[11px] font-semibold uppercase tracking-widest text-faint-app mb-1";
+const FIELD = "w-full rounded-lg border border-surface bg-surface-inset px-3 py-2.5 text-[13px] text-primary-app placeholder:text-dim-app outline-none focus:border-violet-500/50 focus:ring-1 focus:ring-violet-500/30 transition-[border-color,box-shadow] duration-150";
+const SELECT_TRIGGER = "w-full rounded-lg border border-surface bg-surface-inset h-[42px] text-[13px] text-primary-app focus:ring-1 focus:ring-violet-500/40 focus:border-violet-500/50 data-[placeholder]:text-dim-app";
+const SELECT_CONTENT = "bg-surface-card border-surface text-primary-app";
+const SELECT_ITEM = "text-[13px] text-primary-app focus:bg-violet-500/10 focus:text-violet-300 cursor-pointer";
 
 interface InvoiceDetailClientProps {
   invoiceId: string;
@@ -64,6 +91,10 @@ export default function InvoiceDetailClient({
   const [generatingPdf, setGeneratingPdf] = useState(false);
   const [showPdf, setShowPdf] = useState(false);
   const [pdfCacheBust, setPdfCacheBust] = useState(() => Date.now());
+  const [editing, setEditing] = useState(false);
+  const [editForm, setEditForm] = useState({ client_id: "", invoice_number: "", amount: "", due_date: "", status: "pending" as InvoiceStatus });
+  const [editError, setEditError] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
 
   const clientMap = useMemo(() => {
     const m: Record<string, string> = {};
@@ -126,14 +157,19 @@ export default function InvoiceDetailClient({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ invoiceId: updated.id }),
       });
-      const json = (await res.json()) as { invoice?: Invoice; error?: string };
-      if (json.invoice) {
-        setInvoice(json.invoice);
-        setPdfCacheBust(Date.now());
+      if (!res.ok) {
+        const errBody = await res.json().catch(() => ({ error: "PDF generation failed" }));
+        setError(errBody.error ?? "PDF generation failed");
+      } else {
+        const json = (await res.json()) as { invoice?: Invoice; error?: string };
+        if (json.invoice) {
+          setInvoice(json.invoice);
+          setPdfCacheBust(Date.now());
+        }
       }
       await revalidateDashboard();
     } catch (err) {
-      console.error("Failed to mark as paid:", err);
+      setError(err instanceof Error ? err.message : "Failed to mark as paid");
     } finally {
       setMarkingPaid(false);
       setGeneratingPdf(false);
@@ -160,6 +196,63 @@ export default function InvoiceDetailClient({
       setError(err instanceof Error ? err.message : "PDF generation failed.");
     } finally {
       setGeneratingPdf(false);
+    }
+  }
+
+  function openEditForm() {
+    if (!invoice) return;
+    setEditForm({
+      client_id: invoice.client_id ?? "",
+      invoice_number: invoice.invoice_number ?? "",
+      amount: invoice.amount != null ? String(invoice.amount) : "",
+      due_date: invoice.due_date ?? "",
+      status: (invoice.status ?? "pending") as InvoiceStatus,
+    });
+    setEditError(null);
+    setEditing(true);
+  }
+
+  async function handleEditSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!invoice) return;
+    if (!editForm.client_id) { setEditError("Please select a client."); return; }
+    if (!editForm.invoice_number.trim()) { setEditError("Invoice number is required."); return; }
+    if (!editForm.amount || isNaN(parseFloat(editForm.amount)) || parseFloat(editForm.amount) < 0) { setEditError("Enter a valid positive amount."); return; }
+
+    setEditError(null);
+    setSaving(true);
+    try {
+      const updated = await updateInvoiceAction(invoice.id, {
+        client_id: editForm.client_id,
+        invoice_number: editForm.invoice_number.trim(),
+        amount: parseFloat(editForm.amount),
+        due_date: editForm.due_date || null,
+        status: editForm.status,
+      });
+      setInvoice(updated);
+      setClient(findClientInList(updated.client_id, clients));
+      setEditing(false);
+
+      // Regenerate PDF with updated data
+      try {
+        const res = await fetch("/api/generate-invoice-pdf", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ invoiceId: updated.id }),
+        });
+        const json = (await res.json()) as { invoice?: Invoice; error?: string };
+        if (json.invoice) {
+          setInvoice(json.invoice);
+          setPdfCacheBust(Date.now());
+        }
+      } catch {
+        setEditError('Invoice updated but PDF regeneration failed. You can retry later.');
+      }
+      await revalidateDashboard();
+    } catch (err) {
+      setEditError(err instanceof Error ? err.message : "Failed to update invoice.");
+    } finally {
+      setSaving(false);
     }
   }
 
@@ -329,23 +422,30 @@ export default function InvoiceDetailClient({
 
               {/* Actions */}
               <div className="border-t border-surface px-4 sm:px-6 py-3 sm:py-4 space-y-3">
-                {/* Status row */}
-                {invoice.status !== "paid" ? (
-                  isAdmin ? (
-                    <Button onClick={markAsPaid} disabled={markingPaid} size="sm" className="w-full sm:w-auto gap-1.5 bg-emerald-600 hover:bg-emerald-500 text-white focus-visible:ring-emerald-500">
-                      <CheckCircle className="h-3.5 w-3.5" />
-                      {markingPaid ? "Updating…" : "Mark as Paid"}
-                    </Button>
+                {/* Status + Edit row */}
+                <div className="flex items-center justify-between gap-2">
+                  {invoice.status !== "paid" ? (
+                    isAdmin ? (
+                      <Button onClick={markAsPaid} disabled={markingPaid} size="sm" className="gap-1.5 bg-emerald-600 hover:bg-emerald-500 text-white focus-visible:ring-emerald-500">
+                        <CheckCircle className="h-3.5 w-3.5" />
+                        {markingPaid ? "Updating…" : "Mark as Paid"}
+                      </Button>
+                    ) : (
+                      <div className="flex items-center gap-1.5 text-sm font-medium text-amber-400">
+                        <CheckCircle className="h-4 w-4" /> Pending
+                      </div>
+                    )
                   ) : (
-                    <div className="flex items-center gap-1.5 text-sm font-medium text-amber-400">
-                      <CheckCircle className="h-4 w-4" /> Pending
+                    <div className="flex items-center gap-1.5 text-sm font-medium text-emerald-400">
+                      <Check className="h-4 w-4" /> Paid
                     </div>
-                  )
-                ) : (
-                  <div className="flex items-center gap-1.5 text-sm font-medium text-emerald-400">
-                    <Check className="h-4 w-4" /> Paid
-                  </div>
-                )}
+                  )}
+                  {isAdmin && (
+                    <Button onClick={openEditForm} variant="outline" size="sm" className="gap-1.5 border-surface bg-surface-subtle text-muted-app hover:bg-overlay-sm hover:text-primary-app">
+                      <Pencil className="h-3.5 w-3.5" /> Edit
+                    </Button>
+                  )}
+                </div>
                 {/* Action buttons — equal width on mobile */}
                 <div className="flex gap-2">
                   {invoice.pdf_url ? (
@@ -402,6 +502,135 @@ export default function InvoiceDetailClient({
         )}
         </div>
       </div>
+
+      {/* ── Edit Invoice Dialog ─────────────────────────────────────── */}
+      {editing && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          {/* Backdrop */}
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setEditing(false)} />
+          {/* Panel */}
+          <div className="relative w-full max-w-lg rounded-xl border border-surface bg-surface-card shadow-2xl animate-in">
+            {/* Header */}
+            <div className="flex items-center justify-between border-b border-surface px-5 py-4">
+              <h3 className="text-[15px] font-bold text-bright flex items-center gap-2">
+                <Pencil className="h-4 w-4 text-violet-400" />
+                Edit Invoice
+              </h3>
+              <button
+                onClick={() => setEditing(false)}
+                className="flex items-center justify-center h-7 w-7 rounded-lg text-faint-app hover:text-bright hover:bg-surface-subtle transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            {/* Form */}
+            <form onSubmit={handleEditSubmit} className="p-5 space-y-4">
+              {editError && (
+                <div className="flex items-center gap-2 rounded-lg bg-rose-500/10 border border-rose-500/20 px-3 py-2.5 text-sm text-rose-400">
+                  {editError}
+                </div>
+              )}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-4">
+                {/* Client */}
+                <div className="sm:col-span-2">
+                  <label className={LABEL}>
+                    <span className="flex items-center gap-1.5">
+                      <Users className="h-3 w-3" /> Client
+                    </span>
+                  </label>
+                  <Select value={editForm.client_id} onValueChange={(v) => setEditForm((p) => ({ ...p, client_id: v }))}>
+                    <SelectTrigger className={SELECT_TRIGGER}>
+                      <SelectValue placeholder="Select client" />
+                    </SelectTrigger>
+                    <SelectContent className={SELECT_CONTENT}>
+                      {clients.map((c) => (
+                        <SelectItem key={c.id} value={c.id} className={SELECT_ITEM}>{c.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                {/* Invoice number */}
+                <div>
+                  <label className={LABEL}>
+                    <span className="flex items-center gap-1.5">
+                      <Hash className="h-3 w-3" /> Invoice #
+                    </span>
+                  </label>
+                  <input
+                    value={editForm.invoice_number}
+                    onChange={(e) => setEditForm((p) => ({ ...p, invoice_number: e.target.value }))}
+                    className={`${FIELD} font-mono`}
+                  />
+                </div>
+                {/* Status */}
+                <div>
+                  <label className={LABEL}>Status</label>
+                  <Select value={editForm.status} onValueChange={(v) => setEditForm((p) => ({ ...p, status: v as InvoiceStatus }))}>
+                    <SelectTrigger className={SELECT_TRIGGER}>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className={SELECT_CONTENT}>
+                      {EDIT_STATUS_OPTIONS.map((o) => (
+                        <SelectItem key={o.value} value={o.value} className={`${SELECT_ITEM} ${o.color}`}>{o.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                {/* Amount */}
+                <div>
+                  <label className={LABEL}>
+                    <span className="flex items-center gap-1.5">
+                      <DollarSign className="h-3 w-3" /> Amount
+                    </span>
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={editForm.amount}
+                    onChange={(e) => setEditForm((p) => ({ ...p, amount: e.target.value }))}
+                    placeholder="0.00"
+                    className={FIELD}
+                  />
+                </div>
+                {/* Due date */}
+                <div>
+                  <label className={LABEL}>
+                    <span className="flex items-center gap-1.5">
+                      <CalendarDays className="h-3 w-3" /> Due Date
+                    </span>
+                  </label>
+                  <input
+                    type="date"
+                    value={editForm.due_date}
+                    onChange={(e) => setEditForm((p) => ({ ...p, due_date: e.target.value }))}
+                    className={FIELD}
+                  />
+                </div>
+              </div>
+              {/* Footer */}
+              <div className="flex justify-end gap-2 pt-2 border-t border-surface">
+                <button
+                  type="button"
+                  onClick={() => setEditing(false)}
+                  disabled={saving}
+                  className="rounded-lg px-4 py-2 text-sm font-medium text-secondary-app hover:text-primary-app hover:bg-surface-subtle transition-[background-color,color] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={saving}
+                  className="flex items-center gap-2 rounded-lg bg-violet-600 px-4 py-2 text-sm font-semibold text-white shadow-[0_4px_16px_rgba(139,92,246,0.3)] hover:bg-violet-500 hover:shadow-[0_4px_20px_rgba(139,92,246,0.4)] active:scale-[0.97] transition-[background-color,box-shadow,transform] disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400"
+                >
+                  {saving && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+                  {saving ? "Saving…" : "Save Changes"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

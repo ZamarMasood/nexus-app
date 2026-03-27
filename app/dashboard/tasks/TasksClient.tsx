@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { LayoutGrid, List, Plus } from "lucide-react";
 import Image from "next/image";
+import { LayoutGrid, List, Plus } from "lucide-react";
 import { TaskBoard } from "@/components/tasks/TaskBoard";
 import type { TaskWithAssignee } from "@/components/tasks/TaskCard";
 import { useTaskForm } from "@/app/dashboard/task-form-context";

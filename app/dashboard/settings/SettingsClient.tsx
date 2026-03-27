@@ -233,10 +233,10 @@ export default function SettingsClient({ initialName, initialAvatarUrl, userRole
               name="password"
               type="password"
               required
-              minLength={6}
+              minLength={8}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="Min. 6 characters"
+              placeholder="Min. 8 characters"
               className={fieldClass}
             />
           </div>
@@ -278,7 +278,7 @@ export default function SettingsClient({ initialName, initialAvatarUrl, userRole
                 ))}
               </div>
               <span className="text-[11px] text-faint-app">
-                {password.length < 6 ? 'Too short' : password.length < 8 ? 'Weak' : password.length < 12 ? 'Good' : 'Strong'}
+                {password.length < 8 ? 'Too short' : password.length < 12 ? 'Good' : 'Strong'}
               </span>
             </div>
           )}

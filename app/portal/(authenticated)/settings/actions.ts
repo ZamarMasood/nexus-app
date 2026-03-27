@@ -50,8 +50,8 @@ export async function updateClientPasswordAction(
 
   if (!currentPassword || !newPassword)
     return { error: 'All password fields are required.', success: null };
-  if (newPassword.length < 6)
-    return { error: 'New password must be at least 6 characters.', success: null };
+  if (newPassword.length < 8)
+    return { error: 'New password must be at least 8 characters.', success: null };
   if (newPassword !== confirm)
     return { error: 'Passwords do not match.', success: null };
 
@@ -71,7 +71,8 @@ export async function updateClientPasswordAction(
   const match = await bcrypt.compare(currentPassword, client.portal_password);
   if (!match) return { error: 'Current password is incorrect.', success: null };
 
-  const hashed = await bcrypt.hash(newPassword, 10);
+  const BCRYPT_ROUNDS = 10;
+  const hashed = await bcrypt.hash(newPassword, BCRYPT_ROUNDS);
   const { error: updateError } = await supabaseAdmin
     .from('clients')
     .update({ portal_password: hashed })

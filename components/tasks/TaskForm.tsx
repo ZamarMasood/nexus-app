@@ -178,7 +178,7 @@ export function TaskFormDialog({
                 className={FIELD}
                 autoFocus
               />
-              {errors.title && <p className="mt-1 text-xs text-rose-400">{errors.title}</p>}
+              {errors.title && <p className="mt-1 text-xs text-rose-400" role="alert">{errors.title}</p>}
             </div>
 
             {/* Description */}
@@ -219,7 +219,7 @@ export function TaskFormDialog({
                     ))}
                   </SelectContent>
                 </Select>
-                {errors.project_id && <p className="mt-1 text-xs text-rose-400">{errors.project_id}</p>}
+                {errors.project_id && <p className="mt-1 text-xs text-rose-400" role="alert">{errors.project_id}</p>}
               </div>
 
               <div>

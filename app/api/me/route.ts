@@ -7,7 +7,7 @@ export async function GET() {
   const { data: { user } } = await supabase.auth.getUser();
 
   if (!user?.email) {
-    return NextResponse.json({ name: null });
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
   const member = await getTeamMemberByEmail(user.email);

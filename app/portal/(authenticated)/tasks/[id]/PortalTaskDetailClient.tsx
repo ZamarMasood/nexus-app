@@ -2,8 +2,8 @@
 
 import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import Image from "next/image";
 import Link from "next/link";
+import Image from "next/image";
 import {
   ArrowLeft,
   AlertCircle,
@@ -53,7 +53,7 @@ function CommentItem({ comment, clientId }: { comment: Comment; clientId: string
   const raw = comment.created_at ?? "";
   const utc = raw && !raw.endsWith("Z") && !raw.includes("+") ? raw + "Z" : raw;
   const date = utc
-    ? new Date(utc).toLocaleString("en-US", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit", hour12: true, timeZone: "Asia/Karachi" })
+    ? new Date(utc).toLocaleString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit", hour12: true })
     : "";
 
   return (
@@ -175,6 +175,7 @@ export default function PortalTaskDetailClient({
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search tasks…"
+                aria-label="Search tasks"
                 className="w-full rounded-lg bg-surface-subtle border border-surface pl-9 pr-3 py-2 text-[13px] text-primary-app placeholder:text-muted-app outline-none focus:border-violet-500/40 transition-[border-color] duration-150"
               />
             </div>

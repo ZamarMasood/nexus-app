@@ -1,9 +1,10 @@
 'use server';
 
 import { redirect } from 'next/navigation';
-import { cookies } from 'next/headers';
+import { cookies, headers } from 'next/headers';
 import { createSupabaseServerClient } from '@/lib/supabase-server';
 import { generateCsrfToken, setCsrfCookie } from '@/lib/csrf';
+import { checkRateLimit, formatResetTime } from '@/lib/rate-limit';
 import bcrypt from 'bcryptjs';
 
 export interface PortalLoginState {
@@ -14,6 +15,14 @@ export async function portalSignInAction(
   prevState: PortalLoginState,
   formData: FormData
 ): Promise<PortalLoginState> {
+  // Rate limit by IP
+  const headersList = headers();
+  const ip = headersList.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown';
+  const { success, resetMs } = checkRateLimit('portal-login:' + ip);
+  if (!success) {
+    return { error: `Too many login attempts. Please try again in ${formatResetTime(resetMs)}.` };
+  }
+
   const email = formData.get('email') as string;
   const portalPassword = formData.get('portal_password') as string;
 

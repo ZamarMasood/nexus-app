@@ -1,8 +1,10 @@
 'use server';
 
 import { redirect } from 'next/navigation';
+import { headers } from 'next/headers';
 import { createSupabaseServerClient } from '@/lib/supabase-server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
+import { checkRateLimit, formatResetTime } from '@/lib/rate-limit';
 
 export interface SetupOrgState {
   error: string | null;
@@ -16,6 +18,14 @@ export async function setupOrgAction(
   _prevState: SetupOrgState,
   formData: FormData
 ): Promise<SetupOrgState> {
+  // Rate limiting
+  const headersList = headers();
+  const ip = headersList.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown';
+  const { success, resetMs } = checkRateLimit('setup-org:' + ip);
+  if (!success) {
+    return { error: `Too many attempts. Please try again in ${formatResetTime(resetMs)}.` };
+  }
+
   const companyName = ((formData.get('companyName') as string) ?? '').trim();
   const slug        = ((formData.get('slug')        as string) ?? '').trim();
 

@@ -31,20 +31,20 @@ export async function updateTaskStatusAction(
   status: TaskStatus
 ): Promise<{ error: string } | null> {
   try {
+    const orgId = await getCallerOrgId();
     const { data, error } = await supabaseAdmin
       .from("tasks")
       .update({ status })
       .eq("id", taskId)
+      .eq("org_id", orgId)
       .select("id, status")
       .single();
 
     if (error) {
-      console.error("[updateTaskStatus] Supabase error:", error.message, { taskId, status });
       return { error: `Failed to update task: ${error.message}` };
     }
 
     if (!data) {
-      console.error("[updateTaskStatus] No row updated — task may not exist:", { taskId, status });
       return { error: "Task not found" };
     }
 
@@ -52,7 +52,6 @@ export async function updateTaskStatusAction(
     return null;
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown error";
-    console.error("[updateTaskStatus] Unexpected error:", message, { taskId, status });
     return { error: message };
   }
 }

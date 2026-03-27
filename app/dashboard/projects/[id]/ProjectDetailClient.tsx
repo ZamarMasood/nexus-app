@@ -66,12 +66,14 @@ const PRIORITY_STYLES = {
 
 interface EditFormProps {
   project: Project;
+  clients: ClientListItem[];
   onSave: (updated: Project) => void;
   onCancel: () => void;
 }
 
-function EditForm({ project, onSave, onCancel }: EditFormProps) {
+function EditForm({ project, clients, onSave, onCancel }: EditFormProps) {
   const [name, setName] = useState(project.name);
+  const [clientId, setClientId] = useState(project.client_id ?? "");
   const [status, setStatus] = useState(project.status ?? "active");
   const [deadline, setDeadline] = useState(project.deadline ?? "");
   const [totalValue, setTotalValue] = useState(project.total_value != null ? String(project.total_value) : "");
@@ -89,6 +91,7 @@ function EditForm({ project, onSave, onCancel }: EditFormProps) {
     try {
       const updated = await updateProject(project.id, {
         name: name.trim(),
+        client_id: clientId || null,
         status,
         deadline: deadline || null,
         total_value: totalValue ? parseFloat(totalValue) : null,
@@ -110,6 +113,15 @@ function EditForm({ project, onSave, onCancel }: EditFormProps) {
             Project Name <span className="text-rose-400 normal-case tracking-normal">*</span>
           </label>
           <input value={name} onChange={(e) => setName(e.target.value)} className={fieldClass} required />
+        </div>
+        <div className="space-y-1.5">
+          <label className="text-[11px] font-semibold uppercase tracking-wider text-dim-app">Client</label>
+          <select value={clientId} onChange={(e) => setClientId(e.target.value)} className={fieldClass}>
+            <option value="">No client</option>
+            {clients.map((c) => (
+              <option key={c.id} value={c.id}>{c.name}</option>
+            ))}
+          </select>
         </div>
         <div className="space-y-1.5">
           <label className="text-[11px] font-semibold uppercase tracking-wider text-dim-app">Status</label>
@@ -411,7 +423,7 @@ export default function ProjectDetailClient({
 
               <div className="px-6 py-5">
                 {editing ? (
-                  <EditForm project={project} onSave={(updated) => { setProject(updated); setEditing(false); }} onCancel={() => setEditing(false)} />
+                  <EditForm project={project} clients={clients} onSave={(updated) => { setProject(updated); setClient(findClientInList(updated.client_id, clients)); setEditing(false); }} onCancel={() => setEditing(false)} />
                 ) : (
                   <div className="grid grid-cols-2 gap-5 sm:grid-cols-4">
                     <div>

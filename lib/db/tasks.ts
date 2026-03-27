@@ -1,6 +1,7 @@
 'use server';
 import { supabaseAdmin } from '../supabase-admin';
 import { createSupabaseServerClient } from '../supabase-server';
+import { getCallerOrgId } from './team-members';
 import type { Task, TaskInsert, TaskUpdate, TeamMember, Comment, ProjectFile } from '../types';
 // TeamMember used by TaskWithAssignee
 
@@ -13,8 +14,8 @@ export type TaskWithAssignee = Task & {
 };
 
 export async function getTasks(projectId?: string): Promise<Task[]> {
-  const supabase = createSupabaseServerClient();
-  let query = supabase.from('tasks').select('*').order('created_at', { ascending: false });
+  const orgId = await getCallerOrgId();
+  let query = supabaseAdmin.from('tasks').select('*').eq('org_id', orgId).order('created_at', { ascending: false });
 
   if (projectId) {
     query = query.eq('project_id', projectId);
@@ -27,10 +28,11 @@ export async function getTasks(projectId?: string): Promise<Task[]> {
 }
 
 export async function getTasksWithAssignees(projectId?: string): Promise<TaskWithAssignee[]> {
-  const supabase = createSupabaseServerClient();
-  let query = supabase
+  const orgId = await getCallerOrgId();
+  let query = supabaseAdmin
     .from('tasks')
     .select('*, assignee:team_members!tasks_assignee_id_fkey(id, name, avatar_url, role)')
+    .eq('org_id', orgId)
     .order('created_at', { ascending: false });
 
   if (projectId) {
@@ -45,10 +47,11 @@ export async function getTasksWithAssignees(projectId?: string): Promise<TaskWit
 
 /** Fetch only recent N tasks with assignee info (for dashboard list). */
 export async function getRecentTasksWithAssignees(limit: number = 10): Promise<TaskWithAssignee[]> {
-  const supabase = createSupabaseServerClient();
-  const { data, error } = await supabase
+  const orgId = await getCallerOrgId();
+  const { data, error } = await supabaseAdmin
     .from('tasks')
     .select('*, assignee:team_members!tasks_assignee_id_fkey(id, name, avatar_url, role)')
+    .eq('org_id', orgId)
     .order('created_at', { ascending: false })
     .limit(limit);
 
@@ -63,10 +66,11 @@ export async function getTaskStats(): Promise<{
   overdue: number;
   dueSoon: number;
 }> {
-  const supabase = createSupabaseServerClient();
-  const { data, error } = await supabase
+  const orgId = await getCallerOrgId();
+  const { data, error } = await supabaseAdmin
     .from('tasks')
-    .select('id, status, due_date');
+    .select('id, status, due_date')
+    .eq('org_id', orgId);
 
   if (error) throw new Error(`Failed to fetch task stats: ${error.message}`);
 
@@ -94,10 +98,11 @@ export async function getTaskStats(): Promise<{
 export async function getTaskCountsByProject(): Promise<
   Record<string, { total: number; done: number }>
 > {
-  const supabase = createSupabaseServerClient();
-  const { data, error } = await supabase
+  const orgId = await getCallerOrgId();
+  const { data, error } = await supabaseAdmin
     .from('tasks')
-    .select('project_id, status');
+    .select('project_id, status')
+    .eq('org_id', orgId);
 
   if (error) throw new Error(`Failed to fetch task counts: ${error.message}`);
 
@@ -128,11 +133,12 @@ export async function getTasksByAssignee(assigneeId: string): Promise<TaskSideba
 }
 
 export async function getTaskById(id: string): Promise<Task> {
-  const supabase = createSupabaseServerClient();
-  const { data, error } = await supabase
+  const orgId = await getCallerOrgId();
+  const { data, error } = await supabaseAdmin
     .from('tasks')
     .select('*')
     .eq('id', id)
+    .eq('org_id', orgId)
     .single();
 
   if (error) throw new Error(`Failed to fetch task ${id}: ${error.message}`);
@@ -140,11 +146,12 @@ export async function getTaskById(id: string): Promise<Task> {
 }
 
 export async function getTaskByIdWithAssignee(id: string): Promise<TaskWithAssignee> {
-  const supabase = createSupabaseServerClient();
-  const { data, error } = await supabase
+  const orgId = await getCallerOrgId();
+  const { data, error } = await supabaseAdmin
     .from('tasks')
     .select('*, assignee:team_members!tasks_assignee_id_fkey(id, name, avatar_url, role)')
     .eq('id', id)
+    .eq('org_id', orgId)
     .single();
 
   if (error) throw new Error(`Failed to fetch task ${id}: ${error.message}`);
@@ -163,10 +170,12 @@ export async function createTask(task: TaskInsert): Promise<Task> {
 }
 
 export async function updateTask(id: string, updates: TaskUpdate): Promise<Task> {
+  const orgId = await getCallerOrgId();
   const { data, error } = await supabaseAdmin
     .from('tasks')
     .update(updates)
     .eq('id', id)
+    .eq('org_id', orgId)
     .select()
     .single();
 
@@ -186,7 +195,8 @@ export async function updateTask(id: string, updates: TaskUpdate): Promise<Task>
 }
 
 export async function deleteTask(id: string): Promise<void> {
-  const { error } = await supabaseAdmin.from('tasks').delete().eq('id', id);
+  const orgId = await getCallerOrgId();
+  const { error } = await supabaseAdmin.from('tasks').delete().eq('id', id).eq('org_id', orgId);
 
   if (error) throw new Error(`Failed to delete task ${id}: ${error.message}`);
 }
@@ -257,8 +267,8 @@ export async function getTasksWithAssigneesByMember(memberId: string): Promise<T
     .from('tasks')
     .select('*, assignee:team_members!tasks_assignee_id_fkey(id, name, avatar_url, role)')
     .or(ids.length > 0
-      ? `assignee_id.eq.${memberId},project_id.in.(${ids.join(',')})`
-      : `assignee_id.eq.${memberId}`)
+      ? `assignee_id.eq.${encodeURIComponent(memberId)},project_id.in.(${ids.map(id => encodeURIComponent(id)).join(',')})`
+      : `assignee_id.eq.${encodeURIComponent(memberId)}`)
     .order('created_at', { ascending: false });
 
   if (error) throw new Error(`Failed to fetch tasks for member: ${error.message}`);
@@ -277,8 +287,8 @@ export async function getRecentTasksWithAssigneesByMember(
     .from('tasks')
     .select('*, assignee:team_members!tasks_assignee_id_fkey(id, name, avatar_url, role)')
     .or(ids.length > 0
-      ? `assignee_id.eq.${memberId},project_id.in.(${ids.join(',')})`
-      : `assignee_id.eq.${memberId}`)
+      ? `assignee_id.eq.${encodeURIComponent(memberId)},project_id.in.(${ids.map(id => encodeURIComponent(id)).join(',')})`
+      : `assignee_id.eq.${encodeURIComponent(memberId)}`)
     .order('created_at', { ascending: false })
     .limit(limit);
 
@@ -300,8 +310,8 @@ export async function getTaskStatsByMember(memberId: string): Promise<{
     .from('tasks')
     .select('id, status, due_date')
     .or(ids.length > 0
-      ? `assignee_id.eq.${memberId},project_id.in.(${ids.join(',')})`
-      : `assignee_id.eq.${memberId}`);
+      ? `assignee_id.eq.${encodeURIComponent(memberId)},project_id.in.(${ids.map(id => encodeURIComponent(id)).join(',')})`
+      : `assignee_id.eq.${encodeURIComponent(memberId)}`);
 
   if (error) throw new Error(`Failed to fetch task stats for member: ${error.message}`);
 
@@ -350,7 +360,6 @@ export async function getTaskCountsByProjectFiltered(
 }
 
 export async function uploadFileToTask(taskId: string, file: File): Promise<ProjectFile> {
-  const ext = file.name.split('.').pop();
   const path = `tasks/${taskId}/${Date.now()}-${file.name}`;
 
   const { error: uploadError } = await supabaseAdmin.storage

@@ -127,7 +127,6 @@ export function TaskBoard({ initialTasks, onTaskClick, isAdmin = false }: TaskBo
     pendingUpdatesRef.current.delete(draggableId);
 
     if (updateResult?.error) {
-      console.error("Task status update failed:", updateResult.error);
       // Revert on failure
       setTasks((prev) =>
         prev.map((t) =>
@@ -138,6 +137,7 @@ export function TaskBoard({ initialTasks, onTaskClick, isAdmin = false }: TaskBo
       // Force client-side refresh to ensure server data is re-fetched in production
       router.refresh();
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- canDrag and tasks are refs/state that shouldn't re-create the callback
   }, [router]);
 
   return (

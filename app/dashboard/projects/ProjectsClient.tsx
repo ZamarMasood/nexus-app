@@ -86,7 +86,7 @@ function NewProjectDialog({ open, onOpenChange, clients, onSuccess }: NewProject
         client_id:   clientId || null,
         status,
         deadline:    deadline || null,
-        total_value: totalValue ? parseFloat(totalValue) : null,
+        total_value: totalValue ? Math.max(0, parseFloat(totalValue)) : null,
       });
       onOpenChange(false);
       onSuccess();

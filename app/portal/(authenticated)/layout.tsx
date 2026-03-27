@@ -1,6 +1,6 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { getClientById } from "@/lib/db/clients";
+import { getClientByIdForPortal } from "@/lib/db/clients";
 import PortalSidebar from "@/components/portal/PortalSidebar";
 
 export default async function PortalAuthenticatedLayout({
@@ -17,7 +17,7 @@ export default async function PortalAuthenticatedLayout({
 
   let clientName = "Client";
   try {
-    const client = await getClientById(clientId);
+    const client = await getClientByIdForPortal(clientId);
     clientName = client.name;
   } catch {
     // If client lookup fails, still allow access — name is cosmetic only

@@ -1,14 +1,15 @@
 'use server';
 import { supabaseAdmin } from '../supabase-admin';
 import { createSupabaseServerClient } from '../supabase-server';
+import { getCallerOrgId } from './team-members';
 import type { Invoice, InvoiceInsert, InvoiceUpdate } from '../types';
 
 // Lightweight type for sidebar/list views — excludes pdf_url
 export type InvoiceListItem = Pick<Invoice, 'id' | 'invoice_number' | 'client_id' | 'amount' | 'status' | 'due_date'>;
 
 export async function getInvoices(clientId?: string): Promise<Invoice[]> {
-  const supabase = createSupabaseServerClient();
-  let query = supabase.from('invoices').select('*').order('created_at', { ascending: false });
+  const orgId = await getCallerOrgId();
+  let query = supabaseAdmin.from('invoices').select('*').eq('org_id', orgId).order('created_at', { ascending: false });
 
   if (clientId) {
     query = query.eq('client_id', clientId);
@@ -22,10 +23,11 @@ export async function getInvoices(clientId?: string): Promise<Invoice[]> {
 
 /** Fetch only the columns needed for list/sidebar display (no pdf_url). */
 export async function getInvoicesForList(clientId?: string): Promise<InvoiceListItem[]> {
-  const supabase = createSupabaseServerClient();
-  let query = supabase
+  const orgId = await getCallerOrgId();
+  let query = supabaseAdmin
     .from('invoices')
     .select('id, invoice_number, client_id, amount, status, due_date')
+    .eq('org_id', orgId)
     .order('created_at', { ascending: false });
 
   if (clientId) {
@@ -39,11 +41,12 @@ export async function getInvoicesForList(clientId?: string): Promise<InvoiceList
 }
 
 export async function getInvoiceById(id: string): Promise<Invoice> {
-  const supabase = createSupabaseServerClient();
-  const { data, error } = await supabase
+  const orgId = await getCallerOrgId();
+  const { data, error } = await supabaseAdmin
     .from('invoices')
     .select('*')
     .eq('id', id)
+    .eq('org_id', orgId)
     .single();
 
   if (error) throw new Error(`Failed to fetch invoice ${id}: ${error.message}`);
@@ -61,11 +64,13 @@ export async function createInvoice(invoice: InvoiceInsert): Promise<Invoice> {
   return data;
 }
 
-export async function updateInvoice(id: string, updates: InvoiceUpdate): Promise<Invoice> {
+export async function updateInvoice(id: string, updates: InvoiceUpdate, orgId?: string): Promise<Invoice> {
+  const resolvedOrgId = orgId ?? await getCallerOrgId();
   const { data, error } = await supabaseAdmin
     .from('invoices')
     .update(updates)
     .eq('id', id)
+    .eq('org_id', resolvedOrgId)
     .select()
     .single();
 
