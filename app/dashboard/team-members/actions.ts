@@ -64,7 +64,7 @@ export async function addTeamMemberAction(
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
     const { data: inviteData, error: inviteError } = await supabaseAdmin.auth.admin.inviteUserByEmail(
       email,
-      { redirectTo: `${siteUrl}/auth/callback?type=invite` }
+      { redirectTo: `${siteUrl}/auth/confirm` }
     );
 
     if (inviteError) {
