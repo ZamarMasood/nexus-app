@@ -1,7 +1,7 @@
 'use server';
 
 import { headers } from 'next/headers';
-import { createSupabaseServerClient } from '@/lib/supabase-server';
+import { supabaseAdmin } from '@/lib/supabase-admin';
 import { checkRateLimit, formatResetTime } from '@/lib/rate-limit';
 
 export interface ForgotPasswordState {
@@ -28,12 +28,11 @@ export async function forgotPasswordAction(
   }
 
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
-  const supabase = createSupabaseServerClient();
 
-  // Send password reset link via Supabase — the email contains a clickable link.
-  // If the email doesn't exist, Supabase silently does nothing (no enumeration leak).
-  await supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: `${siteUrl}/auth/callback?type=recovery&next=/reset-password`,
+  // Use admin (service_role) client — the server-side anon client has no user
+  // session in this context and may silently fail to send.
+  await supabaseAdmin.auth.resetPasswordForEmail(email, {
+    redirectTo: `${siteUrl}/auth/callback?next=/reset-password`,
   });
 
   // Always return success to prevent email enumeration
