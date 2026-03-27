@@ -3,8 +3,6 @@
 import { headers } from 'next/headers';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 import { checkRateLimit, formatResetTime } from '@/lib/rate-limit';
-import { sendEmail } from '@/lib/email';
-import { getWelcomeEmail } from '@/lib/email-templates';
 
 // -- Step 1: Validate form + create org + send confirmation link ---------------
 
@@ -116,27 +114,20 @@ export async function signupAction(
     return { error: null, fieldErrors: { email: 'An account with this email already exists.' } };
   }
 
-  // STEP D: Create organisation
-  const { data: org, error: orgError } = await supabaseAdmin
-    .from('organisations' as any)
-    .insert({ name: companyName.trim(), slug: slug.trim(), plan: 'free' })
-    .select('id')
-    .single();
-
-  if (orgError || !org) {
-    return { error: `Failed to create organisation: ${orgError?.message ?? 'unknown error'}` };
-  }
-  const orgId = (org as unknown as { id: string }).id ?? '';
-
-  // STEP E: Create auth user with email confirmation DISABLED (Supabase sends confirmation link)
+  // STEP D: Create auth user with signup details in metadata (org + team_member created after email verification)
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
-  const metadata = { full_name: fullName.trim(), org_id: orgId, user_role: 'admin', is_owner: true };
+  const metadata = {
+    full_name: fullName.trim(),
+    company_name: companyName.trim(),
+    slug: slug.trim(),
+    user_role: 'admin',
+    is_owner: true,
+    signup_pending: true, // Flag: org not yet created — will be created after email verification
+  };
 
   // Check if an auth user already exists (e.g. from a previous incomplete signup attempt)
   const { data: { users: allUsers } } = await supabaseAdmin.auth.admin.listUsers();
   const existingAuthUser = allUsers?.find((u) => u.email === trimmedEmail) ?? null;
-
-  let authUserId: string;
 
   if (existingAuthUser) {
     // Update existing auth user with new password and metadata
@@ -145,20 +136,16 @@ export async function signupAction(
       { password, email_confirm: false, user_metadata: metadata }
     );
     if (updateError) {
-      await supabaseAdmin.from('organisations').delete().eq('id', orgId);
       return { error: `Failed to set up account: ${updateError.message}` };
     }
-    authUserId = existingAuthUser.id;
 
     // Re-send confirmation email via generateLink
-    const { data: linkData } = await supabaseAdmin.auth.admin.generateLink({
+    await supabaseAdmin.auth.admin.generateLink({
       type: 'signup',
       email: trimmedEmail,
       password,
-      options: { redirectTo: `${siteUrl}/auth/callback?next=/dashboard` },
+      options: { redirectTo: `${siteUrl}/auth/callback?next=/dashboard&type=signup` },
     });
-    // linkData is used implicitly — Supabase sends the email
-    void linkData;
   } else {
     // Create new auth user — Supabase automatically sends confirmation email
     const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
@@ -169,48 +156,18 @@ export async function signupAction(
     });
 
     if (authError) {
-      await supabaseAdmin.from('organisations').delete().eq('id', orgId);
       return { error: `Failed to create account: ${authError.message}` };
     }
-    authUserId = authData.user.id;
 
     // Generate and "send" the confirmation link via Supabase
     await supabaseAdmin.auth.admin.generateLink({
       type: 'signup',
       email: trimmedEmail,
       password,
-      options: { redirectTo: `${siteUrl}/auth/callback?next=/dashboard` },
+      options: { redirectTo: `${siteUrl}/auth/callback?next=/dashboard&type=signup` },
     });
   }
 
-  // STEP F: Upsert team_members row
-  await supabaseAdmin
-    .from('team_members')
-    .upsert(
-      {
-        id: authUserId,
-        org_id: orgId,
-        name: fullName.trim(),
-        email: trimmedEmail,
-        user_role: 'admin',
-        is_owner: true,
-      },
-      { onConflict: 'id' }
-    );
-
-  // Send welcome email — never block signup on email failure
-  try {
-    await sendEmail({
-      to: trimmedEmail,
-      subject: 'Welcome to Nexus — your workspace is ready',
-      html: getWelcomeEmail({
-        memberName: fullName.trim(),
-        companyName: companyName.trim(),
-      }),
-    });
-  } catch {
-    // Non-critical
-  }
-
+  // Org + team_member will be created in /auth/callback after email verification
   return { error: null, success: true, email: trimmedEmail };
 }
