@@ -1,22 +1,13 @@
 'use client';
 
 import { useFormState, useFormStatus } from 'react-dom';
-import { signupAction, resendSignupOtpAction, createOrgAction, type SignupState } from './actions';
-import { Eye, EyeOff, Layers, ArrowRight, Sun, Moon, ArrowLeft, KeyRound, CheckCircle } from 'lucide-react';
+import { signupAction, type SignupState } from './actions';
+import { Eye, EyeOff, Layers, ArrowRight, Sun, Moon, ArrowLeft, Mail } from 'lucide-react';
 import Link from 'next/link';
 import { useState, useEffect, useRef } from 'react';
 import { useTheme } from 'next-themes';
-import { useRouter } from 'next/navigation';
-import { createBrowserClient } from '@supabase/ssr';
 
-/* --- Supabase browser client ------------------------------------------------ */
-
-function getSupabase() {
-  return createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
-}
+/* --- removed: Supabase browser client no longer needed for OTP ------------- */
 
 /* --- Submit button ---------------------------------------------------------- */
 function SubmitButton() {
@@ -50,36 +41,7 @@ function SubmitButton() {
   );
 }
 
-/* --- Loading button (for client-side actions) ------------------------------- */
-function LoadingButton({ label, pendingLabel, loading, onClick }: {
-  label: string; pendingLabel: string; loading: boolean; onClick?: () => void;
-}) {
-  return (
-    <button
-      type={onClick ? 'button' : 'submit'}
-      disabled={loading}
-      onClick={onClick}
-      className="group relative w-full overflow-hidden rounded-xl py-3.5 text-[14px] font-semibold text-white transition-[transform,box-shadow] duration-200 disabled:opacity-60 hover:scale-[1.015] hover:shadow-[0_8px_40px_rgba(124,58,237,0.5)] active:scale-[0.985] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/60"
-      style={{
-        background: 'linear-gradient(135deg, #7c3aed 0%, #5b21b6 100%)',
-        boxShadow: '0 4px 24px rgba(124,58,237,0.4), 0 1px 0 rgba(255,255,255,0.1) inset',
-      }}
-    >
-      <span
-        className="pointer-events-none absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-in-out"
-        style={{ background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent)' }}
-      />
-      {loading ? (
-        <span className="flex items-center justify-center gap-2.5">
-          <span className="size-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-          {pendingLabel}
-        </span>
-      ) : (
-        <span className="flex items-center justify-center gap-2">{label}</span>
-      )}
-    </button>
-  );
-}
+/* --- removed: LoadingButton no longer needed (OTP removed) ----------------- */
 
 /* --- Field error ------------------------------------------------------------ */
 function FieldError({ message }: { message?: string }) {
@@ -91,63 +53,7 @@ function FieldError({ message }: { message?: string }) {
   );
 }
 
-/* --- OTP Input (6 individual boxes) ----------------------------------------- */
-function OtpInput({ value, onChange, inputBg, inputBdr, textH }: {
-  value: string;
-  onChange: (val: string) => void;
-  inputBg: string;
-  inputBdr: string;
-  textH: string;
-}) {
-  const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
-
-  function handleChange(index: number, char: string) {
-    if (!/^\d*$/.test(char)) return;
-    const arr = value.split('');
-    arr[index] = char;
-    const next = arr.join('').slice(0, 6);
-    onChange(next);
-    if (char && index < 5) {
-      inputRefs.current[index + 1]?.focus();
-    }
-  }
-
-  function handleKeyDown(index: number, e: React.KeyboardEvent) {
-    if (e.key === 'Backspace' && !value[index] && index > 0) {
-      inputRefs.current[index - 1]?.focus();
-    }
-  }
-
-  function handlePaste(e: React.ClipboardEvent) {
-    e.preventDefault();
-    const pasted = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6);
-    onChange(pasted);
-    const focusIdx = Math.min(pasted.length, 5);
-    inputRefs.current[focusIdx]?.focus();
-  }
-
-  return (
-    <div className="flex justify-center gap-2.5">
-      {[0, 1, 2, 3, 4, 5].map((i) => (
-        <input
-          key={i}
-          ref={(el) => { inputRefs.current[i] = el; }}
-          type="text"
-          inputMode="numeric"
-          maxLength={1}
-          autoComplete={i === 0 ? 'one-time-code' : 'off'}
-          aria-label={`Verification code digit ${i + 1} of 6`}
-          value={value[i] ?? ''}
-          onChange={(e) => handleChange(i, e.target.value)}
-          onKeyDown={(e) => handleKeyDown(i, e)}
-          onPaste={i === 0 ? handlePaste : undefined}
-          className="size-12 rounded-xl text-center text-xl font-bold outline-none transition-[border-color,box-shadow] duration-200 focus:border-violet-500/65 focus:shadow-[0_0_0_3px_rgba(124,58,237,0.15)]"
-          style={{ background: inputBg, border: `1px solid ${inputBdr}`, color: textH }}
-        />
-      ))}
-    </div>
-  );
-}
+/* --- removed: OtpInput no longer needed (OTP removed) ---------------------- */
 
 /* --- Slug generator --------------------------------------------------------- */
 function generateSlug(name: string): string {
@@ -160,20 +66,12 @@ function generateSlug(name: string): string {
     .replace(/^-|-$/g, '');
 }
 
-/* --- Stored form data type -------------------------------------------------- */
-interface FormDataSnapshot {
-  companyName: string;
-  slug: string;
-  fullName: string;
-  email: string;
-  password: string;
-}
+/* --- removed: FormDataSnapshot no longer needed (OTP removed) -------------- */
 
 /* --- Page ------------------------------------------------------------------- */
 const initialState: SignupState = { error: null, fieldErrors: {} };
 
 export default function SignupClient() {
-  const router = useRouter();
   const [state, action] = useFormState<SignupState, FormData>(signupAction, initialState);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
@@ -184,135 +82,18 @@ export default function SignupClient() {
   const [mounted, setMounted] = useState(false);
   const slugRef = useRef<HTMLInputElement>(null);
 
-  // OTP state
-  const [step, setStep] = useState<'form' | 'otp' | 'success'>('form');
-  const [email, setEmail] = useState('');
-  const [otp, setOtp] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [otpError, setOtpError] = useState<string | null>(null);
-  const [secondsLeft, setSecondsLeft] = useState(900);
-
-  // Store form data so we can create the org after OTP verification
-  const formSnapshotRef = useRef<FormDataSnapshot | null>(null);
+  // Step state: form (fill details) → success (check your email)
+  const [step, setStep] = useState<'form' | 'success'>('form');
 
   useEffect(() => setMounted(true), []);
 
-  // OTP countdown timer
-  useEffect(() => {
-    if (step !== 'otp') return;
-    setSecondsLeft(900);
-    const interval = setInterval(() => {
-      setSecondsLeft(prev => {
-        if (prev <= 1) { clearInterval(interval); return 0; }
-        return prev - 1;
-      });
-    }, 1000);
-    return () => clearInterval(interval);
-  }, [step]);
-
-  const otpMinutes = Math.floor(secondsLeft / 60);
-  const otpSeconds = secondsLeft % 60;
-  const otpTimerDisplay = secondsLeft > 0
-    ? `Code expires in ${otpMinutes}:${otpSeconds.toString().padStart(2, '0')}`
-    : 'Code has expired — request a new one';
-  const otpExpired = secondsLeft === 0;
-
-  // After server action validates + sends OTP, capture form data and move to OTP step
+  // After server action succeeds → show "check your email" screen
   useEffect(() => {
     if (state.success && state.email && step === 'form') {
-      setEmail(state.email);
-      // Snapshot already captured in the form's onSubmit handler
-      setStep('otp');
+      setStep('success');
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps -- step is intentionally excluded to prevent re-firing when step changes
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state.success, state.email]);
-
-  // Capture form values before the server action runs
-  function handleFormSubmit(e: React.FormEvent<HTMLFormElement>) {
-    const form = e.currentTarget;
-    formSnapshotRef.current = {
-      companyName: (form.elements.namedItem('companyName') as HTMLInputElement)?.value ?? '',
-      slug: (form.elements.namedItem('slug') as HTMLInputElement)?.value ?? '',
-      fullName: (form.elements.namedItem('fullName') as HTMLInputElement)?.value ?? '',
-      email: (form.elements.namedItem('email') as HTMLInputElement)?.value ?? '',
-      password: (form.elements.namedItem('password') as HTMLInputElement)?.value ?? '',
-    };
-    // Don't prevent default — let the server action run
-  }
-
-  async function handleVerifyOtp() {
-    if (otp.length !== 6) {
-      setOtpError('Please enter the full 6-digit code.');
-      return;
-    }
-    setLoading(true);
-    setOtpError(null);
-
-    // Step 1: Verify OTP with Supabase
-    const supabase = getSupabase();
-    const { error } = await supabase.auth.verifyOtp({
-      email,
-      token: otp,
-      type: 'email',
-    });
-
-    if (error) {
-      setLoading(false);
-      setOtpError(error.message);
-      return;
-    }
-
-    // Step 2: OTP verified — now create org + user via server action
-    const snap = formSnapshotRef.current;
-    if (!snap) {
-      setLoading(false);
-      setOtpError('Session expired. Please start over.');
-      return;
-    }
-
-    const result = await createOrgAction(
-      snap.companyName,
-      snap.slug,
-      snap.fullName,
-      snap.email,
-      snap.password
-    );
-
-    if (result.error) {
-      setLoading(false);
-      setOtpError(result.error);
-      return;
-    }
-
-    // Step 3: Org created — sign in with password and redirect
-    const { error: signInError } = await supabase.auth.signInWithPassword({
-      email: snap.email,
-      password: snap.password,
-    });
-
-    if (signInError) {
-      setLoading(false);
-      setOtpError(signInError.message);
-      return;
-    }
-
-    // Navigate immediately — don't update state after this point
-    // to avoid "Node cannot be found" errors from unmounted DOM nodes
-    router.replace('/dashboard');
-  }
-
-  async function handleResendOtp() {
-    setOtp('');
-    setOtpError(null);
-    setLoading(true);
-    const result = await resendSignupOtpAction(email);
-    setLoading(false);
-    if (result.error) {
-      setOtpError(result.error);
-    } else {
-      setSecondsLeft(900);
-    }
-  }
 
   const isDark = mounted ? resolvedTheme === 'dark' : true;
 
@@ -522,7 +303,7 @@ export default function SignupClient() {
                 </div>
               )}
 
-              <form action={action} onSubmit={handleFormSubmit}>
+              <form action={action}>
                 <div className="s2 grid grid-cols-1 gap-x-6 gap-y-4 sm:grid-cols-2">
                   <div>
                     <label className="mb-1.5 block text-[12px] font-medium" style={{ color: textSub }}>Company Name</label>
@@ -714,110 +495,42 @@ export default function SignupClient() {
           )}
 
           {/* ================================================================ */}
-          {/* STEP: OTP verification                                           */}
+          {/* STEP: Success — check your email                                 */}
           {/* ================================================================ */}
-          {step === 'otp' && (
-            <div className="relative z-[1]">
-              {/* Step indicators */}
-              <div className="s1 mb-6 flex items-center justify-center gap-2">
-                {(['details', 'verify'] as const).map((s, i) => (
-                  <div key={s} className="flex items-center gap-2">
-                    <div
-                      className="flex size-7 items-center justify-center rounded-full text-[11px] font-bold transition-colors duration-300"
-                      style={{
-                        background: (i === 0) ? 'linear-gradient(135deg, #10b981, #059669)' : 'linear-gradient(135deg, #7c3aed, #5b21b6)',
-                        color: '#fff',
-                        boxShadow: (i === 1) ? '0 2px 12px rgba(124,58,237,0.4)' : '0 2px 12px rgba(16,185,129,0.4)',
-                      }}
-                    >
-                      {i === 0 ? <CheckCircle size={13} /> : (i + 1)}
-                    </div>
-                    {i < 1 && (
-                      <div className="h-px w-8" style={{ background: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)' }} />
-                    )}
-                  </div>
-                ))}
-              </div>
-
-              {/* Heading */}
-              <div className="s1 mb-7 flex flex-col items-center gap-4 text-center">
+          {step === 'success' && (
+            <div className="s1">
+              <div className="mb-7 flex flex-col items-center gap-4 text-center">
                 <div
                   className="flex size-12 items-center justify-center rounded-2xl"
-                  style={{
-                    background: 'linear-gradient(135deg, #7c3aed 0%, #5b21b6 100%)',
-                    boxShadow: '0 0 0 1px rgba(124,58,237,0.5), 0 8px 32px rgba(124,58,237,0.4)',
-                  }}
+                  style={{ background: 'linear-gradient(135deg, #10b981, #059669)', boxShadow: '0 8px 32px rgba(16,185,129,0.4)' }}
                 >
-                  <KeyRound size={20} className="text-white" />
+                  <Mail size={20} className="text-white" />
                 </div>
                 <div>
                   <h1 className="text-[26px] font-semibold leading-tight tracking-[-0.03em]"
                     style={{ color: textH, fontFamily: 'var(--font-display)' }}>
-                    Verify your email
+                    Check your email
                   </h1>
-                  <p className="mt-1 text-[13px]" style={{ color: textSub }}>
-                    We sent a 6-digit code to {email}
+                  <p className="mt-2 text-[13px] leading-relaxed" style={{ color: textSub }}>
+                    We sent a confirmation link to <strong style={{ color: textH }}>{state.email}</strong>. Click the link to activate your workspace.
                   </p>
                 </div>
               </div>
 
-              {/* Error */}
-              {otpError && (
-                <div className="s1 mb-5 rounded-xl px-4 py-3 text-[13px]"
-                  style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', color: '#fca5a5' }}>
-                  {otpError}
-                </div>
-              )}
-
-              {/* OTP input + verify button */}
-              <div className="s2 space-y-5">
-                <OtpInput value={otp} onChange={setOtp} inputBg={inputBg} inputBdr={inputBdr} textH={textH} />
-
-                {/* Countdown timer */}
-                <p className="text-center text-[12px] font-medium" style={{ color: otpExpired ? '#fca5a5' : textSub }}>
-                  {otpTimerDisplay}
-                </p>
-
-                <div className="pt-1">
-                  <LoadingButton label="Verify & Create Workspace" pendingLabel="Verifying..." loading={loading || otpExpired} onClick={handleVerifyOtp} />
-                </div>
+              <div className="rounded-xl px-4 py-3 text-[13px] text-center" style={{ background: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)', color: textSub }}>
+                Didn&apos;t receive the email? Check your spam folder.
               </div>
 
-              {/* Resend */}
-              <button
-                onClick={handleResendOtp}
-                disabled={loading && !otpExpired}
-                className="s4 mt-4 w-full text-center text-[13px] font-medium transition-opacity duration-150 hover:opacity-70 disabled:opacity-40"
-                style={{ color: isDark ? 'rgba(167,139,250,0.9)' : '#7c3aed' }}
+              <Link
+                href="/login"
+                className="group relative mt-5 flex w-full items-center justify-center gap-2 overflow-hidden rounded-xl py-3.5 text-[14px] font-semibold text-white transition-[transform,box-shadow] duration-200 hover:scale-[1.015] active:scale-[0.985]"
+                style={{
+                  background: 'linear-gradient(135deg, #7c3aed 0%, #5b21b6 100%)',
+                  boxShadow: '0 4px 24px rgba(124,58,237,0.4), 0 1px 0 rgba(255,255,255,0.1) inset',
+                }}
               >
-                Didn&apos;t receive a code? Send again
-              </button>
-            </div>
-          )}
-
-          {/* ================================================================ */}
-          {/* STEP: Success (redirecting)                                       */}
-          {/* ================================================================ */}
-          {step === 'success' && (
-            <div className="s1 flex flex-col items-center gap-4 text-center py-4">
-              <div
-                className="flex size-12 items-center justify-center rounded-2xl"
-                style={{ background: 'linear-gradient(135deg, #10b981, #059669)', boxShadow: '0 8px 32px rgba(16,185,129,0.4)' }}
-              >
-                <CheckCircle size={20} className="text-white" />
-              </div>
-              <div>
-                <h1 className="text-[26px] font-semibold leading-tight tracking-[-0.03em]"
-                  style={{ color: textH, fontFamily: 'var(--font-display)' }}>
-                  Workspace created!
-                </h1>
-                <p className="mt-1 text-[13px]" style={{ color: textSub }}>
-                  Redirecting to your dashboard...
-                </p>
-              </div>
-              <div className="mt-2">
-                <span className="size-5 animate-spin rounded-full border-2 border-violet-400/30 border-t-violet-400 inline-block" />
-              </div>
+                Go to Login
+              </Link>
             </div>
           )}
         </div>

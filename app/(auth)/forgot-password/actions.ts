@@ -1,21 +1,18 @@
 'use server';
 
 import { headers } from 'next/headers';
-import { supabaseAdmin } from '@/lib/supabase-admin';
+import { createSupabaseServerClient } from '@/lib/supabase-server';
 import { checkRateLimit, formatResetTime } from '@/lib/rate-limit';
 
-// ── Step 1: Check user exists and send OTP via Supabase ──────────────────────
-
-export interface SendOtpState {
+export interface ForgotPasswordState {
   error: string | null;
   success: boolean;
-  email?: string;
 }
 
-export async function sendOtpAction(
-  _prevState: SendOtpState,
+export async function forgotPasswordAction(
+  _prevState: ForgotPasswordState,
   formData: FormData
-): Promise<SendOtpState> {
+): Promise<ForgotPasswordState> {
   const email = (formData.get('email') as string)?.trim().toLowerCase();
 
   if (!email) {
@@ -30,18 +27,15 @@ export async function sendOtpAction(
     return { error: `Too many attempts. Please try again in ${formatResetTime(resetMs)}.`, success: false };
   }
 
-  // Check if user exists in team_members (but don't reveal to the user)
-  const { data: member } = await supabaseAdmin
-    .from('team_members')
-    .select('id, email, user_role')
-    .eq('email', email)
-    .single();
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
+  const supabase = createSupabaseServerClient();
 
-  if (!member) {
-    // Return success to prevent email enumeration — the client will attempt
-    // to send an OTP via Supabase which will silently fail for unknown emails
-    return { error: null, success: true, email };
-  }
+  // Send password reset link via Supabase — the email contains a clickable link.
+  // If the email doesn't exist, Supabase silently does nothing (no enumeration leak).
+  await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: `${siteUrl}/auth/callback?type=recovery&next=/reset-password`,
+  });
 
-  return { error: null, success: true, email };
+  // Always return success to prevent email enumeration
+  return { error: null, success: true };
 }
