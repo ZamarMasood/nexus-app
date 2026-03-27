@@ -8,43 +8,55 @@ import { createBrowserClient } from '@supabase/ssr';
  * Handles Supabase auth redirects that use hash fragments (implicit flow).
  * This is needed for invite links where Supabase puts tokens in the URL hash
  * (#access_token=...) which server-side Route Handlers cannot read.
- *
- * The Supabase browser client automatically picks up hash fragment tokens
- * via onAuthStateChange.
  */
 export default function AuthConfirmPage() {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const supabase = createBrowserClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-    );
-
-    // The Supabase client auto-detects hash fragment tokens on init.
-    // Listen for the session to be established.
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
-      if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
-        // Check if this is an invite flow — user needs to set password
-        const hash = window.location.hash;
-        if (hash.includes('type=invite')) {
-          router.replace('/reset-password');
-        } else {
-          router.replace('/dashboard');
-        }
+    async function handleHashTokens() {
+      const hash = window.location.hash.substring(1); // remove leading #
+      if (!hash) {
+        setError('No authentication data found. The link may have expired.');
+        return;
       }
-    });
 
-    // Fallback: if no auth event fires within 5s, something went wrong
-    const timeout = setTimeout(() => {
-      setError('Authentication failed or link expired. Please request a new invite.');
-    }, 5000);
+      // Parse hash fragment into key-value pairs
+      const params = new URLSearchParams(hash);
+      const accessToken = params.get('access_token');
+      const refreshToken = params.get('refresh_token');
+      const type = params.get('type');
 
-    return () => {
-      subscription.unsubscribe();
-      clearTimeout(timeout);
-    };
+      if (!accessToken || !refreshToken) {
+        setError('Invalid authentication link. Please request a new invite.');
+        return;
+      }
+
+      const supabase = createBrowserClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+      );
+
+      // Manually set the session from the hash fragment tokens
+      const { error: sessionError } = await supabase.auth.setSession({
+        access_token: accessToken,
+        refresh_token: refreshToken,
+      });
+
+      if (sessionError) {
+        setError('Authentication failed or link expired. Please request a new invite.');
+        return;
+      }
+
+      // Invited users need to set their password first
+      if (type === 'invite') {
+        router.replace('/reset-password');
+      } else {
+        router.replace('/dashboard');
+      }
+    }
+
+    handleHashTokens();
   }, [router]);
 
   if (error) {
