@@ -437,7 +437,7 @@ export default function SignupClient() {
                     >
                       {/* Visual checkbox */}
                       <div
-                        className="mt-0.5 flex-shrink-0 flex items-center justify-center rounded-[5px] transition-all duration-150"
+                        className="mt-0.5 flex-shrink-0 flex items-center justify-center rounded-[5px] transition-[background-color,border-color,box-shadow] duration-150"
                         style={{
                           width: 16,
                           height: 16,

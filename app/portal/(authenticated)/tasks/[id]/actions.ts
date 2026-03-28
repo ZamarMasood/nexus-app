@@ -2,12 +2,27 @@
 
 import { revalidatePath } from "next/cache";
 import { createPortalComment, getPortalTaskById } from "@/lib/db/portal";
+import { getCsrfToken } from "@/lib/csrf";
 
 export async function submitPortalComment(
   taskId: string,
   content: string,
-  clientId: string
+  clientId: string,
+  csrfToken: string
 ): Promise<{ error: string } | null> {
+  // Verify CSRF token
+  const cookieToken = getCsrfToken();
+  if (!csrfToken || !cookieToken || csrfToken.length !== cookieToken.length) {
+    return { error: "Invalid or missing CSRF token. Please refresh and try again." };
+  }
+  let mismatch = 0;
+  for (let i = 0; i < csrfToken.length; i++) {
+    mismatch |= csrfToken.charCodeAt(i) ^ cookieToken.charCodeAt(i);
+  }
+  if (mismatch !== 0) {
+    return { error: "Invalid or missing CSRF token. Please refresh and try again." };
+  }
+
   if (!content.trim()) return { error: "Comment cannot be empty." };
 
   try {

@@ -50,7 +50,7 @@ export default function AuthConfirmPage() {
 
       // Invited users need to set their password first
       if (type === 'invite') {
-        router.replace('/reset-password');
+        router.replace('/auth/reset-password');
       } else {
         router.replace('/dashboard');
       }

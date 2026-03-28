@@ -6,6 +6,7 @@ import {
   getPortalFilesByTaskId,
   getPortalTasks,
 } from "@/lib/db/portal";
+import { getCsrfToken } from "@/lib/csrf";
 import PortalTaskDetailClient from "./PortalTaskDetailClient";
 
 export const dynamic = "force-dynamic";
@@ -32,6 +33,7 @@ export default async function PortalTaskDetailPage({
   if (!task) notFound();
 
   const { projectName, ...taskData } = task;
+  const csrfToken = getCsrfToken() ?? "";
 
   return (
     <PortalTaskDetailClient
@@ -41,6 +43,7 @@ export default async function PortalTaskDetailPage({
       sidebarTasks={sidebarTasks}
       projectName={projectName}
       clientId={clientId}
+      csrfToken={csrfToken}
     />
   );
 }

@@ -1,9 +1,10 @@
 import { createServerClient } from '@supabase/ssr';
-import { cookies } from 'next/headers';
+import { cookies, headers } from 'next/headers';
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 import { sendEmail } from '@/lib/email';
 import { getWelcomeEmail } from '@/lib/email-templates';
+import { checkRateLimit, formatResetTime } from '@/lib/rate-limit';
 
 /**
  * POST /api/auth/provision-workspace
@@ -29,6 +30,17 @@ export async function POST() {
       },
     }
   );
+
+  // Rate limit by IP
+  const headerStore = headers();
+  const ip = (await headerStore).get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown';
+  const { success: allowed, resetMs } = checkRateLimit(`provision:${ip}`);
+  if (!allowed) {
+    return NextResponse.json(
+      { error: `Too many requests. Please try again in ${formatResetTime(resetMs)}.` },
+      { status: 429 }
+    );
+  }
 
   // Verify caller is authenticated
   const { data: { user } } = await supabase.auth.getUser();

@@ -7,9 +7,10 @@ import { submitPortalComment } from "./actions";
 interface CommentFormProps {
   taskId: string;
   clientId: string;
+  csrfToken: string;
 }
 
-export function CommentForm({ taskId, clientId }: CommentFormProps) {
+export function CommentForm({ taskId, clientId, csrfToken }: CommentFormProps) {
   const [content, setContent] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -21,7 +22,7 @@ export function CommentForm({ taskId, clientId }: CommentFormProps) {
 
     setError(null);
     startTransition(async () => {
-      const result = await submitPortalComment(taskId, trimmed, clientId);
+      const result = await submitPortalComment(taskId, trimmed, clientId, csrfToken);
       if (result?.error) {
         setError(result.error);
       } else {

@@ -1,5 +1,6 @@
 'use server';
 
+import { randomBytes } from 'crypto';
 import bcrypt from 'bcryptjs';
 import { revalidatePath } from 'next/cache';
 import { createSupabaseServerClient } from '@/lib/supabase-server';
@@ -126,8 +127,7 @@ export async function resetPortalPasswordAction(
   if (!isAdmin) throw new Error('Only admins can reset client passwords.');
 
   // 8-char alphanumeric — easy to share verbally
-  const plainPassword = Math.random().toString(36).slice(2, 6).toUpperCase() +
-    Math.random().toString(36).slice(2, 6).toUpperCase();
+  const plainPassword = randomBytes(4).toString('hex').toUpperCase();
 
   const hashed = await bcrypt.hash(plainPassword, BCRYPT_ROUNDS);
 

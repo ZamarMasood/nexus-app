@@ -74,7 +74,9 @@ export async function uploadFileAction(formData: FormData): Promise<ProjectFile>
   // Verify task belongs to caller's org
   await verifyTaskOwnership(taskId);
 
-  const path = `tasks/${taskId}/${Date.now()}-${file.name}`;
+  // Sanitize filename: strip path traversal and special characters
+  const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_').replace(/\.{2,}/g, '.');
+  const path = `tasks/${taskId}/${Date.now()}-${safeName}`;
 
   const { error: uploadError } = await supabaseAdmin.storage
     .from('project-files')

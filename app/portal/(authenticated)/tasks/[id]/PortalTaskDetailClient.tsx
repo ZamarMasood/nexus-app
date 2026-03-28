@@ -115,6 +115,7 @@ interface PortalTaskDetailClientProps {
   sidebarTasks: PortalTask[];
   projectName: string | null;
   clientId: string;
+  csrfToken: string;
 }
 
 export default function PortalTaskDetailClient({
@@ -124,6 +125,7 @@ export default function PortalTaskDetailClient({
   sidebarTasks,
   projectName,
   clientId,
+  csrfToken,
 }: PortalTaskDetailClientProps) {
   const router = useRouter();
   const [search, setSearch] = useState("");
@@ -366,7 +368,7 @@ export default function PortalTaskDetailClient({
                   <p className="text-sm text-faint-app px-1">No comments yet. Start the conversation.</p>
                 )}
 
-                <CommentForm taskId={task.id} clientId={clientId} />
+                <CommentForm taskId={task.id} clientId={clientId} csrfToken={csrfToken} />
               </div>
             </div>
           </div>

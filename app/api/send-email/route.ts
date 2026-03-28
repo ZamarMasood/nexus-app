@@ -38,7 +38,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Missing required fields: to, subject, html' }, { status: 400 });
   }
 
-  if (typeof to !== 'string' || !to.includes('@')) {
+  const emailRegex = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)+$/;
+  if (typeof to !== 'string' || !emailRegex.test(to)) {
     return NextResponse.json({ error: 'Invalid email address' }, { status: 400 });
   }
 
