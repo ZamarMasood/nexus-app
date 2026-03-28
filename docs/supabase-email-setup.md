@@ -1,79 +1,201 @@
-# Supabase Email Template Setup
+# Supabase Email Setup — Brevo SMTP
 
-## Step 1 — Reduce OTP Expiry (Do this now)
+This project uses **Brevo (formerly Sendinblue)** as the custom SMTP provider for Supabase auth emails, bypassing Supabase's default 2 emails/hour rate limit.
 
-1. Supabase Dashboard → Authentication → Email
-2. Find "OTP Expiry"
-3. Change `3600` → `900` (15 minutes)
-4. Save
+There are **two email channels** in this project:
+1. **Supabase auth emails** (signup confirmation, password reset, invites) — sent by Supabase through Brevo SMTP, configured in the Supabase Dashboard.
+2. **App-triggered emails** (welcome email after signup) — sent by the Next.js app through Brevo's HTTP API, configured via `BREVO_API_KEY` env var.
 
-## Step 2 — Update Confirm Signup Template
+---
 
-1. Supabase Dashboard → Authentication → Email Templates
-2. Click "Confirm signup"
-3. Subject: `Verify your Nexus account`
-4. Replace the HTML body with the output of `getSignupOtpEmail()` from `lib/email-templates.ts`
-5. Leave `{{ .Token }}` exactly as-is — Supabase replaces it with the real OTP code
-6. Save
+## Step 1 — Configure Brevo SMTP in Supabase Dashboard
 
-## Step 3 — Update Magic Link Template (REQUIRED for OTP resends)
+> Supabase Dashboard → Authentication → SMTP Settings
 
-When a user retries signup or clicks "Resend code", Supabase uses the **Magic Link**
-template (not "Confirm signup"). Both templates must show the OTP code.
+| Setting        | Value                                       |
+| -------------- | ------------------------------------------- |
+| Enable Custom SMTP | **ON**                                  |
+| Sender email   | `noreply@yourdomain.com` (must be verified in Brevo) |
+| Sender name    | `Nexus`                                     |
+| Host           | `smtp-relay.brevo.com`                      |
+| Port number    | `587`                                       |
+| Minimum interval between emails | `0` (Brevo handles rate limiting) |
+| Username       | Your Brevo login email                      |
+| Password       | Your Brevo **SMTP key** (NOT account password) |
 
-1. Still in Email Templates
-2. Click "Magic Link"
-3. Subject: `Verify your Nexus account`
-4. Replace the HTML body with the **same** output of `getSignupOtpEmail()` from `lib/email-templates.ts`
-5. Leave `{{ .Token }}` exactly as-is
-6. Save
+**How to get your Brevo SMTP key:**
+1. Log in to [Brevo](https://app.brevo.com)
+2. Go to **Settings** → **SMTP & API** → **SMTP** tab
+3. Copy the SMTP key (starts with `xsmtpsib-...`)
 
-## Step 4 — Update Reset Password Template
+---
 
-1. Still in Email Templates
-2. Click "Reset Password"
-3. Subject: `Reset your Nexus password`
-4. Replace the HTML body with the output of `getPasswordResetEmail()` from `lib/email-templates.ts`
-5. Leave `{{ .Token }}` exactly as-is
-6. Save
+## Step 2 — Verify Sender Email in Brevo
 
-## Step 5 — Test All Templates
+> Brevo → Settings → Senders & IPs → Senders
 
-1. Each template has a "Send test" option in the dashboard
-2. Send test for Confirm signup — verify it arrives correctly
-3. Send test for Magic Link — verify it shows the OTP code (not a link)
-4. Send test for Reset Password — verify it arrives correctly
+1. Add `noreply@yourdomain.com` as a sender
+2. Verify the email (Brevo sends a confirmation email)
+3. This MUST match the "Sender email" in Supabase SMTP settings
 
-## How to get the HTML
+If you use a custom domain, also add DNS records (DKIM, SPF) in Brevo → Settings → Senders & IPs → Domains to improve deliverability.
 
-Run the preview script to generate the HTML files:
+---
 
+## Step 3 — Configure Auth URL Settings
+
+> Supabase Dashboard → Authentication → URL Configuration
+
+| Setting        | Value                                       |
+| -------------- | ------------------------------------------- |
+| Site URL       | `https://zamar-nexus-app.vercel.app`        |
+| Redirect URLs  | Add ALL of these:                           |
+|                | `https://zamar-nexus-app.vercel.app/**`     |
+|                | `https://*.vercel.app/**` (preview deploys) |
+|                | `http://localhost:3000/**` (local dev)       |
+
+---
+
+## Step 4 — Configure Auth General Settings
+
+> Supabase Dashboard → Authentication → Providers → Email
+
+| Setting                    | Value    |
+| -------------------------- | -------- |
+| Enable Email Signup        | **ON**   |
+| Confirm email              | **ON**   |
+| Secure email change        | **ON**   |
+| OTP Expiry                 | `86400` (24 hours — matches link-based flow) |
+
+---
+
+## Step 5 — Update Email Templates
+
+> Supabase Dashboard → Authentication → Email Templates
+
+All templates use `{{ .ConfirmationURL }}` (clickable link), NOT `{{ .Token }}` (OTP code).
+
+### Confirm Signup
+- **Subject:** `Verify your Nexus account`
+- **Body:** Paste the HTML from `getSignupConfirmEmail()` in `lib/email-templates.ts`
+
+### Magic Link
+- **Subject:** `Verify your Nexus account`
+- **Body:** Paste the **same** HTML as Confirm Signup above
+- *(Supabase uses the Magic Link template for signup resends)*
+
+### Reset Password
+- **Subject:** `Reset your Nexus password`
+- **Body:** Paste the HTML from `getPasswordResetEmail()` in `lib/email-templates.ts`
+
+### Invite User
+- **Subject:** `You've been invited to Nexus`
+- **Body:** Use Supabase's default invite template, or paste custom HTML
+- *(The invite flow uses `{{ .ConfirmationURL }}` by default)*
+
+**To get the HTML:**
 ```bash
 npm run preview:emails
 ```
+Then open `.email-previews/signup-confirm.html` and `.email-previews/password-reset.html` — copy the full HTML source and paste it into the Supabase template editor.
 
-Then open `.email-previews/signup-otp.html` and `.email-previews/password-reset.html` — copy the full HTML source and paste it into the Supabase template editor.
+---
 
-## Future: Custom SMTP Setup
+## Step 6 — Set Environment Variables
 
-When ready to send from your own domain (e.g. `noreply@yourdomain.com`) instead of Supabase's default sender:
+### Vercel (Production + Preview)
 
-1. Sign up at https://resend.com
-2. Add your domain in Resend → Domains
-3. Get your API key
-4. Go to Supabase → Authentication → SMTP Settings
-5. Enable Custom SMTP with Resend credentials:
-   - Host: `smtp.resend.com`
-   - Port: `465`
-   - User: `resend`
-   - Pass: your Resend API key
-6. See: https://resend.com/docs/send-with-supabase-smtp
+> Vercel Dashboard → Project Settings → Environment Variables
 
-## Future: Transactional Email Service
+| Variable               | Value                                    | Environments      |
+| ---------------------- | ---------------------------------------- | ----------------- |
+| `NEXT_PUBLIC_SUPABASE_URL`  | `https://your-project.supabase.co`  | All               |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Your anon key                   | All               |
+| `SUPABASE_SERVICE_ROLE_KEY` | Your service role key               | All               |
+| `NEXT_PUBLIC_SITE_URL` | `https://zamar-nexus-app.vercel.app`     | Production        |
+| `NEXT_PUBLIC_SITE_URL` | `http://localhost:3000`                  | Development       |
+| `BREVO_API_KEY`        | Your Brevo API key (`xkeysib-...`)       | Production        |
+| `BREVO_SENDER_EMAIL`   | `noreply@yourdomain.com`                 | Production        |
+| `BREVO_SENDER_NAME`    | `Nexus`                                  | Production        |
 
-The `app/api/send-email/route.ts` currently stubs email sending (logs in dev, returns success in prod). When ready to send real welcome emails:
+**How to get your Brevo API key:**
+1. Brevo → Settings → SMTP & API → **API Keys** tab
+2. Create or copy an API key (starts with `xkeysib-...`)
+3. This is different from the SMTP key — the API key is for Brevo's HTTP API
 
-1. `npm install resend`
-2. Add `RESEND_API_KEY` to `.env.local`
-3. Update `app/api/send-email/route.ts` to use Resend
-4. See: https://resend.com/docs/send-with-nextjs
+### Local Development (.env.local)
+
+Copy `.env.local.example` and fill in your values. Emails are logged to console in dev mode.
+
+---
+
+## Step 7 — Test the Full Flow
+
+After all configuration, verify these flows end-to-end:
+
+### Signup
+1. Go to `/signup` and create an account
+2. Check email inbox → should receive "Verify your Nexus account" from Brevo
+3. Click the verification link → should land on `/dashboard`
+4. Check inbox again → should receive "Welcome to Nexus" email
+
+### Password Reset
+1. Go to `/forgot-password` and enter your email
+2. Check email inbox → should receive "Reset your Nexus password" from Brevo
+3. Click the reset link → should land on `/reset-password`
+4. Set new password → should redirect to `/login`
+
+### Team Invite
+1. From `/dashboard/team-members`, invite a new member
+2. Invited user checks email → should receive invite from Brevo
+3. Click accept link → should land on `/reset-password` to set password
+4. After setting password → should redirect to `/dashboard`
+
+### Verify in Brevo
+- Brevo → Transactional → Email Activity
+- Confirm emails are appearing and showing "Delivered" status
+- Check for any bounces or blocks
+
+---
+
+## Architecture Overview
+
+```
+┌────────────────────────────┐    ┌──────────────┐
+│ Supabase Auth              │───▶│ Brevo SMTP   │──▶ User inbox
+│ (signup, reset, invite)    │    │ smtp-relay.   │
+│ Configured in Dashboard    │    │ brevo.com:587 │
+└────────────────────────────┘    └──────────────┘
+
+┌────────────────────────────┐    ┌──────────────┐
+│ Next.js App                │───▶│ Brevo API    │──▶ User inbox
+│ /api/send-email            │    │ api.brevo.   │
+│ (welcome email)            │    │ com/v3/smtp  │
+│ Uses BREVO_API_KEY env var │    └──────────────┘
+└────────────────────────────┘
+```
+
+---
+
+## Troubleshooting
+
+**Emails not arriving?**
+1. Check Brevo → Transactional → Email Activity for delivery status
+2. Verify sender email is confirmed in Brevo → Settings → Senders
+3. Check Supabase Dashboard → Authentication → SMTP Settings are saved
+4. Check spam/junk folder
+
+**"Link expired" errors?**
+1. Set OTP Expiry to `86400` in Supabase Dashboard → Auth → Providers → Email
+2. Ensure `NEXT_PUBLIC_SITE_URL` matches the Site URL in Supabase Dashboard
+3. Ensure redirect URLs are listed in Supabase Dashboard → Auth → URL Configuration
+
+**Rate limit errors on signup/reset?**
+- Brevo free tier: 300 emails/day
+- Check Brevo dashboard for quota usage
+- The app surfaces Supabase rate-limit errors to the user
+
+**Welcome email not sending?**
+- Check `BREVO_API_KEY` is set in Vercel environment variables
+- Check Vercel function logs for `[Email] Brevo API error` messages
+- Welcome emails are non-critical — auth flow continues even if they fail

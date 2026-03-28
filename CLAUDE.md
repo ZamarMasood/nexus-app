@@ -285,20 +285,21 @@ Policy matrix per table:
 
 ### Current Status
 Email templates are built and ready.
-Supabase handles OTP emails automatically (signup + password reset).
-Welcome email is sent after signup via `app/api/send-email` route.
+Supabase auth emails (confirmation, password reset, invites) go through Brevo SMTP configured in Supabase Dashboard.
+Welcome email is sent after signup via `app/api/send-email` route using Brevo HTTP API.
 In development: emails are logged to console, not sent.
-In production: email sending is stubbed — integrate a service before launch.
+In production: emails are sent via Brevo (requires `BREVO_API_KEY` env var).
 
 ### Templates
 All templates in `lib/email-templates.ts` (plain HTML, no JSX):
-- `getSignupOtpEmail()` — for Supabase dashboard Confirm Signup template
+- `getSignupConfirmEmail()` — for Supabase dashboard Confirm Signup + Magic Link templates
 - `getPasswordResetEmail()` — for Supabase dashboard Reset Password template
 - `getWelcomeEmail({ memberName, companyName })` — sent after signup
+- `getTeamInviteEmail({ memberName, companyName, inviterName, inviteLink })` — sent with invites
 
 ### Sending Emails
 - `lib/email.ts`: `sendEmail()` utility (calls `/api/send-email`)
-- `app/api/send-email/route.ts`: stub — replace with Resend before launch
+- `app/api/send-email/route.ts`: sends via Brevo HTTP API in production, logs in dev
 
 ### Preview Templates
 ```bash
@@ -308,12 +309,13 @@ Opens HTML files in `.email-previews/` folder
 
 ### Manual Setup Required
 See `docs/supabase-email-setup.md` for:
-- How to paste templates into Supabase dashboard
-- How to reduce OTP expiry to 15 minutes
-- Future SMTP and email service setup
+- Brevo SMTP configuration in Supabase Dashboard
+- How to paste link-based templates into Supabase Dashboard
+- Sender verification in Brevo
+- Environment variable setup in Vercel
 
 ### Key Rules
 - Email failures NEVER block user actions (always try/catch)
-- Never log OTP codes or passwords
-- `{{ .Token }}` in Supabase templates is replaced by Supabase automatically
+- Never log tokens or passwords
+- `{{ .ConfirmationURL }}` in Supabase templates is replaced by Supabase automatically
 - `NEXT_PUBLIC_SITE_URL` must be set for CTA button links

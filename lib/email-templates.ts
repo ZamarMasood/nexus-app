@@ -84,9 +84,12 @@ function shell(topBorderGradient: string, inner: string) {
 </html>`;
 }
 
-// ── 1. Signup OTP email ────────────────────────────────────────────────────
+// ── 1. Signup confirmation email (link-based) ────────────────────────────
+// Uses {{ .ConfirmationURL }} — Supabase replaces it with the verification link.
+// Paste this template HTML into Supabase Dashboard > Auth > Email Templates > Confirm Signup
+// AND into the "Magic Link" template (Supabase uses Magic Link for resends).
 
-export function getSignupOtpEmail(): string {
+export function getSignupConfirmEmail(): string {
   const inner = `
     ${header()}
 
@@ -99,36 +102,31 @@ export function getSignupOtpEmail(): string {
           Verify your email address
         </h1>
         <p style="margin: 0; font-family: ${FONT_STACK}; font-size: 14px; color: #52525b; line-height: 1.6;">
-          You&rsquo;re almost there. Enter this verification code to finish creating your Nexus workspace.
+          You&rsquo;re almost there. Click the button below to verify your email and finish creating your Nexus workspace.
         </p>
       </td>
     </tr>
 
-    <!-- OTP Code Box -->
+    <!-- CTA Button -->
     <tr>
-      <td style="padding: 0 32px 24px;">
-        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #fafafa; border: 2px dashed #d4d4d8; border-radius: 12px;">
-          <tr>
-            <td align="center" style="padding: 24px 16px;">
-              <div style="font-family: ${FONT_STACK}; font-size: 10px; font-weight: 600; letter-spacing: 0.12em; color: #a1a1aa; text-transform: uppercase; margin-bottom: 12px;">
-                YOUR VERIFICATION CODE
-              </div>
-              <div style="font-family: 'Courier New', Courier, monospace; font-size: 36px; font-weight: 700; color: #7c3aed; letter-spacing: 0.15em; line-height: 1;">
-                {{ .Token }}
-              </div>
-              <div style="font-family: ${FONT_STACK}; font-size: 12px; color: #a1a1aa; margin-top: 12px;">
-                Expires in 15 minutes
-              </div>
-            </td>
-          </tr>
-        </table>
+      <td align="center" style="padding: 0 32px 24px;">
+        <a href="{{ .ConfirmationURL }}" target="_blank" style="display: inline-block; background: linear-gradient(135deg, #7c3aed, #5b21b6); color: #ffffff; font-family: ${FONT_STACK}; font-size: 14px; font-weight: 700; text-decoration: none; padding: 14px 36px; border-radius: 12px; letter-spacing: 0.01em;">
+          Verify Email Address &rarr;
+        </a>
       </td>
     </tr>
 
     <!-- Body text -->
     <tr>
-      <td style="padding: 0 32px 24px; font-family: ${FONT_STACK}; font-size: 14px; color: #52525b; line-height: 1.7;">
-        Go back to the Nexus signup page and enter this code to activate your workspace. Do not share this code with anyone.
+      <td style="padding: 0 32px 8px; font-family: ${FONT_STACK}; font-size: 13px; color: #a1a1aa; line-height: 1.6; text-align: center;">
+        This link expires in 24 hours.
+      </td>
+    </tr>
+
+    <tr>
+      <td style="padding: 8px 32px 24px; font-family: ${FONT_STACK}; font-size: 14px; color: #52525b; line-height: 1.7;">
+        If the button doesn&rsquo;t work, copy and paste this URL into your browser:<br/>
+        <span style="font-size: 12px; color: #7c3aed; word-break: break-all;">{{ .ConfirmationURL }}</span>
       </td>
     </tr>
 
@@ -139,7 +137,7 @@ export function getSignupOtpEmail(): string {
           <tr>
             <td style="padding: 16px 20px; font-family: ${FONT_STACK}; font-size: 13px; color: #713f12; line-height: 1.6;">
               <span style="font-size: 15px; margin-right: 6px;">&#9888;&#65039;</span>
-              If you did not create a Nexus account, you can safely ignore this email. Someone may have entered your email address by mistake.
+              If you did not create a Nexus account, you can safely ignore this email.
             </td>
           </tr>
         </table>
@@ -151,7 +149,9 @@ export function getSignupOtpEmail(): string {
   return shell('#7c3aed, #5b21b6', inner);
 }
 
-// ── 2. Password reset email ────────────────────────────────────────────────
+// ── 2. Password reset email (link-based) ──────────────────────────────────
+// Uses {{ .ConfirmationURL }} — Supabase replaces it with the password reset link.
+// Paste this template HTML into Supabase Dashboard > Auth > Email Templates > Reset Password
 
 export function getPasswordResetEmail(): string {
   const inner = `
@@ -166,36 +166,31 @@ export function getPasswordResetEmail(): string {
           Reset your password
         </h1>
         <p style="margin: 0; font-family: ${FONT_STACK}; font-size: 14px; color: #52525b; line-height: 1.6;">
-          We received a request to reset the password for your Nexus account. Enter the code below to continue.
+          We received a request to reset the password for your Nexus account. Click the button below to set a new password.
         </p>
       </td>
     </tr>
 
-    <!-- OTP Code Box -->
+    <!-- CTA Button -->
     <tr>
-      <td style="padding: 0 32px 24px;">
-        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #fafafa; border: 2px dashed #d4d4d8; border-radius: 12px;">
-          <tr>
-            <td align="center" style="padding: 24px 16px;">
-              <div style="font-family: ${FONT_STACK}; font-size: 10px; font-weight: 600; letter-spacing: 0.12em; color: #a1a1aa; text-transform: uppercase; margin-bottom: 12px;">
-                YOUR RESET CODE
-              </div>
-              <div style="font-family: 'Courier New', Courier, monospace; font-size: 36px; font-weight: 700; color: #d97706; letter-spacing: 0.15em; line-height: 1;">
-                {{ .Token }}
-              </div>
-              <div style="font-family: ${FONT_STACK}; font-size: 12px; color: #a1a1aa; margin-top: 12px;">
-                Expires in 15 minutes
-              </div>
-            </td>
-          </tr>
-        </table>
+      <td align="center" style="padding: 0 32px 24px;">
+        <a href="{{ .ConfirmationURL }}" target="_blank" style="display: inline-block; background: linear-gradient(135deg, #d97706, #b45309); color: #ffffff; font-family: ${FONT_STACK}; font-size: 14px; font-weight: 700; text-decoration: none; padding: 14px 36px; border-radius: 12px; letter-spacing: 0.01em;">
+          Reset Password &rarr;
+        </a>
       </td>
     </tr>
 
-    <!-- Body text -->
+    <!-- Expiry + fallback -->
     <tr>
-      <td style="padding: 0 32px 24px; font-family: ${FONT_STACK}; font-size: 14px; color: #52525b; line-height: 1.7;">
-        Go back to the Nexus password reset page and enter this code. You will then be asked to set a new password. This code can only be used once.
+      <td style="padding: 0 32px 8px; font-family: ${FONT_STACK}; font-size: 13px; color: #a1a1aa; line-height: 1.6; text-align: center;">
+        This link expires in 24 hours.
+      </td>
+    </tr>
+
+    <tr>
+      <td style="padding: 8px 32px 24px; font-family: ${FONT_STACK}; font-size: 14px; color: #52525b; line-height: 1.7;">
+        If the button doesn&rsquo;t work, copy and paste this URL into your browser:<br/>
+        <span style="font-size: 12px; color: #d97706; word-break: break-all;">{{ .ConfirmationURL }}</span>
       </td>
     </tr>
 
@@ -207,7 +202,7 @@ export function getPasswordResetEmail(): string {
             <td style="padding: 16px 20px; font-family: ${FONT_STACK}; line-height: 1.6;">
               <div style="font-size: 13px; font-weight: 700; color: #dc2626; margin-bottom: 4px;">Did not request this?</div>
               <div style="font-size: 13px; color: #7f1d1d;">
-                If you did not request a password reset, ignore this email. Your password will not change. If you are concerned about your account security, contact us immediately.
+                If you did not request a password reset, ignore this email. Your password will not change.
               </div>
             </td>
           </tr>

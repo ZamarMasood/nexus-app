@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import {
-  getSignupOtpEmail,
+  getSignupConfirmEmail,
   getPasswordResetEmail,
   getWelcomeEmail,
 } from '../lib/email-templates';
@@ -11,8 +11,8 @@ fs.mkdirSync(outputDir, { recursive: true });
 
 const templates = [
   {
-    name: 'signup-otp',
-    html: getSignupOtpEmail(),
+    name: 'signup-confirm',
+    html: getSignupConfirmEmail(),
     subject: 'Verify your Nexus account',
   },
   {

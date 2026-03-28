@@ -1,7 +1,8 @@
-// Transactional email endpoint — currently logs in dev, stubs in production.
-// Supabase handles all critical emails (OTP, password reset, invites) directly.
-// To enable app-triggered emails (welcome, etc.) in production, integrate an
-// email service here (Resend, SendGrid, etc.) when you have a custom domain.
+// Transactional email endpoint — sends app-triggered emails (welcome, etc.)
+// via Brevo HTTP API in production, logs in development.
+//
+// Supabase handles all auth emails (confirmation, password reset, invites)
+// directly through its own SMTP integration with Brevo.
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createSupabaseServerClient } from '@/lib/supabase-server';
@@ -51,7 +52,41 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: true, mode: 'development' });
   }
 
-  // Production: stub — welcome emails are non-critical.
-  // All critical emails (invites, OTP, password reset) go through Supabase directly.
-  return NextResponse.json({ success: true, mode: 'stub' });
+  // Production: send via Brevo HTTP API
+  const apiKey = process.env.BREVO_API_KEY;
+  if (!apiKey) {
+    console.error('[Email] BREVO_API_KEY is not set — skipping email send');
+    return NextResponse.json({ success: true, mode: 'stub' });
+  }
+
+  const senderEmail = process.env.BREVO_SENDER_EMAIL || 'noreply@nexusapp.com';
+  const senderName = process.env.BREVO_SENDER_NAME || 'Nexus';
+
+  try {
+    const res = await fetch('https://api.brevo.com/v3/smtp/email', {
+      method: 'POST',
+      headers: {
+        'accept': 'application/json',
+        'content-type': 'application/json',
+        'api-key': apiKey,
+      },
+      body: JSON.stringify({
+        sender: { name: senderName, email: senderEmail },
+        to: [{ email: to }],
+        subject,
+        htmlContent: html,
+      }),
+    });
+
+    if (!res.ok) {
+      const errBody = await res.text();
+      console.error(`[Email] Brevo API error ${res.status}: ${errBody}`);
+      return NextResponse.json({ error: 'Email delivery failed' }, { status: 502 });
+    }
+
+    return NextResponse.json({ success: true, mode: 'brevo' });
+  } catch (err) {
+    console.error('[Email] Brevo API request failed:', err);
+    return NextResponse.json({ error: 'Email delivery failed' }, { status: 502 });
+  }
 }
