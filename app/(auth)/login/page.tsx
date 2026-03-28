@@ -58,7 +58,9 @@ function LoginContent() {
   const [mounted, setMounted] = useState(false);
   const searchParams = useSearchParams();
   const verifyEmail = searchParams.get('verify') === 'email';
-  const authError = searchParams.get('error') === 'auth_callback_failed';
+  const errorParam = searchParams.get('error');
+  const authError = errorParam === 'auth_callback_failed';
+  const linkExpired = errorParam === 'link_expired';
   useEffect(() => setMounted(true), []);
 
   const isDark = mounted ? resolvedTheme === 'dark' : true;
@@ -214,7 +216,15 @@ function LoginContent() {
           {authError && (
             <div className="s1 mb-5 rounded-xl px-4 py-3 text-[13px]"
               style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', color: '#fca5a5' }}>
-              Email verification failed or link expired. Please try again.
+              Email verification failed. Please try again.
+            </div>
+          )}
+
+          {/* Expired link error */}
+          {linkExpired && (
+            <div className="s1 mb-5 rounded-xl px-4 py-3 text-[13px]"
+              style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', color: '#fca5a5' }}>
+              Your email link has expired. Please request a new one.
             </div>
           )}
 
