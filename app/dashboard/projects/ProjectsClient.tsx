@@ -266,7 +266,7 @@ export default function ProjectsClient({ initialProjects, clients, taskCounts, i
           className="rounded-2xl border border-surface animate-in"
           style={{ animationDelay: "160ms" }}
         >
-          <div className="rounded-2xl bg-surface-card overflow-hidden">
+          <div className="rounded-2xl bg-surface-card overflow-x-auto">
             <div className="grid grid-cols-[1fr_auto_24px] sm:grid-cols-[1fr_140px_130px_100px_36px] gap-0 border-b border-surface bg-overlay-xs px-4 sm:px-6 py-2.5">
               {["Project", "Status", "Deadline", "Progress", ""].map((h, idx) => (
                 <p key={h} className={`text-[10px] font-semibold uppercase tracking-widest text-dim-app ${idx >= 2 && idx <= 3 ? "hidden sm:block" : ""}`}>{h}</p>

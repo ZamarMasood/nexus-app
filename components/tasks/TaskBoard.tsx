@@ -142,11 +142,14 @@ export function TaskBoard({ initialTasks, onTaskClick, isAdmin = false }: TaskBo
 
   return (
     <DragDropContext onDragEnd={onDragEnd}>
-      <div className="flex flex-col lg:flex-row lg:justify-center gap-5 pb-6">
+      {/* overflow-x-auto so the board scrolls horizontally on narrow viewports
+          instead of clipping columns. min-w drives the inner flex container. */}
+      <div className="overflow-x-auto pb-1">
+      <div className="flex flex-col lg:flex-row gap-5 pb-6 lg:min-w-[780px]">
         {COLUMNS.map((col) => {
           const colTasks = tasksByStatus[col.id];
           return (
-            <div key={col.id} className="flex w-full lg:w-[380px] lg:shrink-0 flex-col">
+            <div key={col.id} className="flex w-full lg:flex-1 lg:min-w-[240px] lg:max-w-[420px] flex-col">
               {/* Column header — full-width pill */}
               <div className={`mb-3 flex items-center justify-between rounded-xl px-4 py-2.5 ${col.headerPill}`}>
                 <div className="flex items-center gap-2.5">
@@ -225,6 +228,7 @@ export function TaskBoard({ initialTasks, onTaskClick, isAdmin = false }: TaskBo
             </div>
           );
         })}
+      </div>
       </div>
     </DragDropContext>
   );

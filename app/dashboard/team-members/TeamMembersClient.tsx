@@ -657,7 +657,7 @@ export default function TeamMembersClient({
           className="rounded-xl border border-surface animate-in"
           style={{ animationDelay: "80ms" }}
         >
-          <div className="overflow-hidden rounded-xl bg-surface-card">
+          <div className="overflow-x-auto rounded-xl bg-surface-card">
             {members.length === 0 ? (
               <div className="flex flex-col items-center justify-center gap-3 py-20 text-center">
                 <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-surface-subtle border border-surface">

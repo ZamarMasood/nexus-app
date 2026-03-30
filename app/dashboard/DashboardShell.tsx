@@ -157,7 +157,7 @@ export default function DashboardShell({ children, isAdmin, currentMemberId, org
       <div className="flex h-screen overflow-hidden flex-col bg-surface-page lg:flex-row">
 
         {/* ── Mobile top bar ─────────────────────────────────────────────── */}
-        <header className="relative flex shrink-0 items-center bg-surface-sidebar border-b border-surface px-4 py-3 lg:hidden">
+        <header className="relative flex shrink-0 items-center justify-between bg-surface-sidebar border-b border-surface px-4 py-3 lg:hidden">
           <button
             type="button"
             onClick={toggleMenu}
@@ -166,6 +166,8 @@ export default function DashboardShell({ children, isAdmin, currentMemberId, org
           >
             {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </button>
+          <BrandMark orgName={orgName} />
+          <div className="w-9" />{/* spacer to keep brand centered */}
         </header>
 
         {/* ── Mobile backdrop ────────────────────────────────────────────── */}
@@ -221,7 +223,7 @@ export default function DashboardShell({ children, isAdmin, currentMemberId, org
         </aside>
 
         {/* ── Main content ───────────────────────────────────────────────── */}
-        <main className="flex-1 overflow-y-auto">{children}</main>
+        <main className="flex-1 min-w-0 overflow-y-auto overflow-x-hidden">{children}</main>
       </div>
     </TaskFormProvider>
   );

@@ -190,7 +190,7 @@ export default function DashboardClient({ recentTasks, taskStats, projects, user
 
       {/* ── Recent tasks ────────────────────────────────────────────────────── */}
       <div
-        className="rounded-2xl border border-surface bg-surface-card overflow-hidden animate-in"
+        className="rounded-2xl border border-surface bg-surface-card overflow-x-auto animate-in"
         style={{ animationDelay: "400ms" }}
       >
         <div className="flex items-center justify-between px-6 py-4 border-b border-surface">

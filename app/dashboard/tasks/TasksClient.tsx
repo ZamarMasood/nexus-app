@@ -174,7 +174,7 @@ export default function TasksClient({ initialTasks, isAdmin, currentMemberId }: 
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
           {/* My Tasks / All Tasks toggle */}
           {currentMemberId && (
             <div className="flex items-center rounded-lg border border-surface bg-surface-card p-0.5">
