@@ -7,6 +7,7 @@ import { LayoutGrid, List, Plus } from "lucide-react";
 import { TaskBoard } from "@/components/tasks/TaskBoard";
 import type { TaskWithAssignee } from "@/components/tasks/TaskCard";
 import { useTaskForm } from "@/app/dashboard/task-form-context";
+import { useWorkspaceSlug } from "@/app/dashboard/workspace-context";
 
 // ── List view ─────────────────────────────────────────────────────────────────
 
@@ -151,6 +152,7 @@ interface TasksClientProps {
 
 export default function TasksClient({ initialTasks, isAdmin, currentMemberId }: TasksClientProps) {
   const router = useRouter();
+  const slug = useWorkspaceSlug();
   const { openTaskForm } = useTaskForm();
   const [view, setView] = useState<ViewMode>("kanban");
   const [showMyTasks, setShowMyTasks] = useState(false);
@@ -160,7 +162,7 @@ export default function TasksClient({ initialTasks, isAdmin, currentMemberId }: 
     : initialTasks;
 
   function handleTaskClick(task: TaskWithAssignee) {
-    router.push(`/dashboard/tasks/${task.id}`);
+    router.push(`/${slug}/tasks/${task.id}`);
   }
 
   return (

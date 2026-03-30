@@ -13,6 +13,7 @@ import {
 import Link from "next/link";
 import { formatDate } from "@/lib/utils";
 import { useTaskForm } from "./task-form-context";
+import { useWorkspaceSlug } from "@/app/dashboard/workspace-context";
 import type { TaskWithAssignee } from "@/lib/db/tasks";
 import type { Project } from "@/lib/types";
 
@@ -47,6 +48,7 @@ interface DashboardClientProps {
 
 export default function DashboardClient({ recentTasks, taskStats, projects, userName, dateLabel, greetingText }: DashboardClientProps) {
   const { openTaskForm } = useTaskForm();
+  const slug = useWorkspaceSlug();
 
   const activeProjects = projects.filter((p) => p.status === "active" || p.status === "in_progress");
   const completionPct  = taskStats.total ? Math.round((taskStats.done / taskStats.total) * 100) : 0;
@@ -173,9 +175,9 @@ export default function DashboardClient({ recentTasks, taskStats, projects, user
         </div>
         <div className="flex flex-wrap gap-2">
           {[
-            { href: "/dashboard/projects", label: "Projects" },
-            { href: "/dashboard/clients",  label: "Clients"  },
-            { href: "/dashboard/invoices", label: "Invoices" },
+            { href: `/${slug}/projects`, label: "Projects" },
+            { href: `/${slug}/clients`,  label: "Clients"  },
+            { href: `/${slug}/invoices`, label: "Invoices" },
           ].map(({ href, label }) => (
             <Link
               key={href}
@@ -199,7 +201,7 @@ export default function DashboardClient({ recentTasks, taskStats, projects, user
             <p className="text-[11px] text-dim-app mt-0.5">{taskStats.total} total tasks</p>
           </div>
           <Link
-            href="/dashboard/tasks"
+            href={`/${slug}/tasks`}
             className="group flex items-center gap-1 rounded-lg px-3 py-1.5 text-[12px] font-medium text-faint-app border border-surface hover:border-violet-500/30 hover:text-violet-500 dark:hover:text-violet-400 hover:bg-violet-500/5 transition-[background-color,border-color,color] duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/40"
           >
             View all
@@ -245,7 +247,7 @@ export default function DashboardClient({ recentTasks, taskStats, projects, user
                     style={{ animationDelay: `${460 + idx * 30}ms` }}
                   >
                     <Link
-                      href={`/dashboard/tasks/${task.id}`}
+                      href={`/${slug}/tasks/${task.id}`}
                       className="group grid grid-cols-[1fr_80px_60px] sm:grid-cols-[1fr_140px_100px_90px] gap-2 sm:gap-4 items-center px-3 sm:px-6 py-3.5 hover:bg-overlay-xs transition-[background-color] duration-100 focus-visible:outline-none focus-visible:bg-overlay-sm"
                     >
                       <div className="flex items-center gap-3 min-w-0">

@@ -15,7 +15,7 @@ function SubmitButton() {
     <button
       type="submit"
       disabled={pending}
-      className="group relative w-full overflow-hidden rounded-xl py-3.5 text-[14px] font-semibold text-white transition-[transform,box-shadow] duration-200 disabled:opacity-60 hover:scale-[1.015] hover:shadow-[0_8px_40px_rgba(124,58,237,0.5)] active:scale-[0.985] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/60"
+      className="group relative w-full overflow-hidden rounded-xl py-3 text-[13px] font-semibold text-white transition-[transform,box-shadow] duration-200 disabled:opacity-60 hover:scale-[1.015] hover:shadow-[0_8px_40px_rgba(124,58,237,0.5)] active:scale-[0.985] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/60"
       style={{
         background: 'linear-gradient(135deg, #7c3aed 0%, #5b21b6 100%)',
         boxShadow: '0 4px 24px rgba(124,58,237,0.4), 0 1px 0 rgba(255,255,255,0.1) inset',
@@ -121,8 +121,8 @@ function LoginContent() {
         .login-input {
           width: 100%;
           border-radius: 12px;
-          padding: 13px 16px;
-          font-size: 14px;
+          padding: 11px 14px;
+          font-size: 13px;
           outline: none;
           transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
         }
@@ -183,7 +183,7 @@ function LoginContent() {
 
         {/* Glass card */}
         <div
-          className="card-in relative z-10 w-full max-w-[400px] rounded-3xl p-8"
+          className="card-in relative z-10 w-full max-w-[380px] rounded-3xl p-7"
           style={{
             background: cardBg,
             border: `1px solid ${cardBdr}`,
@@ -197,18 +197,18 @@ function LoginContent() {
             style={{ background: `linear-gradient(90deg, transparent, ${isDark ? 'rgba(255,255,255,0.18)' : 'rgba(255,255,255,0.9)'}, transparent)` }} />
 
           {/* Logo + heading */}
-          <div className="s1 mb-7 flex flex-col items-center gap-4 text-center">
+          <div className="s1 mb-5 flex flex-col items-center gap-3 text-center">
             <div
-              className="flex size-12 items-center justify-center rounded-2xl"
+              className="flex size-10 items-center justify-center rounded-2xl"
               style={{
                 background: 'linear-gradient(135deg, #7c3aed 0%, #5b21b6 100%)',
                 boxShadow: '0 0 0 1px rgba(124,58,237,0.5), 0 8px 32px rgba(124,58,237,0.4)',
               }}
             >
-              <Layers size={20} className="text-white" />
+              <Layers size={18} className="text-white" />
             </div>
             <div>
-              <h1 className="text-[26px] font-semibold leading-tight tracking-[-0.03em]"
+              <h1 className="text-[22px] font-semibold leading-tight tracking-[-0.03em]"
                 style={{ color: textH, fontFamily: 'var(--font-display)' }}>
                 Welcome back
               </h1>
@@ -255,7 +255,7 @@ function LoginContent() {
             </div>
           )}
 
-          <form action={action} className="space-y-4">
+          <form action={action} className="space-y-3.5">
             {/* Email */}
             <div className="s2">
               <label className="mb-1.5 block text-[12px] font-medium" style={{ color: textSub }}>Email Address</label>
@@ -308,7 +308,7 @@ function LoginContent() {
           </form>
 
           {/* Divider */}
-          <div className="s5 mt-6 flex items-center gap-3">
+          <div className="s5 mt-5 flex items-center gap-3">
             <div className="flex-1 h-px" style={{ background: isDark ? 'rgba(255,255,255,0.07)' : 'rgba(124,58,237,0.1)' }} />
             <span className="text-[11px] font-mono tracking-widest uppercase" style={{ color: textSub }}>Nexus</span>
             <div className="flex-1 h-px" style={{ background: isDark ? 'rgba(255,255,255,0.07)' : 'rgba(124,58,237,0.1)' }} />

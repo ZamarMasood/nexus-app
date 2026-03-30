@@ -69,6 +69,7 @@ export default function AuthConfirmPage() {
         // Invited users must set their own password first
         router.replace('/auth/reset-password');
       } else {
+        // Non-signup, non-recovery flow — redirect to dashboard (middleware will handle slug redirect)
         router.replace('/dashboard');
       }
     }

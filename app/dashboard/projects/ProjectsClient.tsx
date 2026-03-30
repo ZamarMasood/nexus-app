@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Plus, FolderKanban, Calendar, ChevronRight, BarChart3 } from "lucide-react";
 import Link from "next/link";
+import { useWorkspaceSlug } from "@/app/dashboard/workspace-context";
 import { createProjectAction } from "@/app/dashboard/projects/actions";
 import { formatDate } from "@/lib/utils";
 import {
@@ -183,6 +184,7 @@ interface ProjectsClientProps {
 
 export default function ProjectsClient({ initialProjects, clients, taskCounts, isAdmin }: ProjectsClientProps) {
   const router = useRouter();
+  const slug = useWorkspaceSlug();
   const [projects, setProjects] = useState<Project[]>(initialProjects);
   const [newProjectOpen, setNewProjectOpen] = useState(false);
 
@@ -293,7 +295,7 @@ export default function ProjectsClient({ initialProjects, clients, taskCounts, i
                     style={{ animationDelay: `${220 + i * 40}ms` }}
                   >
                     <Link
-                      href={`/dashboard/projects/${project.id}`}
+                      href={`/${slug}/projects/${project.id}`}
                       className="grid grid-cols-[1fr_auto_24px] sm:grid-cols-[1fr_130px_120px_100px_36px] md:grid-cols-[1fr_140px_130px_100px_36px] items-center gap-0 px-3 sm:px-6 py-4 hover:bg-overlay-sm transition-[background-color] duration-150 group"
                     >
                       <div className="min-w-0">

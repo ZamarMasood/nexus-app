@@ -22,6 +22,7 @@ import type { ClientListItem } from "@/lib/db/clients";
 import { getProjectById } from "@/lib/db/projects";
 import { getTasksWithAssignees } from "@/lib/db/tasks";
 import { formatDate, formatCurrency } from "@/lib/utils";
+import { useWorkspaceSlug } from "@/app/dashboard/workspace-context";
 import type { Project } from "@/lib/types";
 import type { TaskWithAssignee } from "@/lib/db/tasks";
 import { useTaskForm } from "../../task-form-context";
@@ -179,6 +180,7 @@ export default function ProjectDetailClient({
   isAdmin,
 }: ProjectDetailClientProps) {
   const router = useRouter();
+  const slug = useWorkspaceSlug();
   const [selectedId, setSelectedId] = useState(projectId);
   const [search, setSearch] = useState("");
 
@@ -253,7 +255,7 @@ export default function ProjectDetailClient({
   function selectProject(id: string) {
     if (id === selectedId) return;
     setSelectedId(id);
-    window.history.replaceState(null, "", `/dashboard/projects/${id}`);
+    window.history.replaceState(null, "", `/${slug}/projects/${id}`);
   }
 
   const cfg = project ? getStatusConfig(project.status) : getStatusConfig(null);
@@ -267,7 +269,7 @@ export default function ProjectDetailClient({
     <div className="p-4 sm:p-6 lg:p-8">
       {/* Mobile back button */}
       <button
-        onClick={() => router.push("/dashboard/projects")}
+        onClick={() => router.push(`/${slug}/projects`)}
         className="flex lg:hidden items-center gap-1.5 mb-4 rounded text-sm text-faint-app transition-colors hover:text-muted-app focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500"
       >
         <ArrowLeft className="h-3.5 w-3.5" />
@@ -280,7 +282,7 @@ export default function ProjectDetailClient({
           <div className="px-4 pt-4 pb-3 border-b border-surface/60">
             <div className="flex items-center gap-2 mb-3">
               <button
-                onClick={() => router.push("/dashboard/projects")}
+                onClick={() => router.push(`/${slug}/projects`)}
                 className="flex items-center justify-center h-7 w-7 rounded-lg text-faint-app hover:text-bright hover:bg-surface-subtle transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500"
                 title="Back to Projects"
               >
@@ -403,7 +405,7 @@ export default function ProjectDetailClient({
                 <div className="min-w-0">
                   <h1 className="truncate text-2xl font-bold tracking-[-0.03em] text-bright">{project.name}</h1>
                   {client && (
-                    <Link href={`/dashboard/clients/${client.id}`} className="mt-0.5 text-sm text-faint-app hover:text-violet-400 transition-colors">
+                    <Link href={`/${slug}/clients/${client.id}`} className="mt-0.5 text-sm text-faint-app hover:text-violet-400 transition-colors">
                       {client.name}
                     </Link>
                   )}
@@ -490,7 +492,7 @@ export default function ProjectDetailClient({
                       return (
                         <li key={task.id}>
                           <button
-                            onClick={() => router.push(`/dashboard/tasks/${task.id}`)}
+                            onClick={() => router.push(`/${slug}/tasks/${task.id}`)}
                             className="flex w-full items-center gap-3 px-5 py-3.5 text-left transition-colors hover:bg-overlay-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-violet-400"
                           >
                             <span className="flex-1 min-w-0">

@@ -14,9 +14,14 @@ export function createSupabaseServerClient() {
           return cookieStore.getAll();
         },
         setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) => {
-            cookieStore.set(name, value, options);
-          });
+          try {
+            cookiesToSet.forEach(({ name, value, options }) => {
+              cookieStore.set(name, value, options);
+            });
+          } catch {
+            // Ignored — setAll is called from Server Components where
+            // cookies are read-only. The middleware will handle the refresh.
+          }
         },
       },
     }

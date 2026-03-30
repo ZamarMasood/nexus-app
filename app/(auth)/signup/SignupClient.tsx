@@ -16,7 +16,7 @@ function SubmitButton() {
     <button
       type="submit"
       disabled={pending}
-      className="group relative w-full overflow-hidden rounded-xl py-3.5 text-[14px] font-semibold text-white transition-[transform,box-shadow] duration-200 disabled:opacity-60 hover:scale-[1.015] hover:shadow-[0_8px_40px_rgba(124,58,237,0.5)] active:scale-[0.985] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/60"
+      className="group relative w-full overflow-hidden rounded-xl py-3 text-[13px] font-semibold text-white transition-[transform,box-shadow] duration-200 disabled:opacity-60 hover:scale-[1.015] hover:shadow-[0_8px_40px_rgba(124,58,237,0.5)] active:scale-[0.985] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/60"
       style={{
         background: 'linear-gradient(135deg, #7c3aed 0%, #5b21b6 100%)',
         boxShadow: '0 4px 24px rgba(124,58,237,0.4), 0 1px 0 rgba(255,255,255,0.1) inset',
@@ -150,8 +150,8 @@ export default function SignupClient() {
         .signup-input {
           width: 100%;
           border-radius: 12px;
-          padding: 13px 16px;
-          font-size: 14px;
+          padding: 11px 14px;
+          font-size: 13px;
           outline: none;
           transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
         }
@@ -253,9 +253,9 @@ export default function SignupClient() {
 
         {/* Glass card */}
         <div
-          className="card-in relative z-10 w-full rounded-3xl p-8"
+          className="card-in relative z-10 w-full rounded-3xl p-7"
           style={{
-            maxWidth: step === 'form' ? '820px' : '420px',
+            maxWidth: step === 'form' ? '780px' : '380px',
             transition: 'max-width 0.4s cubic-bezier(0.16,1,0.3,1)',
             background: cardBg,
             border: `1px solid ${cardBdr}`,
@@ -274,18 +274,18 @@ export default function SignupClient() {
           {step === 'form' && (
             <>
               {/* Logo + heading */}
-              <div className="s1 mb-7 flex flex-col items-center gap-4 text-center">
+              <div className="s1 mb-5 flex flex-col items-center gap-3 text-center">
                 <div
-                  className="flex size-12 items-center justify-center rounded-2xl"
+                  className="flex size-10 items-center justify-center rounded-2xl"
                   style={{
                     background: 'linear-gradient(135deg, #7c3aed 0%, #5b21b6 100%)',
                     boxShadow: '0 0 0 1px rgba(124,58,237,0.5), 0 8px 32px rgba(124,58,237,0.4)',
                   }}
                 >
-                  <Layers size={20} className="text-white" />
+                  <Layers size={18} className="text-white" />
                 </div>
                 <div>
-                  <h1 className="text-[26px] font-semibold leading-tight tracking-[-0.03em]"
+                  <h1 className="text-[22px] font-semibold leading-tight tracking-[-0.03em]"
                     style={{ color: textH, fontFamily: 'var(--font-display)' }}>
                     Create your workspace
                   </h1>
@@ -304,7 +304,7 @@ export default function SignupClient() {
               )}
 
               <form action={action}>
-                <div className="s2 grid grid-cols-1 gap-x-6 gap-y-4 sm:grid-cols-2">
+                <div className="s2 grid grid-cols-1 gap-x-5 gap-y-3.5 sm:grid-cols-2">
                   <div>
                     <label className="mb-1.5 block text-[12px] font-medium" style={{ color: textSub }}>Company Name</label>
                     <input
@@ -426,7 +426,7 @@ export default function SignupClient() {
                   </div>
                 </div>
 
-                <div className="mt-5 space-y-4">
+                <div className="mt-4 space-y-3.5">
                   <div className="s5">
                     {/* Hidden native checkbox for form submission */}
                     <input type="hidden" name="terms" value={termsChecked ? 'on' : ''} />
@@ -475,7 +475,7 @@ export default function SignupClient() {
               </form>
 
               {/* Sign in link */}
-              <div className="s7 mt-6 flex items-center gap-3">
+              <div className="s7 mt-5 flex items-center gap-3">
                 <div className="divider-line" style={{ background: isDark ? 'rgba(255,255,255,0.07)' : 'rgba(124,58,237,0.1)' }} />
                 <span className="text-[11px] font-mono tracking-widest uppercase" style={{ color: textSub }}>Nexus</span>
                 <div className="divider-line" style={{ background: isDark ? 'rgba(255,255,255,0.07)' : 'rgba(124,58,237,0.1)' }} />
@@ -499,15 +499,15 @@ export default function SignupClient() {
           {/* ================================================================ */}
           {step === 'success' && (
             <div className="s1">
-              <div className="mb-7 flex flex-col items-center gap-4 text-center">
+              <div className="mb-5 flex flex-col items-center gap-3 text-center">
                 <div
-                  className="flex size-12 items-center justify-center rounded-2xl"
+                  className="flex size-10 items-center justify-center rounded-2xl"
                   style={{ background: 'linear-gradient(135deg, #10b981, #059669)', boxShadow: '0 8px 32px rgba(16,185,129,0.4)' }}
                 >
-                  <Mail size={20} className="text-white" />
+                  <Mail size={18} className="text-white" />
                 </div>
                 <div>
-                  <h1 className="text-[26px] font-semibold leading-tight tracking-[-0.03em]"
+                  <h1 className="text-[22px] font-semibold leading-tight tracking-[-0.03em]"
                     style={{ color: textH, fontFamily: 'var(--font-display)' }}>
                     Check your email
                   </h1>
@@ -523,7 +523,7 @@ export default function SignupClient() {
 
               <Link
                 href="/login"
-                className="group relative mt-5 flex w-full items-center justify-center gap-2 overflow-hidden rounded-xl py-3.5 text-[14px] font-semibold text-white transition-[transform,box-shadow] duration-200 hover:scale-[1.015] active:scale-[0.985]"
+                className="group relative mt-5 flex w-full items-center justify-center gap-2 overflow-hidden rounded-xl py-3 text-[13px] font-semibold text-white transition-[transform,box-shadow] duration-200 hover:scale-[1.015] active:scale-[0.985]"
                 style={{
                   background: 'linear-gradient(135deg, #7c3aed 0%, #5b21b6 100%)',
                   boxShadow: '0 4px 24px rgba(124,58,237,0.4), 0 1px 0 rgba(255,255,255,0.1) inset',

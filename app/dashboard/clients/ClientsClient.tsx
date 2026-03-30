@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/dialog";
 import { ClientForm } from "@/components/clients/ClientForm";
 import { formatCurrency } from "@/lib/utils";
+import { useWorkspaceSlug } from "@/app/dashboard/workspace-context";
 import type { ProjectListItem } from "@/lib/db/projects";
 import type { Client, ClientStatus } from "@/lib/types";
 
@@ -62,6 +63,7 @@ interface ClientsClientProps {
 
 export default function ClientsClient({ initialClients, projects, isAdmin }: ClientsClientProps) {
   const router = useRouter();
+  const slug = useWorkspaceSlug();
   const [clients, setClients] = useState<Client[]>(initialClients);
   const [filter, setFilter]   = useState<ClientStatus | "all">("all");
   const [addOpen, setAddOpen] = useState(false);
@@ -226,7 +228,7 @@ export default function ClientsClient({ initialClients, projects, isAdmin }: Cli
                   return (
                     <tr
                       key={client.id}
-                      onClick={() => router.push(`/dashboard/clients/${client.id}`)}
+                      onClick={() => router.push(`/${slug}/clients/${client.id}`)}
                       className="group cursor-pointer border-b border-surface last:border-0 transition-[background-color] duration-100 hover:bg-overlay-sm animate-in"
                       style={{ animationDelay: `${400 + i * 35}ms` }}
                     >

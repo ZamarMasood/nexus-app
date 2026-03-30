@@ -77,6 +77,15 @@ export async function getIsAdminByEmail(email: string): Promise<boolean> {
   return data?.user_role === 'admin';
 }
 
+export async function getOrgSlugById(orgId: string): Promise<string | null> {
+  const { data: org } = await supabase
+    .from('organisations')
+    .select('slug')
+    .eq('id', orgId)
+    .maybeSingle();
+  return (org as any)?.slug ?? null;
+}
+
 export async function getIsOwnerById(id: string): Promise<boolean> {
   const { data } = await supabase
     .from('team_members')

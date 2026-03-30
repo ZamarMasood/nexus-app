@@ -336,7 +336,7 @@ export default function LandingPage() {
                   {['#ff5f57','#febc2e','#28c840'].map(c => <span key={c} className="size-2.5 rounded-full" style={{ background: c }} />)}
                   <div className="mx-auto flex items-center gap-1.5 rounded-md px-3 py-1 text-[11px]"
                     style={{ background: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(124,58,237,0.05)', color: textSub }}>
-                    nexus.app/dashboard
+                    nexus.app/your-workspace
                   </div>
                 </div>
                 <div className="p-5">

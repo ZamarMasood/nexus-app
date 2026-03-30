@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useMemo } from "react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import {
@@ -20,18 +20,26 @@ import { TaskFormProvider } from "./task-form-context";
 import { signOutAction } from "@/app/(auth)/login/actions";
 import { ThemeToggle } from "@/components/ThemeToggle";
 
+/** Nav item paths are relative to the workspace root (no /dashboard prefix) */
 const BASE_NAV = [
-  { href: "/dashboard",          label: "Overview",      icon: LayoutDashboard, exact: true  },
-  { href: "/dashboard/projects", label: "Projects",      icon: FolderKanban,    exact: false },
-  { href: "/dashboard/tasks",    label: "Tasks",         icon: CheckSquare,     exact: false },
-  { href: "/dashboard/clients",  label: "Clients",       icon: Users,           exact: false },
-  { href: "/dashboard/invoices", label: "Invoices",      icon: Receipt,         exact: false },
+  { path: "",          label: "Overview",      icon: LayoutDashboard, exact: true  },
+  { path: "/projects", label: "Projects",      icon: FolderKanban,    exact: false },
+  { path: "/tasks",    label: "Tasks",         icon: CheckSquare,     exact: false },
+  { path: "/clients",  label: "Clients",       icon: Users,           exact: false },
+  { path: "/invoices", label: "Invoices",      icon: Receipt,         exact: false },
 ];
 
 const ADMIN_NAV_ITEM = {
-  href: "/dashboard/team-members",
+  path: "/team-members",
   label: "Team Members",
   icon: UserCog,
+  exact: false,
+};
+
+const SETTINGS_ITEM = {
+  path: "/settings",
+  label: "Settings",
+  icon: Settings,
   exact: false,
 };
 
@@ -41,27 +49,25 @@ interface DashboardShellProps {
   currentMemberId?: string;
   orgName?: string;
   memberName?: string;
+  slug: string;
 }
 
 function NavLink({
   href,
   label,
   icon: Icon,
-  exact,
+  active,
 }: {
   href: string;
   label: string;
   icon: React.ElementType;
-  exact: boolean;
+  active: boolean;
 }) {
-  const pathname = usePathname();
-  const active = exact ? pathname === href : pathname.startsWith(href);
-
   return (
     <Link
       href={href}
       className={[
-        "group relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-[13px] font-medium",
+        "group relative flex items-center gap-3 rounded-lg px-3 py-2 text-[13px] font-medium",
         "transition-[background-color,color] duration-150",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/60",
         active
@@ -107,26 +113,29 @@ function BottomBar({ memberName }: { memberName?: string }) {
     : '?';
 
   return (
-    <div className="px-3 pb-4 pt-4 border-t border-surface mt-auto shrink-0 space-y-1">
-      {/* Member info */}
+    <div className="px-3 pb-3 pt-2.5 border-t border-surface shrink-0">
+      {/* Member card */}
       {memberName && (
-        <div className="flex items-center gap-2.5 rounded-lg px-3 py-2 mb-1">
-          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-violet-500/30 to-violet-700/30 ring-1 ring-violet-500/20">
-            <span className="text-[10px] font-bold text-violet-300">{initials}</span>
+        <div className="flex items-center gap-2.5 rounded-xl bg-surface-subtle/50 px-3 py-2.5 mb-2">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-violet-500 to-violet-600 shadow-[0_2px_8px_rgba(139,92,246,0.3)]">
+            <span className="text-[11px] font-bold text-white">{initials}</span>
           </div>
-          <span className="text-[12px] font-medium text-secondary-app truncate">{memberName}</span>
+          <div className="min-w-0">
+            <span className="block text-[12px] font-semibold text-bright truncate">{memberName}</span>
+            <span className="block text-[10px] text-dim-app">Online</span>
+          </div>
         </div>
       )}
-      <div className="flex items-center gap-3 rounded-lg px-3 py-2">
-        <span className="text-[13px] font-medium text-faint-app flex-1">Theme</span>
+      <div className="flex items-center justify-between rounded-lg px-3 py-1.5">
+        <span className="text-[12px] font-medium text-faint-app">Theme</span>
         <ThemeToggle />
       </div>
       <form action={signOutAction}>
         <button
           type="submit"
-          className="group flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-[13px] font-medium text-faint-app transition-[background-color,color] duration-150 hover:bg-rose-500/8 hover:text-rose-500 dark:hover:text-rose-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40 active:scale-[0.98]"
+          className="group flex w-full items-center gap-2.5 rounded-lg px-3 py-1.5 text-[12px] font-medium text-faint-app transition-[background-color,color] duration-150 hover:bg-rose-500/8 hover:text-rose-500 dark:hover:text-rose-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40 active:scale-[0.98]"
         >
-          <LogOut className="h-4 w-4 shrink-0 text-dim-app transition-colors group-hover:text-rose-500 dark:group-hover:text-rose-400" />
+          <LogOut className="h-3.5 w-3.5 shrink-0 text-dim-app transition-colors group-hover:text-rose-500 dark:group-hover:text-rose-400" />
           Sign out
         </button>
       </form>
@@ -134,14 +143,27 @@ function BottomBar({ memberName }: { memberName?: string }) {
   );
 }
 
-export default function DashboardShell({ children, isAdmin, currentMemberId, orgName, memberName }: DashboardShellProps) {
+export default function DashboardShell({ children, isAdmin, currentMemberId, orgName, memberName, slug }: DashboardShellProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const pathname = usePathname();
+  const base = `/${slug}`;
 
-  const SETTINGS_ITEM = { href: "/dashboard/settings", label: "Settings", icon: Settings, exact: false };
-  const NAV = isAdmin
-    ? [...BASE_NAV, ADMIN_NAV_ITEM, SETTINGS_ITEM]
-    : [...BASE_NAV, SETTINGS_ITEM];
+  const NAV_ITEMS = useMemo(() => {
+    const items = isAdmin
+      ? [...BASE_NAV, ADMIN_NAV_ITEM, SETTINGS_ITEM]
+      : [...BASE_NAV, SETTINGS_ITEM];
+    return items.map((item) => ({
+      ...item,
+      href: `${base}${item.path}`,
+    }));
+  }, [isAdmin, base]);
+
+  /** Check active state: the browser URL is /{slug}/... */
+  function isActive(item: { path: string; exact: boolean }) {
+    const fullPath = `${base}${item.path}`;
+    if (item.exact) return pathname === fullPath;
+    return pathname === fullPath || pathname.startsWith(fullPath + '/');
+  }
 
   useEffect(() => { setMobileMenuOpen(false); }, [pathname]);
 
@@ -198,7 +220,7 @@ export default function DashboardShell({ children, isAdmin, currentMemberId, org
             mobileMenuOpen ? "translate-x-0" : "-translate-x-full",
           ].join(" ")}
         >
-          <div className="flex items-center justify-between px-5 pt-5 pb-6">
+          <div className="flex items-center justify-between px-5 pt-5 pb-5">
             <BrandMark orgName={orgName} />
             <button
               type="button"
@@ -211,8 +233,10 @@ export default function DashboardShell({ children, isAdmin, currentMemberId, org
           </div>
 
           <nav className="flex flex-col gap-0.5 px-3 flex-1 min-h-0 overflow-y-auto">
-            <p className="px-3 mb-2 text-[10px] font-semibold uppercase tracking-widest text-dim-app">Menu</p>
-            {NAV.map((item) => <NavLink key={item.href} {...item} />)}
+            <p className="px-3 mb-1.5 text-[10px] font-semibold uppercase tracking-widest text-dim-app">Menu</p>
+            {NAV_ITEMS.map((item) => (
+              <NavLink key={item.href} href={item.href} label={item.label} icon={item.icon} active={isActive(item)} />
+            ))}
           </nav>
 
           <BottomBar memberName={memberName} />
@@ -220,13 +244,15 @@ export default function DashboardShell({ children, isAdmin, currentMemberId, org
 
         {/* ── Desktop sidebar ────────────────────────────────────────────── */}
         <aside className="hidden lg:flex w-[220px] shrink-0 flex-col bg-surface-sidebar border-r border-surface h-screen sticky top-0">
-          <div className="px-5 pt-6 pb-7">
+          <div className="px-5 pt-5 pb-5">
             <BrandMark orgName={orgName} />
           </div>
 
-          <nav className="flex flex-col gap-0.5 px-3 flex-1 min-h-0 overflow-y-auto">
-            <p className="px-3 mb-2 text-[10px] font-semibold uppercase tracking-widest text-dim-app">Menu</p>
-            {NAV.map((item) => <NavLink key={item.href} {...item} />)}
+          <nav className="flex flex-col gap-0.5 px-3 mb-4">
+            <p className="px-3 mb-1.5 text-[10px] font-semibold uppercase tracking-widest text-dim-app">Menu</p>
+            {NAV_ITEMS.map((item) => (
+              <NavLink key={item.href} href={item.href} label={item.label} icon={item.icon} active={isActive(item)} />
+            ))}
           </nav>
 
           <BottomBar memberName={memberName} />

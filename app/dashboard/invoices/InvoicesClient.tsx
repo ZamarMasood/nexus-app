@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import { InvoiceForm } from "@/components/invoices/InvoiceForm";
 import { formatCurrency, formatDate } from "@/lib/utils";
+import { useWorkspaceSlug } from "@/app/dashboard/workspace-context";
 import type { ClientListItem } from "@/lib/db/clients";
 import type { Invoice, InvoiceStatus } from "@/lib/types";
 
@@ -42,6 +43,7 @@ interface InvoicesClientProps {
 
 export default function InvoicesClient({ initialInvoices, clients, isAdmin }: InvoicesClientProps) {
   const router = useRouter();
+  const slug = useWorkspaceSlug();
   const [invoices, setInvoices] = useState<Invoice[]>(initialInvoices);
   const [filter, setFilter]     = useState<InvoiceStatus | "all">("all");
   const [createOpen, setCreateOpen] = useState(false);
@@ -217,7 +219,7 @@ export default function InvoicesClient({ initialInvoices, clients, isAdmin }: In
                   return (
                     <tr
                       key={inv.id}
-                      onClick={() => router.push(`/dashboard/invoices/${inv.id}`)}
+                      onClick={() => router.push(`/${slug}/invoices/${inv.id}`)}
                       className="group cursor-pointer border-b border-surface last:border-0 transition-[background-color] duration-100 hover:bg-overlay-sm animate-in"
                       style={{ animationDelay: `${460 + i * 35}ms` }}
                     >

@@ -27,6 +27,7 @@ import { TaskFormDialog } from "@/components/tasks/TaskForm";
 import type { TaskWithAssignee, CommentWithAuthor, TaskSidebarItem } from "@/lib/db/tasks";
 import type { ProjectFile, TaskStatus, TaskPriority } from "@/lib/types";
 import { formatDate } from "@/lib/utils";
+import { useWorkspaceSlug } from "@/app/dashboard/workspace-context";
 import { createCommentAction, uploadFileAction } from "./actions";
 
 // ── Config ───────────────────────────────────────────────────────────────────
@@ -117,6 +118,7 @@ export default function TaskDetailClient({
   currentMemberId,
 }: TaskDetailClientProps) {
   const router = useRouter();
+  const slug = useWorkspaceSlug();
   const [selectedId, setSelectedId] = useState(initialTask.id);
   const [search, setSearch] = useState("");
 
@@ -183,7 +185,7 @@ export default function TaskDetailClient({
   function selectTask(id: string) {
     if (id === selectedId) return;
     setSelectedId(id);
-    window.history.replaceState(null, "", `/dashboard/tasks/${id}`);
+    window.history.replaceState(null, "", `/${slug}/tasks/${id}`);
   }
 
   async function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
@@ -231,7 +233,7 @@ export default function TaskDetailClient({
     <div className="p-4 sm:p-6 lg:p-8">
       {/* Mobile back button */}
       <button
-        onClick={() => router.push("/dashboard/tasks")}
+        onClick={() => router.push(`/${slug}/tasks`)}
         className="flex lg:hidden items-center gap-1.5 mb-4 rounded text-sm text-faint-app transition-colors hover:text-muted-app focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500"
       >
         <ArrowLeft className="h-3.5 w-3.5" />
@@ -244,7 +246,7 @@ export default function TaskDetailClient({
           <div className="px-4 pt-4 pb-3 border-b border-surface/60">
             <div className="flex items-center gap-2 mb-3">
               <button
-                onClick={() => router.push("/dashboard/tasks")}
+                onClick={() => router.push(`/${slug}/tasks`)}
                 className="flex items-center justify-center h-7 w-7 rounded-lg text-faint-app hover:text-bright hover:bg-surface-subtle transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500"
                 title="Back to Tasks"
               >

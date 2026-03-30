@@ -4,7 +4,7 @@ import { redirect } from 'next/navigation';
 import { cookies, headers } from 'next/headers';
 import { createSupabaseServerClient } from '@/lib/supabase-server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
-import { getTeamMemberByEmail } from '@/lib/db/team-members';
+import { getTeamMemberByEmail, getOrgSlugById } from '@/lib/db/team-members';
 import { checkRateLimit, formatResetTime } from '@/lib/rate-limit';
 import { generateCsrfToken, setCsrfCookie, deleteCsrfCookie } from '@/lib/csrf';
 import bcrypt from 'bcryptjs';
@@ -76,14 +76,16 @@ export async function signInAction(
               },
               { onConflict: 'id' }
             );
-          redirect('/dashboard');
+          const metaSlug = await getOrgSlugById(metaOrgId);
+          redirect(metaSlug ? `/${metaSlug}` : '/dashboard');
         }
       }
 
       // No org_id in metadata either — redirect to setup page
       redirect('/setup-org');
     }
-    redirect('/dashboard');
+    const slug = await getOrgSlugById(member.org_id);
+    redirect(slug ? `/${slug}` : '/dashboard');
   }
 
   // 1b. Email not confirmed — give a clear message instead of "Invalid email or password"

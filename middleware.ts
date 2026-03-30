@@ -1,6 +1,7 @@
 import { createServerClient } from '@supabase/ssr';
 import { NextRequest, NextResponse } from 'next/server';
 
+/* ── Security headers ─────────────────────────────────────────────────────── */
 function withSecurityHeaders(response: NextResponse): NextResponse {
   response.headers.set('X-Frame-Options', 'DENY');
   response.headers.set('X-Content-Type-Options', 'nosniff');
@@ -12,12 +13,69 @@ function withSecurityHeaders(response: NextResponse): NextResponse {
   return response;
 }
 
+/* ── Route classification ─────────────────────────────────────────────────── */
+const KNOWN_PREFIXES = [
+  '/api', '/auth', '/login', '/signup', '/setup-org',
+  '/portal', '/dashboard', '/_next', '/favicon.ico',
+  '/brand_assets',
+];
+
+/** Slug pattern: lowercase alphanumeric with hyphens, e.g. "lums", "my-company" */
+const SLUG_RE = /^\/([a-z0-9]+(?:-[a-z0-9]+)*)(\/.*)?$/;
+
+function classifyRoute(pathname: string): 'portal' | 'dashboard' | 'workspace' | 'other' {
+  if (pathname.startsWith('/portal')) return 'portal';
+  if (pathname.startsWith('/dashboard')) return 'dashboard';
+  for (const prefix of KNOWN_PREFIXES) {
+    if (pathname === prefix || pathname.startsWith(prefix + '/')) return 'other';
+  }
+  if (pathname === '/') return 'other';
+  if (SLUG_RE.test(pathname)) return 'workspace';
+  return 'other';
+}
+
+/* ── Supabase auth helper ─────────────────────────────────────────────────── */
+function createMiddlewareSupabase(request: NextRequest) {
+  let supabaseResponse = NextResponse.next({ request });
+
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return request.cookies.getAll();
+        },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value }) =>
+            request.cookies.set(name, value)
+          );
+          supabaseResponse = NextResponse.next({ request });
+          cookiesToSet.forEach(({ name, value, options }) =>
+            supabaseResponse.cookies.set(name, value, options)
+          );
+        },
+      },
+    }
+  );
+
+  return { supabase, getResponse: () => supabaseResponse };
+}
+
+/** Copy auth cookies from the Supabase response to another response */
+function copyCookies(source: NextResponse, target: NextResponse) {
+  source.cookies.getAll().forEach((cookie) => {
+    target.cookies.set(cookie.name, cookie.value, cookie as any);
+  });
+}
+
+/* ── Main middleware ───────────────────────────────────────────────────────── */
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
+  const routeType = classifyRoute(pathname);
 
-  // ── Portal routes ─────────────────────────────────────────────────────────
-  if (pathname.startsWith('/portal')) {
-    // Portal login page is public
+  // ── Portal routes (unchanged) ─────────────────────────────────────────────
+  if (routeType === 'portal') {
     if (pathname === '/portal/login') return withSecurityHeaders(NextResponse.next());
 
     const portalClientId = request.cookies.get('portal_client_id');
@@ -25,10 +83,8 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(new URL('/login', request.url));
     }
 
-    // Verify CSRF token cookie is present alongside the session cookie
     const csrfToken = request.cookies.get('portal_csrf_token');
     if (!csrfToken?.value) {
-      // Missing CSRF token — force re-login to get a fresh token pair
       const loginUrl = new URL('/login', request.url);
       const response = NextResponse.redirect(loginUrl);
       response.cookies.delete('portal_client_id');
@@ -38,60 +94,72 @@ export async function middleware(request: NextRequest) {
     return withSecurityHeaders(NextResponse.next());
   }
 
-  // ── Dashboard routes ──────────────────────────────────────────────────────
-  if (pathname.startsWith('/dashboard')) {
-    // Portal (client) sessions must never access dashboard
-    const portalClientId = request.cookies.get('portal_client_id');
-    if (portalClientId?.value) {
-      return NextResponse.redirect(new URL('/portal/tasks', request.url));
-    }
-
-    // Check Supabase Auth (team session)
-    let supabaseResponse = NextResponse.next({ request });
-
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          getAll() {
-            return request.cookies.getAll();
-          },
-          setAll(cookiesToSet) {
-            cookiesToSet.forEach(({ name, value }) =>
-              request.cookies.set(name, value)
-            );
-            supabaseResponse = NextResponse.next({ request });
-            cookiesToSet.forEach(({ name, value, options }) =>
-              supabaseResponse.cookies.set(name, value, options)
-            );
-          },
-        },
-      }
-    );
-
-    const { data: { user }, error } = await supabase.auth.getUser();
-
-    if (error || !user) {
-      // Clear stale auth cookies to prevent refresh-token loop
-      const loginUrl = new URL('/login', request.url);
-      const response = NextResponse.redirect(loginUrl);
-      request.cookies.getAll().forEach((cookie) => {
-        if (cookie.name.startsWith('sb-')) {
-          response.cookies.delete(cookie.name);
-        }
-      });
-      return response;
-    }
-
-    return withSecurityHeaders(supabaseResponse);
+  // ── Non-workspace routes — just add headers ───────────────────────────────
+  if (routeType === 'other') {
+    return withSecurityHeaders(NextResponse.next());
   }
 
-  return withSecurityHeaders(NextResponse.next());
+  // ── Workspace routes (dashboard or /{slug}/*) — require team auth ─────────
+  // Block portal sessions from workspace
+  const portalClientId = request.cookies.get('portal_client_id');
+  if (portalClientId?.value) {
+    return NextResponse.redirect(new URL('/portal/tasks', request.url));
+  }
+
+  // Authenticate via Supabase
+  const { supabase, getResponse } = createMiddlewareSupabase(request);
+  const { data: { user }, error } = await supabase.auth.getUser();
+
+  if (error || !user) {
+    const loginUrl = new URL('/login', request.url);
+    const response = NextResponse.redirect(loginUrl);
+    request.cookies.getAll().forEach((cookie) => {
+      if (cookie.name.startsWith('sb-')) {
+        response.cookies.delete(cookie.name);
+      }
+    });
+    return response;
+  }
+
+  // ── /dashboard/* → redirect to /{slug}/* ──────────────────────────────────
+  if (routeType === 'dashboard') {
+    // Look up the user's workspace slug (single joined query)
+    const { data: memberData } = await supabase
+      .from('team_members')
+      .select('organisations(slug)')
+      .eq('id', user.id)
+      .single();
+
+    const slug = (memberData?.organisations as any)?.slug as string | undefined;
+
+    if (slug) {
+      const rest = pathname === '/dashboard' ? '' : pathname.slice('/dashboard'.length);
+      const redirectUrl = new URL(`/${slug}${rest}${request.nextUrl.search}`, request.url);
+      const response = NextResponse.redirect(redirectUrl);
+      copyCookies(getResponse(), response);
+      return withSecurityHeaders(response);
+    }
+
+    // No org/slug — let through (page will redirect to /setup-org)
+    return withSecurityHeaders(getResponse());
+  }
+
+  // ── /{slug}/* → rewrite to /dashboard/* ───────────────────────────────────
+  const match = pathname.match(SLUG_RE)!;
+  const urlSlug = match[1];
+  const rest = match[2] || '';                    // e.g. "/projects/abc"
+  const dashboardPath = `/dashboard${rest}`;
+
+  const rewriteUrl = new URL(dashboardPath, request.url);
+  rewriteUrl.search = request.nextUrl.search;
+
+  const response = NextResponse.rewrite(rewriteUrl, { request });
+  copyCookies(getResponse(), response);
+  response.headers.set('x-workspace-slug', urlSlug);
+
+  return withSecurityHeaders(response);
 }
 
 export const config = {
-  // Public routes (not listed here, so middleware never runs on them):
-  //   /login, /signup, /setup-org, /portal/login, and all other non-dashboard/portal paths
-  matcher: ['/dashboard/:path*', '/portal/:path*'],
+  matcher: ['/((?!_next/static|_next/image|favicon\\.ico|api/).*)'],
 };

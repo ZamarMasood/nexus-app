@@ -2,6 +2,7 @@ import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
+import { getOrgSlugById } from '@/lib/db/team-members';
 import { sendEmail } from '@/lib/email';
 import { getWelcomeEmail } from '@/lib/email-templates';
 
@@ -136,6 +137,26 @@ export async function GET(request: NextRequest) {
     }
   }
 
+  // ── Resolve workspace slug for redirect ────────────────────────────────────
+  let resolvedNext = next;
+  if (next === '/dashboard') {
+    // For signup flows, slug is in user metadata; for others, look it up
+    if (type === 'signup') {
+      const { data: { user: signupUser } } = await supabase.auth.getUser();
+      const metaSlug = signupUser?.user_metadata?.slug as string | undefined;
+      if (metaSlug) resolvedNext = `/${metaSlug}`;
+    } else {
+      const { data: { user: currentUser } } = await supabase.auth.getUser();
+      if (currentUser) {
+        const metaOrgId = currentUser.user_metadata?.org_id as string | undefined;
+        if (metaOrgId) {
+          const slug = await getOrgSlugById(metaOrgId);
+          if (slug) resolvedNext = `/${slug}`;
+        }
+      }
+    }
+  }
+
   // ── Redirect to destination ───────────────────────────────────────────────
-  return NextResponse.redirect(`${siteUrl}${next}`);
+  return NextResponse.redirect(`${siteUrl}${resolvedNext}`);
 }

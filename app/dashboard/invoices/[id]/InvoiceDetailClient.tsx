@@ -33,6 +33,7 @@ import { revalidateDashboard } from "@/app/dashboard/actions";
 import type { InvoiceListItem } from "@/lib/db/invoices";
 import type { ClientListItem } from "@/lib/db/clients";
 import { formatCurrency, formatDate } from "@/lib/utils";
+import { useWorkspaceSlug } from "@/app/dashboard/workspace-context";
 import type { Invoice, InvoiceStatus } from "@/lib/types";
 
 const STATUS_BADGE: Record<InvoiceStatus, string> = {
@@ -80,6 +81,7 @@ export default function InvoiceDetailClient({
   isAdmin,
 }: InvoiceDetailClientProps) {
   const router = useRouter();
+  const slug = useWorkspaceSlug();
   const [selectedId, setSelectedId] = useState(invoiceId);
   const [search, setSearch] = useState("");
   // Initialize from server-fetched props — no loading on first render
@@ -142,7 +144,7 @@ export default function InvoiceDetailClient({
   function selectInvoice(id: string) {
     if (id === selectedId) return;
     setSelectedId(id);
-    window.history.replaceState(null, "", `/dashboard/invoices/${id}`);
+    window.history.replaceState(null, "", `/${slug}/invoices/${id}`);
   }
 
   async function markAsPaid() {
@@ -262,7 +264,7 @@ export default function InvoiceDetailClient({
     <div className="p-4 sm:p-6 lg:p-8">
       {/* Mobile back button */}
       <button
-        onClick={() => router.push("/dashboard/invoices")}
+        onClick={() => router.push(`/${slug}/invoices`)}
         className="flex lg:hidden items-center gap-1.5 mb-4 rounded text-sm text-faint-app transition-colors hover:text-muted-app focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500"
       >
         <ArrowLeft className="h-3.5 w-3.5" />
@@ -275,7 +277,7 @@ export default function InvoiceDetailClient({
           <div className="px-4 pt-4 pb-3 border-b border-surface/60">
             <div className="flex items-center gap-2 mb-3">
               <button
-                onClick={() => router.push("/dashboard/invoices")}
+                onClick={() => router.push(`/${slug}/invoices`)}
                 className="flex items-center justify-center h-7 w-7 rounded-lg text-faint-app hover:text-bright hover:bg-surface-subtle transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500"
                 title="Back to Invoices"
               >

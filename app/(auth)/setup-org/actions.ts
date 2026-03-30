@@ -71,7 +71,7 @@ export async function setupOrgAction(
           },
           { onConflict: 'id' }
         );
-      redirect('/dashboard');
+      redirect(`/${slug}`);
     }
   }
 
@@ -125,5 +125,5 @@ export async function setupOrgAction(
     user_metadata: { ...user.user_metadata, org_id: orgId },
   });
 
-  redirect('/dashboard');
+  redirect(`/${slug}`);
 }

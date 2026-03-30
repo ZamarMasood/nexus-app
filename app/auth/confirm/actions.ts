@@ -26,7 +26,8 @@ export async function provisionSignupAction(): Promise<ProvisionResult> {
 
     // Already provisioned — skip straight to dashboard
     if (!user.user_metadata?.signup_pending) {
-      return { error: null, redirectTo: '/dashboard' };
+      const slug = user.user_metadata?.slug as string | undefined;
+      return { error: null, redirectTo: slug ? `/${slug}` : '/dashboard' };
     }
 
     const meta = user.user_metadata;
@@ -101,7 +102,7 @@ export async function provisionSignupAction(): Promise<ProvisionResult> {
       // Non-critical
     }
 
-    return { error: null, redirectTo: '/dashboard' };
+    return { error: null, redirectTo: slug ? `/${slug}` : '/dashboard' };
   } catch {
     return { error: null, redirectTo: '/setup-org' };
   }

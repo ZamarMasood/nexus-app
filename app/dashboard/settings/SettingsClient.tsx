@@ -1,15 +1,16 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Image from 'next/image';
-import { User, Lock, Camera, CheckCircle, AlertCircle, Loader2, Sparkles } from 'lucide-react';
-import { updateProfileAction, updatePasswordAction, type SettingsState } from './actions';
+import { User, Lock, Camera, CheckCircle, AlertCircle, Loader2, Sparkles, Trash2, AlertTriangle, X } from 'lucide-react';
+import { updateProfileAction, updatePasswordAction, deleteWorkspaceAction, type SettingsState, type DeleteWorkspaceState } from './actions';
 interface SettingsClientProps {
   initialName:      string;
   initialAvatarUrl: string;
   userRole:         string;
   email:            string;
   isOwner:          boolean;
+  orgName:          string;
 }
 
 function StatusBanner({ state }: { state: SettingsState }) {
@@ -36,7 +37,7 @@ function StatusBanner({ state }: { state: SettingsState }) {
 const fieldClass =
   'w-full rounded-lg bg-surface-inset border border-surface px-3 py-2.5 text-[13px] text-primary-app placeholder:text-dim-app outline-none focus:border-violet-500/50 focus:ring-1 focus:ring-violet-500/30 transition-[border-color,box-shadow] duration-150';
 
-export default function SettingsClient({ initialName, initialAvatarUrl, userRole, email, isOwner }: SettingsClientProps) {
+export default function SettingsClient({ initialName, initialAvatarUrl, userRole, email, isOwner, orgName }: SettingsClientProps) {
   const [name, setName]           = useState(initialName);
   const [avatarUrl, setAvatarUrl] = useState(initialAvatarUrl);
   const roleLabel = isOwner ? 'Owner (Admin)' : userRole === 'admin' ? 'Admin' : 'Member';
@@ -47,6 +48,21 @@ export default function SettingsClient({ initialName, initialAvatarUrl, userRole
   const [confirm, setConfirm]   = useState('');
   const [passwordState, setPasswordState]   = useState<SettingsState>({ error: null, success: null });
   const [passwordLoading, setPasswordLoading] = useState(false);
+
+  const [deleteConfirmName, setDeleteConfirmName] = useState('');
+  const [deleteState, setDeleteState] = useState<DeleteWorkspaceState>({ error: null, success: null });
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+
+  // Lock body scroll when modal is open
+  useEffect(() => {
+    if (showDeleteModal) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => { document.body.style.overflow = ''; };
+  }, [showDeleteModal]);
 
   async function handleProfileSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -67,6 +83,32 @@ export default function SettingsClient({ initialName, initialAvatarUrl, userRole
     setPasswordState(result);
     setPasswordLoading(false);
     if (!result.error) { setPassword(''); setConfirm(''); }
+  }
+
+  function openDeleteModal() {
+    setDeleteConfirmName('');
+    setDeleteState({ error: null, success: null });
+    setShowDeleteModal(true);
+  }
+
+  function closeDeleteModal() {
+    if (deleteLoading) return;
+    setShowDeleteModal(false);
+    setDeleteConfirmName('');
+    setDeleteState({ error: null, success: null });
+  }
+
+  async function handleDeleteWorkspace(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setDeleteLoading(true);
+    setDeleteState({ error: null, success: null });
+    const fd = new FormData(e.currentTarget);
+    const result = await deleteWorkspaceAction({ error: null, success: null }, fd);
+    setDeleteState(result);
+    setDeleteLoading(false);
+    if (!result.error) {
+      window.location.href = '/login';
+    }
   }
 
   const initials = name
@@ -299,6 +341,151 @@ export default function SettingsClient({ initialName, initialAvatarUrl, userRole
       </section>
 
       </div>
+
+      {/* ── Danger Zone — Owner only ─────────────────────────────────────────── */}
+      {isOwner && (
+        <section
+          className="mt-5 rounded-2xl border border-rose-500/20 bg-surface-card overflow-hidden animate-in"
+          style={{ animationDelay: '240ms' }}
+        >
+          <div className="flex items-center gap-3 px-6 py-4 border-b border-rose-500/20 bg-rose-500/[0.03]">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-rose-500/10">
+              <Trash2 className="h-4 w-4 text-rose-400" />
+            </div>
+            <div>
+              <p className="text-[13px] font-semibold text-bright">Danger Zone</p>
+              <p className="text-[11px] text-faint-app">Irreversible actions for your workspace</p>
+            </div>
+          </div>
+
+          <div className="px-6 py-5">
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <p className="text-[13px] font-medium text-bright">Delete Workspace</p>
+                <p className="text-[11px] text-faint-app mt-0.5">
+                  Permanently delete <span className="font-semibold text-dim-app">{orgName}</span> and all its data.
+                  This action cannot be undone.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={openDeleteModal}
+                className="shrink-0 rounded-lg border border-rose-500/30 bg-rose-500/10 hover:bg-rose-500/20 px-4 py-2 text-[13px] font-semibold text-rose-400 transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/50"
+              >
+                Delete Workspace
+              </button>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* ── Delete Workspace Modal ───────────────────────────────────────────── */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          {/* Backdrop */}
+          <div
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200"
+            onClick={closeDeleteModal}
+          />
+
+          {/* Modal */}
+          <div className="relative w-full max-w-md rounded-2xl border border-surface bg-surface-card shadow-[0_25px_60px_rgba(0,0,0,0.4)] animate-in zoom-in-95 fade-in duration-200">
+            {/* Header */}
+            <div className="flex items-center justify-between px-6 pt-5 pb-4">
+              <div className="flex items-center gap-3">
+                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-rose-500/10">
+                  <AlertTriangle className="h-4.5 w-4.5 text-rose-400" />
+                </div>
+                <h2 className="text-[15px] font-semibold text-bright">Delete Workspace</h2>
+              </div>
+              <button
+                type="button"
+                onClick={closeDeleteModal}
+                disabled={deleteLoading}
+                className="flex h-7 w-7 items-center justify-center rounded-lg text-faint-app hover:bg-surface-subtle hover:text-bright transition-colors duration-150 disabled:opacity-40"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            {/* Divider */}
+            <div className="mx-6 border-t border-surface" />
+
+            {/* Body */}
+            <form onSubmit={handleDeleteWorkspace} className="px-6 py-5 space-y-4">
+              <div className="rounded-lg bg-rose-500/[0.06] border border-rose-500/15 px-4 py-3">
+                <p className="text-[12px] font-semibold text-rose-400 mb-1.5">This will permanently delete:</p>
+                <ul className="space-y-1 text-[12px] text-rose-300/80">
+                  <li className="flex items-start gap-2">
+                    <span className="mt-1.5 h-1 w-1 rounded-full bg-rose-400/60 shrink-0" />
+                    All projects, tasks, comments, and files
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="mt-1.5 h-1 w-1 rounded-full bg-rose-400/60 shrink-0" />
+                    All clients and invoices
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="mt-1.5 h-1 w-1 rounded-full bg-rose-400/60 shrink-0" />
+                    All team members and their accounts
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="mt-1.5 h-1 w-1 rounded-full bg-rose-400/60 shrink-0" />
+                    Your account — you can re-signup with the same email
+                  </li>
+                </ul>
+              </div>
+
+              <div className="space-y-1.5">
+                <p className="text-[12px] text-secondary-app">
+                  To confirm, type <span className="font-bold text-bright">{orgName}</span> below:
+                </p>
+                <input
+                  id="confirm_name"
+                  name="confirm_name"
+                  type="text"
+                  required
+                  autoComplete="off"
+                  autoFocus
+                  value={deleteConfirmName}
+                  onChange={(e) => setDeleteConfirmName(e.target.value)}
+                  placeholder={orgName}
+                  className={`${fieldClass} focus:border-rose-500/50 focus:ring-rose-500/30`}
+                />
+              </div>
+
+              {deleteState.error && (
+                <div className="flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-[12px] font-medium bg-rose-500/10 border border-rose-500/20 text-rose-400">
+                  <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+                  {deleteState.error}
+                </div>
+              )}
+
+              {/* Divider */}
+              <div className="border-t border-surface" />
+
+              {/* Actions */}
+              <div className="flex items-center justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={closeDeleteModal}
+                  disabled={deleteLoading}
+                  className="rounded-lg border border-surface hover:bg-surface-inset px-4 py-2 text-[13px] font-medium text-dim-app transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/50 disabled:opacity-40"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={deleteLoading || deleteConfirmName !== orgName}
+                  className="flex items-center gap-2 rounded-lg bg-rose-600 hover:bg-rose-500 px-4 py-2 text-[13px] font-semibold text-white shadow-[0_4px_16px_rgba(239,68,68,0.3)] hover:shadow-[0_4px_20px_rgba(239,68,68,0.4)] transition-[background-color,box-shadow,transform] duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/60 active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  {deleteLoading && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+                  Delete this workspace
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
