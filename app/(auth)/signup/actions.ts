@@ -132,6 +132,30 @@ export async function signupAction(
 
   if (existingAuthUser) {
     // Clean up previous incomplete signup so we can recreate via signUp()
+
+    // If the previous attempt partially provisioned an org (e.g. org created
+    // but team_member insert or rollback failed), delete the orphaned org too.
+    const prevSlug = existingAuthUser.user_metadata?.slug as string | undefined;
+    if (prevSlug) {
+      const { data: orphanedOrg } = await supabaseAdmin
+        .from('organisations')
+        .select('id')
+        .eq('slug', prevSlug)
+        .maybeSingle();
+
+      if (orphanedOrg) {
+        // Only delete if no team members are linked (truly orphaned)
+        const { count } = await supabaseAdmin
+          .from('team_members')
+          .select('id', { count: 'exact', head: true })
+          .eq('org_id', orphanedOrg.id);
+
+        if (!count || count === 0) {
+          await supabaseAdmin.from('organisations').delete().eq('id', orphanedOrg.id);
+        }
+      }
+    }
+
     await supabaseAdmin.from('team_members').delete().eq('id', existingAuthUser.id);
     const { error: deleteError } = await supabaseAdmin.auth.admin.deleteUser(existingAuthUser.id);
     if (deleteError) {
@@ -165,8 +189,8 @@ export async function signupAction(
     return { error: `Failed to create account: ${signUpError.message}` };
   }
 
-  // A DB trigger may have auto-inserted a team_members row for the unverified
-  // auth user. Delete it immediately — the proper row (with org_id) is only
+  // DB triggers may auto-insert team_members / organisations rows for the
+  // unverified auth user. Delete them immediately — the proper rows are only
   // created in /auth/confirm after the user clicks the verification link.
   if (signUpData?.user?.id) {
     await supabaseAdmin
@@ -174,6 +198,24 @@ export async function signupAction(
       .delete()
       .eq('id', signUpData.user.id)
       .is('org_id', null);
+
+    // Clean up any org a trigger may have created with this slug
+    const { data: triggerOrg } = await supabaseAdmin
+      .from('organisations')
+      .select('id')
+      .eq('slug', slug.trim())
+      .maybeSingle();
+
+    if (triggerOrg) {
+      const { count } = await supabaseAdmin
+        .from('team_members')
+        .select('id', { count: 'exact', head: true })
+        .eq('org_id', triggerOrg.id);
+
+      if (!count || count === 0) {
+        await supabaseAdmin.from('organisations').delete().eq('id', triggerOrg.id);
+      }
+    }
   }
 
   // Org + team_member will be created in /auth/confirm after email verification
