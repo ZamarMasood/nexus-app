@@ -148,7 +148,7 @@ export async function signupAction(
     { auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false } }
   );
 
-  const { error: signUpError } = await supabase.auth.signUp({
+  const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
     email: trimmedEmail,
     password,
     options: {
@@ -165,6 +165,17 @@ export async function signupAction(
     return { error: `Failed to create account: ${signUpError.message}` };
   }
 
-  // Org + team_member will be created in /auth/callback after email verification
+  // A DB trigger may have auto-inserted a team_members row for the unverified
+  // auth user. Delete it immediately — the proper row (with org_id) is only
+  // created in /auth/confirm after the user clicks the verification link.
+  if (signUpData?.user?.id) {
+    await supabaseAdmin
+      .from('team_members')
+      .delete()
+      .eq('id', signUpData.user.id)
+      .is('org_id', null);
+  }
+
+  // Org + team_member will be created in /auth/confirm after email verification
   return { error: null, success: true, email: trimmedEmail };
 }
