@@ -59,8 +59,17 @@ function LoginContent() {
   const searchParams = useSearchParams();
   const verifyEmail = searchParams.get('verify') === 'email';
   const errorParam = searchParams.get('error');
-  const authError = errorParam === 'auth_callback_failed';
-  const linkExpired = errorParam === 'link_expired';
+  const [hashOtpExpired, setHashOtpExpired] = useState(false);
+  // Hash fragments aren't sent to the server, so Supabase's otp_expired error
+  // arrives as #error=access_denied&error_code=otp_expired — detect it client-side.
+  useEffect(() => {
+    const hash = window.location.hash;
+    if (hash.includes('error_code=otp_expired') || (hash.includes('error=access_denied') && hash.includes('expired'))) {
+      setHashOtpExpired(true);
+    }
+  }, []);
+  const isLinkExpired = errorParam === 'link_expired' || hashOtpExpired;
+  const authError = errorParam === 'auth_callback_failed' && !isLinkExpired;
   useEffect(() => setMounted(true), []);
 
   const isDark = mounted ? resolvedTheme === 'dark' : true;
@@ -221,10 +230,14 @@ function LoginContent() {
           )}
 
           {/* Expired link error */}
-          {linkExpired && (
+          {isLinkExpired && (
             <div className="s1 mb-5 rounded-xl px-4 py-3 text-[13px]"
               style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', color: '#fca5a5' }}>
-              Your email link has expired. Please request a new one.
+              Your password reset link has expired.{' '}
+              <Link href="/forgot-password" className="underline underline-offset-2 hover:opacity-80">
+                Request a new one
+              </Link>
+              .
             </div>
           )}
 

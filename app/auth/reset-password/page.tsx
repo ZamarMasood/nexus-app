@@ -38,13 +38,41 @@ export default function ResetPasswordPage() {
   const orbHigh    = mounted ? (isDark ? 'rgba(109,40,217,0.7)' : 'rgba(124,58,237,0.22)') : 'rgba(109,40,217,0.7)';
   const orbMid     = mounted ? (isDark ? 'rgba(124,58,237,0.6)' : 'rgba(99,45,220,0.14)') : 'rgba(124,58,237,0.6)';
 
-  // Check for a valid session on mount (user must have arrived via reset/invite link)
+  // Check for a valid session on mount (user must have arrived via reset/invite link).
+  // Supabase may use the implicit flow and deliver the token in the URL hash fragment
+  // (#access_token=...&type=recovery) instead of a PKCE code — handle both cases.
   useEffect(() => {
     async function verifySession() {
       const supabase = createBrowserClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
         process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
       );
+
+      // Parse hash fragment for implicit-flow tokens
+      const hash = window.location.hash.slice(1);
+      if (hash) {
+        const params = new URLSearchParams(hash);
+        const accessToken = params.get('access_token');
+        const refreshToken = params.get('refresh_token');
+        const type = params.get('type');
+
+        if (accessToken && type === 'recovery') {
+          const { error: sessionError } = await supabase.auth.setSession({
+            access_token: accessToken,
+            refresh_token: refreshToken ?? '',
+          });
+          if (sessionError) {
+            router.replace('/login?error=session_expired');
+            return;
+          }
+          // Clear the tokens from the URL without a page reload
+          window.history.replaceState(null, '', window.location.pathname);
+          setChecking(false);
+          return;
+        }
+      }
+
+      // PKCE flow — session already set by the server-side callback
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
         router.replace('/login?error=session_expired');

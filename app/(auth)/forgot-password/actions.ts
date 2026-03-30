@@ -31,7 +31,7 @@ export async function forgotPasswordAction(
 
   // Use admin (service_role) client to send password reset email
   const { error: resetError } = await supabaseAdmin.auth.resetPasswordForEmail(email, {
-    redirectTo: `${siteUrl}/auth/callback?next=/auth/reset-password`,
+    redirectTo: `${siteUrl}/auth/reset-password`,
   });
 
   // Surface rate-limit errors from Supabase; suppress other errors to prevent email enumeration
