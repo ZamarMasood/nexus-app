@@ -367,7 +367,7 @@ export default function ProjectDetailClient({
                   <div className="h-7 w-14 rounded-lg bg-overlay-xs" />
                 </div>
               </div>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-5 px-6 py-5">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-5 px-6 py-5">
                 {[0, 1, 2, 3].map((i) => (
                   <div key={i} className="space-y-2">
                     <div className="h-3 w-16 rounded bg-overlay-xs" />
@@ -425,7 +425,7 @@ export default function ProjectDetailClient({
                 {editing ? (
                   <EditForm project={project} clients={clients} onSave={(updated) => { setProject(updated); setClient(findClientInList(updated.client_id, clients)); setEditing(false); }} onCancel={() => setEditing(false)} />
                 ) : (
-                  <div className="grid grid-cols-2 gap-5 sm:grid-cols-4">
+                  <div className="grid grid-cols-2 gap-3 sm:gap-5 sm:grid-cols-4">
                     <div>
                       <p className="text-[11px] font-semibold uppercase tracking-wider text-dim-app">Deadline</p>
                       <p className={`mt-1 flex items-center gap-1.5 text-sm font-medium ${isOverdue ? "text-rose-400" : "text-secondary-app"}`}>

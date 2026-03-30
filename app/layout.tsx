@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter, DM_Serif_Display } from "next/font/google";
 import NextTopLoader from "nextjs-toploader";
 import { ThemeProvider } from "@/components/ThemeProvider";
@@ -10,6 +10,12 @@ const dmSerif = DM_Serif_Display({
   weight: "400",
   variable: "--font-display",
 });
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 5,
+};
 
 export const metadata: Metadata = {
   title: {

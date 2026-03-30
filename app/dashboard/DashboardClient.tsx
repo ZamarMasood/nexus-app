@@ -105,7 +105,7 @@ export default function DashboardClient({ recentTasks, taskStats, projects, user
           <p className="text-[11px] font-semibold uppercase tracking-widest text-dim-app mb-1">
             {dateLabel}
           </p>
-          <h1 className="text-[28px] font-bold tracking-[-0.04em] text-bright leading-tight">
+          <h1 className="text-[22px] sm:text-[26px] lg:text-[28px] font-bold tracking-[-0.04em] text-bright leading-tight">
             {greetingText}{userName ? `, ${userName}!` : "!"}
           </h1>
           <p className="mt-1 text-sm text-faint-app">Here&apos;s what&apos;s happening today.</p>
@@ -143,7 +143,7 @@ export default function DashboardClient({ recentTasks, taskStats, projects, user
                 {trend && <TrendingUp className="h-3.5 w-3.5 text-emerald-400" />}
               </div>
 
-              <p className={`text-[24px] sm:text-[32px] font-bold tracking-[-0.04em] leading-none ${valueColor ?? "text-bright"}`}>
+              <p className={`text-[20px] sm:text-[28px] lg:text-[32px] font-bold tracking-[-0.04em] leading-none ${valueColor ?? "text-bright"}`}>
                 {value}
               </p>
               <p className="mt-2 text-[11px] font-medium text-dim-app">{label}</p>
@@ -223,7 +223,7 @@ export default function DashboardClient({ recentTasks, taskStats, projects, user
           </div>
         ) : (
           <>
-            <div className="grid grid-cols-[1fr_90px_70px] sm:grid-cols-[1fr_140px_100px_90px] gap-2 sm:gap-4 px-4 sm:px-6 py-2.5 text-[10px] font-semibold uppercase tracking-widest text-dim-app border-b border-surface">
+            <div className="grid grid-cols-[1fr_80px_60px] sm:grid-cols-[1fr_140px_100px_90px] gap-2 sm:gap-4 px-3 sm:px-6 py-2.5 text-[10px] font-semibold uppercase tracking-widest text-dim-app border-b border-surface">
               <span>Task</span>
               <span>Status</span>
               <span className="hidden sm:block">Assignee</span>
@@ -246,7 +246,7 @@ export default function DashboardClient({ recentTasks, taskStats, projects, user
                   >
                     <Link
                       href={`/dashboard/tasks/${task.id}`}
-                      className="group grid grid-cols-[1fr_90px_70px] sm:grid-cols-[1fr_140px_100px_90px] gap-2 sm:gap-4 items-center px-4 sm:px-6 py-3.5 hover:bg-overlay-xs transition-[background-color] duration-100 focus-visible:outline-none focus-visible:bg-overlay-sm"
+                      className="group grid grid-cols-[1fr_80px_60px] sm:grid-cols-[1fr_140px_100px_90px] gap-2 sm:gap-4 items-center px-3 sm:px-6 py-3.5 hover:bg-overlay-xs transition-[background-color] duration-100 focus-visible:outline-none focus-visible:bg-overlay-sm"
                     >
                       <div className="flex items-center gap-3 min-w-0">
                         <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${priorityCfg.dot}`} />

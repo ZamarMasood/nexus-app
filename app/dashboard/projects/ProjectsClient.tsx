@@ -207,7 +207,7 @@ export default function ProjectsClient({ initialProjects, clients, taskCounts, i
       {/* Header */}
       <div className="flex flex-wrap items-start justify-between gap-3 animate-in" style={{ animationDelay: "0ms" }}>
         <div>
-          <h1 className="text-2xl font-bold tracking-[-0.03em] text-bright">Projects</h1>
+          <h1 className="text-xl sm:text-2xl font-bold tracking-[-0.03em] text-bright">Projects</h1>
           <p className="mt-0.5 text-sm text-faint-app">
             {projects.length} project{projects.length !== 1 ? "s" : ""}
           </p>
@@ -267,7 +267,7 @@ export default function ProjectsClient({ initialProjects, clients, taskCounts, i
           style={{ animationDelay: "160ms" }}
         >
           <div className="rounded-2xl bg-surface-card overflow-x-auto">
-            <div className="grid grid-cols-[1fr_auto_24px] sm:grid-cols-[1fr_140px_130px_100px_36px] gap-0 border-b border-surface bg-overlay-xs px-4 sm:px-6 py-2.5">
+            <div className="grid grid-cols-[1fr_auto_24px] sm:grid-cols-[1fr_130px_120px_100px_36px] md:grid-cols-[1fr_140px_130px_100px_36px] gap-0 border-b border-surface bg-overlay-xs px-3 sm:px-6 py-2.5">
               {["Project", "Status", "Deadline", "Progress", ""].map((h, idx) => (
                 <p key={h} className={`text-[10px] font-semibold uppercase tracking-widest text-dim-app ${idx >= 2 && idx <= 3 ? "hidden sm:block" : ""}`}>{h}</p>
               ))}
@@ -294,7 +294,7 @@ export default function ProjectsClient({ initialProjects, clients, taskCounts, i
                   >
                     <Link
                       href={`/dashboard/projects/${project.id}`}
-                      className="grid grid-cols-[1fr_auto_24px] sm:grid-cols-[1fr_140px_130px_100px_36px] items-center gap-0 px-4 sm:px-6 py-4 hover:bg-overlay-sm transition-[background-color] duration-150 group"
+                      className="grid grid-cols-[1fr_auto_24px] sm:grid-cols-[1fr_130px_120px_100px_36px] md:grid-cols-[1fr_140px_130px_100px_36px] items-center gap-0 px-3 sm:px-6 py-4 hover:bg-overlay-sm transition-[background-color] duration-150 group"
                     >
                       <div className="min-w-0">
                         <p className="truncate text-sm font-semibold text-primary-app group-hover:text-bright tracking-[-0.01em] transition-colors duration-150">

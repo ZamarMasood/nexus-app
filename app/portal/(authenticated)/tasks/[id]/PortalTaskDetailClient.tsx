@@ -264,7 +264,7 @@ export default function PortalTaskDetailClient({
                 </h1>
 
                 {/* Meta row */}
-                <div className="grid grid-cols-2 gap-x-6 gap-y-4 sm:grid-cols-4 border-t border-surface pt-5">
+                <div className="grid grid-cols-2 gap-x-3 gap-y-3 sm:gap-x-6 sm:gap-y-4 sm:grid-cols-4 border-t border-surface pt-5">
                   <div>
                     <p className="text-[11px] font-semibold uppercase tracking-wide text-dim-app mb-1.5">Assignee</p>
                     {task.assignee ? (

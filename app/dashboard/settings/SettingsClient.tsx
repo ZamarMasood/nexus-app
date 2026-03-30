@@ -77,7 +77,7 @@ export default function SettingsClient({ initialName, initialAvatarUrl, userRole
     .toUpperCase();
 
   return (
-    <div className="p-4 sm:px-6 sm:py-10">
+    <div className="p-4 sm:p-6 lg:p-10">
 
       {/* Page header */}
       <div className="mb-8 animate-in" style={{ animationDelay: '0ms' }}>

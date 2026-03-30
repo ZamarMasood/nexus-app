@@ -39,7 +39,7 @@ function ListView({
   return (
     <div className="overflow-x-auto rounded-xl border border-surface">
     <div className="min-w-0 sm:min-w-[580px] bg-surface-card overflow-hidden rounded-xl">
-      <div className="grid grid-cols-[1fr_80px_90px] sm:grid-cols-[1fr_100px_120px_120px_100px] gap-2 sm:gap-4 border-b border-surface bg-overlay-xs px-4 sm:px-5 py-3">
+      <div className="grid grid-cols-[1fr_70px_80px] sm:grid-cols-[1fr_90px_100px_120px_100px] md:grid-cols-[1fr_100px_120px_120px_100px] gap-2 sm:gap-3 md:gap-4 border-b border-surface bg-overlay-xs px-3 sm:px-5 py-3">
         {["Task", "Priority", "Status", "Assignee", "Due Date"].map((h, idx) => (
           <span key={h} className={`text-xs font-semibold uppercase tracking-wider text-dim-app ${idx >= 3 ? "hidden sm:block" : ""}`}>
             {h}
@@ -58,7 +58,7 @@ function ListView({
           key={task.id}
           onClick={() => onTaskClick?.(task)}
           className={[
-            "grid w-full grid-cols-[1fr_80px_90px] sm:grid-cols-[1fr_100px_120px_120px_100px] gap-2 sm:gap-4 px-4 sm:px-5 py-3.5 text-left",
+            "grid w-full grid-cols-[1fr_70px_80px] sm:grid-cols-[1fr_90px_100px_120px_100px] md:grid-cols-[1fr_100px_120px_120px_100px] gap-2 sm:gap-3 md:gap-4 px-3 sm:px-5 py-3.5 text-left",
             "hover:bg-overlay-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-violet-400",
             "transition-colors",
             i !== tasks.length - 1 ? "border-b border-surface" : "",
@@ -168,7 +168,7 @@ export default function TasksClient({ initialTasks, isAdmin, currentMemberId }: 
       {/* Page header */}
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold tracking-[-0.03em] text-bright">Tasks</h1>
+          <h1 className="text-xl sm:text-2xl font-bold tracking-[-0.03em] text-bright">Tasks</h1>
           <p className="mt-0.5 text-sm text-faint-app">
             {visibleTasks.length} task{visibleTasks.length !== 1 ? "s" : ""}{showMyTasks ? " assigned to you" : " across all projects"}
           </p>

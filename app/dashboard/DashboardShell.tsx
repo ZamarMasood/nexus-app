@@ -107,7 +107,7 @@ function BottomBar({ memberName }: { memberName?: string }) {
     : '?';
 
   return (
-    <div className="px-3 pb-5 pt-4 border-t border-surface mt-4 space-y-1">
+    <div className="px-3 pb-4 pt-4 border-t border-surface mt-auto shrink-0 space-y-1">
       {/* Member info */}
       {memberName && (
         <div className="flex items-center gap-2.5 rounded-lg px-3 py-2 mb-1">
@@ -146,8 +146,18 @@ export default function DashboardShell({ children, isAdmin, currentMemberId, org
   useEffect(() => { setMobileMenuOpen(false); }, [pathname]);
 
   useEffect(() => {
-    document.body.style.overflow = mobileMenuOpen ? "hidden" : "";
-    return () => { document.body.style.overflow = ""; };
+    if (mobileMenuOpen) {
+      const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
+      document.body.style.overflow = "hidden";
+      document.body.style.paddingRight = `${scrollbarWidth}px`;
+    } else {
+      document.body.style.overflow = "";
+      document.body.style.paddingRight = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+      document.body.style.paddingRight = "";
+    };
   }, [mobileMenuOpen]);
 
   const toggleMenu = useCallback(() => setMobileMenuOpen((v) => !v), []);
@@ -200,7 +210,7 @@ export default function DashboardShell({ children, isAdmin, currentMemberId, org
             </button>
           </div>
 
-          <nav className="flex flex-col gap-0.5 px-3 flex-1">
+          <nav className="flex flex-col gap-0.5 px-3 flex-1 min-h-0 overflow-y-auto">
             <p className="px-3 mb-2 text-[10px] font-semibold uppercase tracking-widest text-dim-app">Menu</p>
             {NAV.map((item) => <NavLink key={item.href} {...item} />)}
           </nav>
@@ -209,12 +219,12 @@ export default function DashboardShell({ children, isAdmin, currentMemberId, org
         </div>
 
         {/* ── Desktop sidebar ────────────────────────────────────────────── */}
-        <aside className="hidden lg:flex w-[220px] shrink-0 flex-col bg-surface-sidebar border-r border-surface">
+        <aside className="hidden lg:flex w-[220px] shrink-0 flex-col bg-surface-sidebar border-r border-surface h-screen sticky top-0">
           <div className="px-5 pt-6 pb-7">
             <BrandMark orgName={orgName} />
           </div>
 
-          <nav className="flex flex-col gap-0.5 px-3 flex-1">
+          <nav className="flex flex-col gap-0.5 px-3 flex-1 min-h-0 overflow-y-auto">
             <p className="px-3 mb-2 text-[10px] font-semibold uppercase tracking-widest text-dim-app">Menu</p>
             {NAV.map((item) => <NavLink key={item.href} {...item} />)}
           </nav>

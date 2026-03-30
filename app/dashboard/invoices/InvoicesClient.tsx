@@ -115,7 +115,7 @@ export default function InvoicesClient({ initialInvoices, clients, isAdmin }: In
       {/* Header */}
       <div className="mb-6 flex flex-wrap items-start justify-between gap-3 animate-in" style={{ animationDelay: "0ms" }}>
         <div>
-          <h1 className="text-2xl font-bold tracking-[-0.03em] text-bright">Invoices</h1>
+          <h1 className="text-xl sm:text-2xl font-bold tracking-[-0.03em] text-bright">Invoices</h1>
           <p className="mt-0.5 text-sm text-faint-app">
             {invoices.length} invoice{invoices.length !== 1 ? "s" : ""} total
           </p>
@@ -149,7 +149,7 @@ export default function InvoicesClient({ initialInvoices, clients, isAdmin }: In
               <div className={`mb-3 flex h-9 w-9 items-center justify-center rounded-xl ${iconBg}`}>
                 <Icon className={`h-4 w-4 ${iconColor}`} />
               </div>
-              <p className={`text-[22px] font-bold tracking-[-0.03em] leading-none ${valueColor ?? "text-bright"}`}>
+              <p className={`text-[18px] sm:text-[22px] font-bold tracking-[-0.03em] leading-none ${valueColor ?? "text-bright"}`}>
                 {value}
               </p>
               <p className="mt-2 text-[11px] font-medium text-dim-app">{label}</p>

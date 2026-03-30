@@ -104,7 +104,7 @@ export default function ClientsClient({ initialClients, projects, isAdmin }: Cli
       {/* Header */}
       <div className="mb-6 flex flex-wrap items-start justify-between gap-3 animate-in" style={{ animationDelay: "0ms" }}>
         <div>
-          <h1 className="text-2xl font-bold tracking-[-0.03em] text-bright">Clients</h1>
+          <h1 className="text-xl sm:text-2xl font-bold tracking-[-0.03em] text-bright">Clients</h1>
           <p className="mt-0.5 text-sm text-faint-app">
             {clients.length} client{clients.length !== 1 ? "s" : ""} total
           </p>
@@ -161,7 +161,7 @@ export default function ClientsClient({ initialClients, projects, isAdmin }: Cli
                   <Icon className={`h-4 w-4 ${iconColor}`} />
                 </div>
               </div>
-              <p className="relative text-[26px] font-bold tracking-[-0.03em] leading-none text-bright">{value}</p>
+              <p className="relative text-[20px] sm:text-[26px] font-bold tracking-[-0.03em] leading-none text-bright">{value}</p>
               <p className="relative mt-2 text-[11px] font-medium text-dim-app">{label}</p>
             </div>
           ))}
