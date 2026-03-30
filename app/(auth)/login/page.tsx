@@ -62,10 +62,16 @@ function LoginContent() {
   const [hashOtpExpired, setHashOtpExpired] = useState(false);
   // Hash fragments aren't sent to the server, so Supabase's otp_expired error
   // arrives as #error=access_denied&error_code=otp_expired — detect it client-side.
+  // Valid signup/recovery tokens in the hash mean the server callback couldn't
+  // read them — forward to /auth/confirm which handles implicit-flow tokens.
   useEffect(() => {
     const hash = window.location.hash;
     if (hash.includes('error_code=otp_expired') || (hash.includes('error=access_denied') && hash.includes('expired'))) {
       setHashOtpExpired(true);
+      return;
+    }
+    if (hash.includes('access_token=') && (hash.includes('type=signup') || hash.includes('type=recovery') || hash.includes('type=invite'))) {
+      window.location.replace('/auth/confirm' + window.location.hash);
     }
   }, []);
   const isLinkExpired = errorParam === 'link_expired' || hashOtpExpired;

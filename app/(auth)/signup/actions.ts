@@ -153,7 +153,7 @@ export async function signupAction(
     password,
     options: {
       data: metadata,
-      emailRedirectTo: `${siteUrl}/auth/callback?next=/dashboard&type=signup`,
+      emailRedirectTo: `${siteUrl}/auth/confirm`,
     },
   });
 
