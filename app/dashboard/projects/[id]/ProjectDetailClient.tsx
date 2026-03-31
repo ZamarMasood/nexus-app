@@ -34,28 +34,32 @@ import type { TaskWithAssignee } from "@/lib/db/tasks";
 import { useTaskForm } from "../../task-form-context";
 
 // Status configuration
-const STATUS_CONFIG: Record<string, { label: string; dot: string; badge: string; icon: any }> = {
-  active: { 
-    label: "Active", 
-    dot: "bg-[#26c97f]", 
+const STATUS_CONFIG: Record<string, { label: string; dot: string; text: string; badge: string; icon: any }> = {
+  active: {
+    label: "Active",
+    dot: "bg-[#26c97f]",
+    text: "text-[#26c97f]",
     badge: "text-[#26c97f] bg-[rgba(38,201,127,0.10)] border-[rgba(38,201,127,0.20)]",
     icon: CheckCircle
   },
-  in_progress: { 
-    label: "In Progress", 
-    dot: "bg-[#5e6ad2]", 
+  in_progress: {
+    label: "In Progress",
+    dot: "bg-[#5e6ad2]",
+    text: "text-[#5e6ad2]",
     badge: "text-[#5e6ad2] bg-[rgba(94,106,210,0.15)] border-[rgba(94,106,210,0.20)]",
     icon: Clock
   },
-  completed: { 
-    label: "Completed", 
-    dot: "bg-[#888888]", 
+  completed: {
+    label: "Completed",
+    dot: "bg-[#888888]",
+    text: "text-[#8a8a8a]",
     badge: "text-[#8a8a8a] bg-[rgba(255,255,255,0.06)] border-[rgba(255,255,255,0.06)]",
     icon: CheckCircle
   },
-  paused: { 
-    label: "Paused", 
-    dot: "bg-[#e79d13]", 
+  paused: {
+    label: "Paused",
+    dot: "bg-[#e79d13]",
+    text: "text-[#e79d13]",
     badge: "text-[#e79d13] bg-[rgba(231,157,19,0.10)] border-[rgba(231,157,19,0.20)]",
     icon: AlertCircle
   },
@@ -65,6 +69,7 @@ function getStatusConfig(status: string | null) {
   return STATUS_CONFIG[status ?? ""] ?? {
     label: status ?? "Unknown",
     dot: "bg-[#888888]",
+    text: "text-[#8a8a8a]",
     badge: "text-[#8a8a8a] bg-[rgba(255,255,255,0.06)] border-[rgba(255,255,255,0.06)]",
     icon: Briefcase,
   };

@@ -405,9 +405,9 @@ export default function TaskDetailClient({
                                 </span>
                               )}
                             </div>
-                            {t.project_name && (
+                            {'project_name' in t && (t as any).project_name && (
                               <span className="text-[#555] truncate max-w-[120px]">
-                                {t.project_name}
+                                {(t as any).project_name}
                               </span>
                             )}
                           </div>

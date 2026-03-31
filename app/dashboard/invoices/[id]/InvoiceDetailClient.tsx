@@ -40,22 +40,25 @@ import { useWorkspaceSlug } from "@/app/dashboard/workspace-context";
 import type { Invoice, InvoiceStatus } from "@/lib/types";
 
 // Status configuration matching project detail style
-const STATUS_CONFIG: Record<string, { label: string; dot: string; badge: string; icon: any }> = {
-  paid: { 
-    label: "Paid", 
-    dot: "bg-[#26c97f]", 
+const STATUS_CONFIG: Record<string, { label: string; dot: string; text: string; badge: string; icon: any }> = {
+  paid: {
+    label: "Paid",
+    dot: "bg-[#26c97f]",
+    text: "text-[#26c97f]",
     badge: "text-[#26c97f] bg-[rgba(38,201,127,0.10)] border-[rgba(38,201,127,0.20)]",
     icon: CheckCircle
   },
-  pending: { 
-    label: "Pending", 
-    dot: "bg-[#e79d13]", 
+  pending: {
+    label: "Pending",
+    dot: "bg-[#e79d13]",
+    text: "text-[#e79d13]",
     badge: "text-[#e79d13] bg-[rgba(231,157,19,0.10)] border-[rgba(231,157,19,0.20)]",
     icon: AlertCircle
   },
-  overdue: { 
-    label: "Overdue", 
-    dot: "bg-[#e5484d]", 
+  overdue: {
+    label: "Overdue",
+    dot: "bg-[#e5484d]",
+    text: "text-[#e5484d]",
     badge: "text-[#e5484d] bg-[rgba(229,72,77,0.10)] border-[rgba(229,72,77,0.20)]",
     icon: AlertCircle
   },
@@ -65,6 +68,7 @@ function getStatusConfig(status: string | null) {
   return STATUS_CONFIG[status ?? ""] ?? {
     label: status ?? "Unknown",
     dot: "bg-[#888888]",
+    text: "text-[#8a8a8a]",
     badge: "text-[#8a8a8a] bg-[rgba(255,255,255,0.06)] border-[rgba(255,255,255,0.06)]",
     icon: Receipt,
   };
