@@ -4,7 +4,9 @@ import { randomBytes } from 'crypto';
 import bcrypt from 'bcryptjs';
 import { revalidatePath } from 'next/cache';
 import { createSupabaseServerClient } from '@/lib/supabase-server';
-import { getCallerOrgId, getIsAdminByEmail } from '@/lib/db/team-members';
+import { getCallerOrgId, getIsAdminByEmail, getTeamMemberByEmail } from '@/lib/db/team-members';
+import { getClientsPaginated, getClientsByMemberPaginated, getClientsForSidebar, type ClientListItem } from '@/lib/db/clients';
+import { getProjectsForList, getProjectsForListByMember, type ProjectListItem } from '@/lib/db/projects';
 import type { Client, ClientInsert, ClientUpdate } from '@/lib/types';
 
 const BCRYPT_ROUNDS = 10;
@@ -143,4 +145,30 @@ export async function resetPortalPasswordAction(
   if (error) throw new Error(`Failed to reset portal password: ${error.message}`);
   revalidatePath('/dashboard', 'layout');
   return { client: result, plainPassword };
+}
+
+export async function fetchClientsPageAction(page: number, pageSize: number) {
+  const supabase = createSupabaseServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  const member = user?.email ? await getTeamMemberByEmail(user.email) : null;
+  const isAdmin = member?.user_role === 'admin';
+  const memberId = member?.id ?? '';
+
+  if (!member?.org_id) return { clients: [] as Client[], total: 0, projects: [] as ProjectListItem[] };
+
+  const [result, projects] = await Promise.all([
+    isAdmin
+      ? getClientsPaginated(page, pageSize, member.org_id)
+      : getClientsByMemberPaginated(memberId, page, pageSize),
+    isAdmin
+      ? getProjectsForList()
+      : getProjectsForListByMember(memberId),
+  ]);
+
+  return { clients: result.data, total: result.total, projects };
+}
+
+/** Server action for sidebar search in client detail page. */
+export async function searchClientsForSidebarAction(search: string, page: number = 0): Promise<ClientListItem[]> {
+  return getClientsForSidebar(5, search || undefined, page);
 }

@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { getProjects, getProjectsByMember } from "@/lib/db/projects";
+import { getProjectsPaginated, getProjectsByMemberPaginated } from "@/lib/db/projects";
 
 export const metadata: Metadata = { title: "Projects" };
 import { getClients, getClientsByMember } from "@/lib/db/clients";
@@ -13,6 +13,8 @@ import ProjectsClient from "./ProjectsClient";
 
 export const dynamic = "force-dynamic";
 
+const PAGE_SIZE = 5;
+
 export default async function ProjectsPage() {
   const supabase = createSupabaseServerClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -21,11 +23,11 @@ export default async function ProjectsPage() {
   const memberId = member?.id ?? '';
   const hasMember = Boolean(member);
 
-  const projects = !hasMember
-    ? []
+  const { data: projects, total: totalProjects } = !hasMember
+    ? { data: [], total: 0 }
     : isAdmin
-      ? await getProjects()
-      : await getProjectsByMember(memberId);
+      ? await getProjectsPaginated(0, PAGE_SIZE)
+      : await getProjectsByMemberPaginated(memberId, 0, PAGE_SIZE);
 
   // For task counts: admin gets all, member gets only their projects
   const projectIds = projects.map((p) => p.id);
@@ -43,6 +45,7 @@ export default async function ProjectsPage() {
   return (
     <ProjectsClient
       initialProjects={projects}
+      totalProjects={totalProjects}
       clients={clients}
       taskCounts={taskCounts}
       isAdmin={isAdmin}

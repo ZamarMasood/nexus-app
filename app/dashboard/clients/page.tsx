@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { getClients, getClientsByMember } from "@/lib/db/clients";
+import { getClientsPaginated, getClientsByMemberPaginated } from "@/lib/db/clients";
 
 export const metadata: Metadata = { title: "Clients" };
 import { getProjectsForList, getProjectsForListByMember } from "@/lib/db/projects";
@@ -9,6 +9,8 @@ import ClientsClient from "./ClientsClient";
 
 export const dynamic = "force-dynamic";
 
+const PAGE_SIZE = 5;
+
 export default async function ClientsPage() {
   const supabase = createSupabaseServerClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -17,14 +19,23 @@ export default async function ClientsPage() {
   const memberId = member?.id ?? '';
   const hasMember = Boolean(member);
 
-  const [clients, projects] = await Promise.all([
+  const [clientsResult, projects] = await Promise.all([
     !hasMember
-      ? []
-      : isAdmin ? getClients() : getClientsByMember(memberId),
+      ? { data: [], total: 0 }
+      : isAdmin
+        ? getClientsPaginated(0, PAGE_SIZE)
+        : getClientsByMemberPaginated(memberId, 0, PAGE_SIZE),
     !hasMember
       ? []
       : isAdmin ? getProjectsForList() : getProjectsForListByMember(memberId),
   ]);
 
-  return <ClientsClient initialClients={clients} projects={projects} isAdmin={isAdmin} />;
+  return (
+    <ClientsClient
+      initialClients={clientsResult.data}
+      totalClients={clientsResult.total}
+      projects={projects}
+      isAdmin={isAdmin}
+    />
+  );
 }

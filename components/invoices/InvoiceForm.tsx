@@ -20,16 +20,23 @@ interface InvoiceFormProps {
 }
 
 const STATUS_OPTIONS: { value: InvoiceStatus; label: string; color: string }[] = [
-  { value: "pending", label: "Pending", color: "text-amber-400"   },
-  { value: "paid",    label: "Paid",    color: "text-emerald-400" },
-  { value: "overdue", label: "Overdue", color: "text-rose-400"    },
+  { value: "pending", label: "Pending", color: "text-[#e79d13]" },
+  { value: "paid",    label: "Paid",    color: "text-[#26c97f]" },
+  { value: "overdue", label: "Overdue", color: "text-[#e5484d]" },
 ];
 
-const LABEL = "block text-[11px] font-semibold uppercase tracking-widest text-faint-app mb-1";
-const FIELD = "w-full rounded-lg border border-surface bg-surface-inset px-3 py-2.5 text-[13px] text-primary-app placeholder:text-dim-app outline-none focus:border-violet-500/50 focus:ring-1 focus:ring-violet-500/30 transition-[border-color,box-shadow] duration-150";
-const SELECT_TRIGGER = "w-full rounded-lg border border-surface bg-surface-inset h-[42px] text-[13px] text-primary-app focus:ring-1 focus:ring-violet-500/40 focus:border-violet-500/50 data-[placeholder]:text-dim-app";
-const SELECT_CONTENT = "bg-surface-card border-surface text-primary-app";
-const SELECT_ITEM    = "text-[13px] text-primary-app focus:bg-violet-500/10 focus:text-violet-300 cursor-pointer";
+const LABEL = "block text-[12px] font-medium text-[#8a8a8a] uppercase tracking-[0.04em] mb-1.5";
+const FIELD = `w-full px-3 py-2 rounded-md bg-[#1a1a1a] border border-[rgba(255,255,255,0.10)]
+  text-[#f0f0f0] text-[13px] placeholder:text-[#555]
+  focus:outline-none focus:border-[rgba(255,255,255,0.16)]
+  focus:ring-1 focus:ring-[rgba(94,106,210,0.35)]
+  transition-colors duration-150`;
+const SELECT_TRIGGER = `w-full rounded-md border border-[rgba(255,255,255,0.10)] bg-[#1a1a1a]
+  h-[38px] text-[13px] text-[#f0f0f0]
+  focus:ring-1 focus:ring-[rgba(94,106,210,0.35)] focus:border-[rgba(255,255,255,0.16)]
+  data-[placeholder]:text-[#555]`;
+const SELECT_CONTENT = "bg-[#1c1c1c] border-[rgba(255,255,255,0.10)] text-[#f0f0f0]";
+const SELECT_ITEM = "text-[13px] text-[#8a8a8a] focus:bg-white/5 focus:text-[#f0f0f0] cursor-pointer";
 
 function generateInvoiceNumber(): string {
   const now = new Date();
@@ -39,7 +46,7 @@ function generateInvoiceNumber(): string {
 }
 
 export function InvoiceForm({ onSuccess, onCancel }: InvoiceFormProps) {
-  const [clients, setClients]           = useState<Client[]>([]);
+  const [clients, setClients]               = useState<Client[]>([]);
   const [loadingClients, setLoadingClients] = useState(true);
   const [form, setForm] = useState({
     client_id:      "",
@@ -107,142 +114,98 @@ export function InvoiceForm({ onSuccess, onCancel }: InvoiceFormProps) {
   }
 
   const buttonLabel =
-    step === "saving"     ? "Saving invoice…"  :
-    step === "generating" ? "Generating PDF…"  :
-    "Create Invoice";
+    step === "saving"     ? "Saving invoice..."  :
+    step === "generating" ? "Generating PDF..."  :
+    "Create invoice";
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={handleSubmit} className="space-y-3">
       {error && (
-        <div className="flex items-center gap-2 rounded-lg bg-rose-500/10 border border-rose-500/20 px-3 py-2.5 text-sm text-rose-400">
+        <div className="rounded-md px-3 py-2 text-[13px] text-[#e5484d]
+          bg-[rgba(229,72,77,0.1)] border border-[rgba(229,72,77,0.2)]">
           {error}
         </div>
       )}
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-4">
-        {/* Client — full width */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-3 gap-y-3">
         <div className="sm:col-span-2">
           <label className={LABEL}>
             <span className="flex items-center gap-1.5">
               <Users className="h-3 w-3" />
-              Client <span className="text-rose-400 normal-case tracking-normal font-normal">*</span>
+              Client <span className="text-[#e5484d] normal-case tracking-normal font-normal">*</span>
             </span>
           </label>
-          <Select
-            value={form.client_id}
-            onValueChange={(v) => setForm((prev) => ({ ...prev, client_id: v }))}
-            disabled={loadingClients}
-          >
-            <SelectTrigger id="if-client" className={SELECT_TRIGGER}>
-              <SelectValue placeholder={loadingClients ? "Loading clients…" : "Select client"} />
+          <Select value={form.client_id} onValueChange={(v) => setForm((prev) => ({ ...prev, client_id: v }))} disabled={loadingClients}>
+            <SelectTrigger className={SELECT_TRIGGER}>
+              <SelectValue placeholder={loadingClients ? "Loading clients..." : "Select client"} />
             </SelectTrigger>
             <SelectContent className={SELECT_CONTENT}>
               {clients.map((c) => (
-                <SelectItem key={c.id} value={c.id} className={SELECT_ITEM}>
-                  {c.name}
-                </SelectItem>
+                <SelectItem key={c.id} value={c.id} className={SELECT_ITEM}>{c.name}</SelectItem>
               ))}
             </SelectContent>
           </Select>
         </div>
 
-        {/* Invoice number */}
         <div>
           <label className={LABEL}>
             <span className="flex items-center gap-1.5">
               <Hash className="h-3 w-3" />
-              Invoice # <span className="text-rose-400 normal-case tracking-normal font-normal">*</span>
+              Invoice # <span className="text-[#e5484d] normal-case tracking-normal font-normal">*</span>
             </span>
           </label>
-          <input
-            id="if-num"
-            value={form.invoice_number}
-            onChange={field("invoice_number")}
-            placeholder="INV-202503-0001"
-            className={`${FIELD} font-mono`}
-          />
+          <input value={form.invoice_number} onChange={field("invoice_number")} placeholder="INV-202503-0001" className={`${FIELD} font-mono`} />
         </div>
 
-        {/* Status */}
         <div>
           <label className={LABEL}>Status</label>
-          <Select
-            value={form.status}
-            onValueChange={(v) => setForm((prev) => ({ ...prev, status: v as InvoiceStatus }))}
-          >
-            <SelectTrigger id="if-status" className={SELECT_TRIGGER}>
-              <SelectValue />
-            </SelectTrigger>
+          <Select value={form.status} onValueChange={(v) => setForm((prev) => ({ ...prev, status: v as InvoiceStatus }))}>
+            <SelectTrigger className={SELECT_TRIGGER}><SelectValue /></SelectTrigger>
             <SelectContent className={SELECT_CONTENT}>
               {STATUS_OPTIONS.map((o) => (
-                <SelectItem key={o.value} value={o.value} className={`${SELECT_ITEM} ${o.color}`}>
-                  {o.label}
-                </SelectItem>
+                <SelectItem key={o.value} value={o.value} className={`${SELECT_ITEM} ${o.color}`}>{o.label}</SelectItem>
               ))}
             </SelectContent>
           </Select>
         </div>
 
-        {/* Amount */}
         <div>
           <label className={LABEL}>
             <span className="flex items-center gap-1.5">
               <DollarSign className="h-3 w-3" />
-              Amount <span className="text-rose-400 normal-case tracking-normal font-normal">*</span>
+              Amount <span className="text-[#e5484d] normal-case tracking-normal font-normal">*</span>
             </span>
           </label>
-          <input
-            id="if-amount"
-            type="number"
-            min="0"
-            step="0.01"
-            value={form.amount}
-            onChange={field("amount")}
-            placeholder="0.00"
-            className={FIELD}
-          />
+          <input type="number" min="0" step="0.01" value={form.amount} onChange={field("amount")} placeholder="0.00" className={FIELD} />
         </div>
 
-        {/* Due date */}
         <div>
           <label className={LABEL}>
-            <span className="flex items-center gap-1.5">
-              <CalendarDays className="h-3 w-3" />
-              Due Date
-            </span>
+            <span className="flex items-center gap-1.5"><CalendarDays className="h-3 w-3" /> Due Date</span>
           </label>
-          <input
-            id="if-due"
-            type="date"
-            value={form.due_date}
-            onChange={field("due_date")}
-            className={FIELD}
-          />
+          <input type="date" value={form.due_date} onChange={field("due_date")} className={FIELD} />
         </div>
       </div>
 
-      {/* PDF hint */}
-      <div className="flex items-center gap-2 rounded-lg bg-surface-inset border border-surface px-3 py-2.5">
-        <FileText className="h-3.5 w-3.5 shrink-0 text-dim-app" />
-        <p className="text-[11px] text-dim-app">
+      <div className="flex items-center gap-2 rounded-md bg-[#1a1a1a] border border-[rgba(255,255,255,0.06)] px-3 py-2">
+        <FileText className="h-3.5 w-3.5 shrink-0 text-[#3a3a3a]" />
+        <p className="text-[11px] text-[#3a3a3a]">
           A PDF will be automatically generated and stored after saving.
         </p>
       </div>
 
-      <div className="flex justify-end gap-2 pt-2 border-t border-surface">
-        <button
-          type="button"
-          onClick={onCancel}
-          disabled={loading}
-          className="rounded-lg px-4 py-2 text-sm font-medium text-secondary-app hover:text-primary-app hover:bg-surface-subtle transition-[background-color,color] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 disabled:opacity-50"
-        >
+      <div className="flex justify-end gap-2 pt-3 border-t border-[rgba(255,255,255,0.06)]">
+        <button type="button" onClick={onCancel} disabled={loading}
+          className="px-3 py-1.5 rounded-md text-[13px] font-medium text-[#8a8a8a]
+            hover:bg-white/5 hover:text-[#f0f0f0] transition-colors duration-150
+            disabled:opacity-50">
           Cancel
         </button>
-        <button
-          type="submit"
-          disabled={loading}
-          className="flex items-center gap-2 rounded-lg bg-violet-600 px-4 py-2 text-sm font-semibold text-white shadow-[0_4px_16px_rgba(139,92,246,0.3)] hover:bg-violet-500 hover:shadow-[0_4px_20px_rgba(139,92,246,0.4)] active:scale-[0.97] transition-[background-color,box-shadow,transform] disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400"
-        >
+        <button type="submit" disabled={loading}
+          className="flex items-center gap-2 px-3 py-1.5 rounded-md text-[13px] font-medium
+            bg-[#5e6ad2] hover:bg-[#6872e5] text-white
+            active:scale-[0.98] transition-colors duration-150
+            disabled:opacity-50">
           {loading && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
           {buttonLabel}
         </button>

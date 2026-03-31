@@ -19,6 +19,48 @@ export async function getClients(): Promise<Client[]> {
   return data as Client[];
 }
 
+export interface PaginatedClients {
+  data: Client[];
+  total: number;
+}
+
+/** Fetch a page of clients (0-indexed). Pass orgId to skip re-auth. */
+export async function getClientsPaginated(page: number, pageSize: number, orgIdOverride?: string): Promise<PaginatedClients> {
+  const orgId = orgIdOverride ?? await getCallerOrgId();
+  const from = page * pageSize;
+  const to = from + pageSize - 1;
+
+  const { data, error, count } = await supabaseAdmin
+    .from('clients')
+    .select('id, name, email, status, monthly_rate, project_type, start_date, created_at', { count: 'exact' })
+    .eq('org_id', orgId)
+    .order('created_at', { ascending: false })
+    .range(from, to);
+
+  if (error) throw new Error(`Failed to fetch clients: ${error.message}`);
+  return { data: (data ?? []) as Client[], total: count ?? 0 };
+}
+
+/** Fetch a page of clients for a specific member. */
+export async function getClientsByMemberPaginated(memberId: string, page: number, pageSize: number): Promise<PaginatedClients> {
+  const clientIds = await getMemberClientIds(memberId);
+  if (clientIds.length === 0) return { data: [], total: 0 };
+
+  const from = page * pageSize;
+  const to = from + pageSize - 1;
+
+  const supabase = createSupabaseServerClient();
+  const { data, error, count } = await supabase
+    .from('clients')
+    .select('id, name, email, status, monthly_rate, project_type, start_date, created_at', { count: 'exact' })
+    .in('id', clientIds)
+    .order('created_at', { ascending: false })
+    .range(from, to);
+
+  if (error) throw new Error(`Failed to fetch clients for member: ${error.message}`);
+  return { data: (data ?? []) as Client[], total: count ?? 0 };
+}
+
 /** Fetch only the columns needed for list/sidebar display (no portal_password). */
 export async function getClientsForList(): Promise<ClientListItem[]> {
   const orgId = await getCallerOrgId();
@@ -29,6 +71,28 @@ export async function getClientsForList(): Promise<ClientListItem[]> {
     .order('created_at', { ascending: false });
 
   if (error) throw new Error(`Failed to fetch clients: ${error.message}`);
+  return data;
+}
+
+/** Fetch a limited set of clients for sidebar display, with optional search. */
+export async function getClientsForSidebar(pageSize: number = 5, search?: string, page: number = 0): Promise<ClientListItem[]> {
+  const orgId = await getCallerOrgId();
+  const from = page * pageSize;
+  const to = from + pageSize - 1;
+
+  let query = supabaseAdmin
+    .from('clients')
+    .select('id, name, email, status, monthly_rate, project_type, start_date')
+    .eq('org_id', orgId)
+    .order('created_at', { ascending: false })
+    .range(from, to);
+
+  if (search && search.trim()) {
+    query = query.or(`name.ilike.%${search.trim()}%,email.ilike.%${search.trim()}%`);
+  }
+
+  const { data, error } = await query;
+  if (error) throw new Error(`Failed to fetch clients for sidebar: ${error.message}`);
   return data;
 }
 

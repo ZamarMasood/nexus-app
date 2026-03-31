@@ -8,28 +8,30 @@ export default function DashboardNotFound() {
 
   return (
     <div className="flex flex-1 items-center justify-center px-4 py-20">
-      {/* Ambient glow */}
-      <div className="pointer-events-none absolute inset-0 overflow-hidden">
-        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 h-[320px] w-[320px] rounded-full bg-violet-600/[0.06] blur-[100px]" />
-      </div>
+      <div className="flex flex-col items-center text-center max-w-md">
+        <svg width="48" height="48" viewBox="0 0 48 48" fill="none"
+          className="text-[#333] opacity-80 mb-6">
+          <rect x="8" y="8" width="32" height="32" rx="6"
+            stroke="currentColor" strokeWidth="1.5" fill="none" />
+          <rect x="14" y="14" width="20" height="20" rx="4"
+            stroke="currentColor" strokeWidth="1.5" fill="none" opacity="0.7" />
+          <rect x="20" y="20" width="8" height="8" rx="2"
+            stroke="currentColor" strokeWidth="1.5" fill="none" opacity="0.4" />
+        </svg>
 
-      <div className="relative z-10 flex flex-col items-center text-center max-w-md">
-        {/* Error code */}
-        <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-violet-500/10 border border-violet-500/20 mb-6">
-          <span className="text-2xl font-bold text-violet-400 font-display">404</span>
-        </div>
-
-        <h1 className="text-xl font-bold tracking-[-0.03em] text-bright">
+        <h1 className="text-[15px] font-medium text-[#f0f0f0]">
           Not Found
         </h1>
-        <p className="mt-2 text-sm leading-relaxed text-faint-app max-w-xs">
+        <p className="mt-2 text-[13px] text-[#555] max-w-xs">
           This item does not exist or you do not have access.
         </p>
 
-        {/* Action */}
         <Link
           href={`/${slug}`}
-          className="mt-6 inline-flex items-center gap-2 rounded-lg bg-violet-600 hover:bg-violet-500 px-5 py-2.5 text-[13px] font-semibold text-white shadow-[0_4px_16px_rgba(139,92,246,0.3)] hover:shadow-[0_4px_20px_rgba(139,92,246,0.45)] transition-[background-color,box-shadow,transform] duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/60 active:scale-[0.98]"
+          className="mt-6 inline-flex items-center gap-1.5 px-4 py-2
+            bg-[#5e6ad2] hover:bg-[#6872e5] active:scale-[0.98]
+            text-white text-[13px] font-medium rounded-md
+            transition-colors duration-150"
         >
           Back to Dashboard
         </Link>

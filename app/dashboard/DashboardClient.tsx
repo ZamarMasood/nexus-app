@@ -1,34 +1,48 @@
 "use client";
 
-import {
-  CheckSquare,
-  AlertCircle,
-  FolderKanban,
-  Calendar,
-  Plus,
-  ArrowUpRight,
-  TrendingUp,
-  Zap,
-} from "lucide-react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
+import { 
+  Plus, 
+  Layers, 
+  CheckCircle, 
+  AlertCircle,
+  Calendar,
+  Briefcase,
+  Clock,
+  ArrowRight,
+  MessageSquare,
+  Copy
+} from "lucide-react";
 import { formatDate } from "@/lib/utils";
 import { useTaskForm } from "./task-form-context";
 import { useWorkspaceSlug } from "@/app/dashboard/workspace-context";
 import type { TaskWithAssignee } from "@/lib/db/tasks";
 import type { Project } from "@/lib/types";
 
-const PRIORITY_CONFIG: Record<string, { dot: string; label: string; bg: string; text: string }> = {
-  urgent: { dot: "bg-rose-400",   label: "Urgent", bg: "bg-rose-500/10",    text: "text-rose-400"   },
-  high:   { dot: "bg-orange-400", label: "High",   bg: "bg-orange-500/10",  text: "text-orange-400" },
-  normal: { dot: "bg-sky-400",    label: "Normal", bg: "bg-sky-500/10",     text: "text-sky-400"    },
-  low:    { dot: "bg-dim-app",    label: "Low",    bg: "bg-surface-inset",  text: "text-faint-app"  },
+const STATUS_COLORS: Record<string, { bg: string; text: string; dot: string }> = {
+  todo:        { bg: 'rgba(136,136,136,0.12)', text: '#888', dot: '#888' },
+  in_progress: { bg: 'rgba(94,106,210,0.12)', text: '#5e6ad2', dot: '#5e6ad2' },
+  done:        { bg: 'rgba(38,201,127,0.12)', text: '#26c97f', dot: '#26c97f' },
 };
 
-const STATUS_CONFIG: Record<string, { label: string; bg: string; text: string; dot: string }> = {
-  todo:        { label: "To Do",       bg: "bg-surface-inset",  text: "text-muted-app",  dot: "bg-dim-app"    },
-  in_progress: { label: "In Progress", bg: "bg-amber-500/10",   text: "text-amber-400",  dot: "bg-amber-400"  },
-  done:        { label: "Done",        bg: "bg-emerald-500/10", text: "text-emerald-400", dot: "bg-emerald-400" },
+const PRIORITY_DOT: Record<string, string> = {
+  urgent: '#e5484d',
+  high:   '#e79d13',
+  normal: '#5e6ad2',
+  low:    '#8a8a8a',
 };
+
+function StatusBadge({ status }: { status: string }) {
+  const colors = STATUS_COLORS[status] ?? STATUS_COLORS.todo;
+  return (
+    <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-xs font-medium"
+      style={{ background: colors.bg, color: colors.text }}>
+      <span className="w-1.5 h-1.5 rounded-full" style={{ background: colors.dot }} />
+      {status.replace('_', ' ')}
+    </span>
+  );
+}
 
 interface TaskStats {
   total: number;
@@ -43,252 +57,270 @@ interface DashboardClientProps {
   projects: Project[];
   userName: string | null;
   dateLabel: string;
-  greetingText: string;
 }
 
-export default function DashboardClient({ recentTasks, taskStats, projects, userName, dateLabel, greetingText }: DashboardClientProps) {
+export default function DashboardClient({ 
+  recentTasks, 
+  taskStats, 
+  projects, 
+  userName, 
+  dateLabel 
+}: DashboardClientProps) {
   const { openTaskForm } = useTaskForm();
   const slug = useWorkspaceSlug();
 
   const activeProjects = projects.filter((p) => p.status === "active" || p.status === "in_progress");
-  const completionPct  = taskStats.total ? Math.round((taskStats.done / taskStats.total) * 100) : 0;
-
-  const stats = [
-    {
-      label:      "Total Tasks",
-      value:      taskStats.total,
-      icon:       CheckSquare,
-      accent:     "from-violet-500/20 to-violet-600/5",
-      iconColor:  "text-violet-400",
-      iconBg:     "bg-violet-500/10",
-      sub:        `${completionPct}% complete`,
-      trend:      taskStats.done > 0,
-      progress:   completionPct,
-    },
-    {
-      label:      "Overdue",
-      value:      taskStats.overdue,
-      icon:       AlertCircle,
-      accent:     taskStats.overdue > 0 ? "from-rose-500/20 to-rose-600/5" : "",
-      iconColor:  taskStats.overdue > 0 ? "text-rose-400" : "text-faint-app",
-      iconBg:     taskStats.overdue > 0 ? "bg-rose-500/10" : "bg-surface-inset",
-      sub:        taskStats.overdue > 0 ? "Needs attention" : "All on track",
-      valueColor: taskStats.overdue > 0 ? "text-rose-400" : undefined,
-    },
-    {
-      label:     "Active Projects",
-      value:     activeProjects.length,
-      icon:      FolderKanban,
-      accent:    "from-sky-500/20 to-sky-600/5",
-      iconColor: "text-sky-400",
-      iconBg:    "bg-sky-500/10",
-      sub:       `${projects.length} total`,
-    },
-    {
-      label:     "Due This Week",
-      value:     taskStats.dueSoon,
-      icon:      Calendar,
-      accent:    "from-amber-500/20 to-amber-600/5",
-      iconColor: "text-amber-400",
-      iconBg:    "bg-amber-500/10",
-      sub:       "Next 7 days",
-    },
-  ];
+  const completionPct = taskStats.total ? Math.round((taskStats.done / taskStats.total) * 100) : 0;
 
   return (
-    <div className="p-6 sm:p-8 lg:p-10">
+    <div className="flex flex-col h-full bg-[#0d0d0d]">
 
-      {/* ── Header ─────────────────────────────────────────────────────────── */}
-      <div
-        className="flex flex-wrap items-start justify-between gap-4 mb-8 animate-in"
-        style={{ animationDelay: "0ms" }}
-      >
-        <div>
-          <p className="text-[11px] font-semibold uppercase tracking-widest text-dim-app mb-1">
-            {dateLabel}
-          </p>
-          <h1 className="text-[22px] sm:text-[26px] lg:text-[28px] font-bold tracking-[-0.04em] text-bright leading-tight">
-            {greetingText}{userName ? `, ${userName}!` : "!"}
-          </h1>
-          <p className="mt-1 text-sm text-faint-app">Here&apos;s what&apos;s happening today.</p>
+      {/* Header toolbar */}
+      <div className="flex items-center justify-between px-6 h-[60px] border-b border-[rgba(255,255,255,0.06)] shrink-0">
+        <div className="flex items-center gap-3">
+          <Layers size={16} className="text-[#555]" />
+          <div>
+            <h1 className="text-[15px] font-medium text-[#e8e8e8]">Dashboard</h1>
+            <p className="text-[11px] text-[#555] mt-0.5">{dateLabel}</p>
+          </div>
         </div>
-
         <button
           onClick={() => openTaskForm()}
-          className="group flex items-center gap-2 rounded-xl bg-violet-600 px-4 py-2.5 text-sm font-semibold text-white shadow-[0_4px_24px_rgba(139,92,246,0.35),0_1px_4px_rgba(0,0,0,0.4)] hover:bg-violet-500 hover:shadow-[0_4px_28px_rgba(139,92,246,0.5)] active:scale-[0.97] transition-[background-color,box-shadow,transform] duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400/60"
+          className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium
+            bg-[#5e6ad2] hover:bg-[#6872e5] text-white transition-all duration-150"
         >
-          <Plus className="h-4 w-4 transition-transform duration-200 group-hover:rotate-90" />
+          <Plus size={14} />
           New Task
         </button>
       </div>
 
-      {/* ── Stat cards ─────────────────────────────────────────────────────── */}
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4 mb-8">
-        {stats.map(({ label, value, icon: Icon, accent, iconColor, iconBg, sub, valueColor, trend, progress }, i) => (
-          <div
-            key={label}
-            className="relative overflow-hidden rounded-2xl border border-surface bg-surface-card p-5 animate-in"
-            style={{ animationDelay: `${80 + i * 60}ms` }}
-          >
-            {accent && (
-              <>
-                <div className={`absolute inset-x-0 top-0 h-px bg-gradient-to-r ${accent}`} />
-                <div className={`absolute inset-x-0 top-0 h-20 bg-gradient-to-b ${accent} opacity-40`} />
-              </>
-            )}
+      {/* Main content */}
+      <div className="flex-1 overflow-y-auto">
+        <div className="p-6">
+          
+          {/* Welcome section */}
+          <div className="mb-8">
+            <h2 className="text-[20px] font-semibold text-[#e8e8e8] tracking-tight">
+              Welcome back{userName ? `, ${userName}!` : ''}
+            </h2>
+          </div>
 
-            <div className="relative">
-              <div className="flex items-start justify-between mb-3">
-                <div className={`flex h-9 w-9 items-center justify-center rounded-xl ${iconBg}`}>
-                  <Icon className={`h-4 w-4 ${iconColor}`} />
+          {/* Stats grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+            {/* Total Tasks */}
+            <div className="rounded-xl border border-[rgba(255,255,255,0.06)] bg-[#111111] p-4">
+              <div className="flex items-center justify-between mb-3">
+                <div className="p-1.5 rounded-md bg-[rgba(94,106,210,0.12)]">
+                  <Layers size={14} className="text-[#5e6ad2]" />
                 </div>
-                {trend && <TrendingUp className="h-3.5 w-3.5 text-emerald-400" />}
+                <span className="text-[11px] text-[#555]">Total</span>
+              </div>
+              <p className="text-[24px] font-semibold text-[#e8e8e8] mb-1">{taskStats.total}</p>
+              <p className="text-[11px] text-[#555]">Tasks</p>
+            </div>
+
+            {/* Completion Rate */}
+            <div className="rounded-xl border border-[rgba(255,255,255,0.06)] bg-[#111111] p-4">
+              <div className="flex items-center justify-between mb-3">
+                <div className="p-1.5 rounded-md bg-[rgba(38,201,127,0.12)]">
+                  <CheckCircle size={14} className="text-[#26c97f]" />
+                </div>
+                <span className="text-[11px] text-[#555]">Progress</span>
+              </div>
+              <p className="text-[24px] font-semibold text-[#e8e8e8] mb-1">{completionPct}%</p>
+              <p className="text-[11px] text-[#555]">Complete</p>
+              <div className="mt-2 h-1 rounded-full bg-[rgba(255,255,255,0.06)] overflow-hidden">
+                <div 
+                  className="h-full rounded-full transition-all"
+                  style={{ width: `${completionPct}%`, background: '#5e6ad2' }}
+                />
+              </div>
+            </div>
+
+            {/* Active Projects */}
+            <div className="rounded-xl border border-[rgba(255,255,255,0.06)] bg-[#111111] p-4">
+              <div className="flex items-center justify-between mb-3">
+                <div className="p-1.5 rounded-md bg-[rgba(94,106,210,0.12)]">
+                  <Briefcase size={14} className="text-[#5e6ad2]" />
+                </div>
+                <span className="text-[11px] text-[#555]">Active</span>
+              </div>
+              <p className="text-[24px] font-semibold text-[#e8e8e8] mb-1">{activeProjects.length}</p>
+              <p className="text-[11px] text-[#555]">Projects</p>
+            </div>
+
+            {/* Overdue */}
+            <div className="rounded-xl border border-[rgba(255,255,255,0.06)] bg-[#111111] p-4">
+              <div className="flex items-center justify-between mb-3">
+                <div className="p-1.5 rounded-md bg-[rgba(229,72,77,0.12)]">
+                  <AlertCircle size={14} className="text-[#e5484d]" />
+                </div>
+                <span className="text-[11px] text-[#555]">Attention</span>
+              </div>
+              <p className="text-[24px] font-semibold text-[#e5484d] mb-1">{taskStats.overdue}</p>
+              <p className="text-[11px] text-[#555]">Overdue tasks</p>
+            </div>
+          </div>
+
+          {/* Two column layout */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            
+            {/* Recent Tasks */}
+            <div className="lg:col-span-2">
+              <div className="rounded-xl border border-[rgba(255,255,255,0.06)] bg-[#111111] overflow-hidden">
+                <div className="flex items-center justify-between px-5 py-3 border-b border-[rgba(255,255,255,0.06)]">
+                  <div className="flex items-center gap-2">
+                    <Clock size={14} className="text-[#5e6ad2]" />
+                    <h3 className="text-[13px] font-medium text-[#e8e8e8]">Recent Tasks</h3>
+                  </div>
+                  <Link 
+                    href={`/${slug}/tasks`}
+                    className="text-[11px] text-[#5e6ad2] hover:text-[#7e8ae6] transition-colors flex items-center gap-1"
+                  >
+                    View all
+                    <ArrowRight size={12} />
+                  </Link>
+                </div>
+
+                {recentTasks.length === 0 ? (
+                  <div className="p-8 text-center">
+                    <p className="text-[13px] text-[#888] mb-2">No tasks yet</p>
+                    <button
+                      onClick={() => openTaskForm()}
+                      className="text-[12px] text-[#5e6ad2] hover:text-[#7e8ae6]"
+                    >
+                      Create your first task →
+                    </button>
+                  </div>
+                ) : (
+                  <div className="divide-y divide-[rgba(255,255,255,0.06)]">
+                    {recentTasks.map((task) => {
+                      const isHighPriority = task.priority === "urgent" || task.priority === "high";
+                      
+                      return (
+                        <Link 
+                          key={task.id} 
+                          href={`/${slug}/tasks/${task.id}`}
+                          className="group block px-5 py-3 hover:bg-[#1c1c1c] transition-colors"
+                        >
+                          <div className="flex items-start gap-3">
+                            {isHighPriority && (
+                              <div 
+                                className="w-1.5 h-1.5 rounded-full mt-1.5 flex-shrink-0"
+                                style={{ background: PRIORITY_DOT[task.priority ?? 'normal'] }}
+                              />
+                            )}
+                            <div className="flex-1 min-w-0">
+                              <p className="text-[13px] text-[#d4d4d4] group-hover:text-[#5e6ad2] transition-colors">
+                                {task.title}
+                              </p>
+                              <div className="flex items-center gap-3 mt-1.5">
+                                <StatusBadge status={task.status ?? 'todo'} />
+                                {task.due_date && (
+                                  <span className="flex items-center gap-1 text-[11px] text-[#555]">
+                                    <Calendar size={10} />
+                                    {formatDate(task.due_date)}
+                                  </span>
+                                )}
+                                <span className="flex items-center gap-1 text-[11px] text-[#555]">
+                                  <MessageSquare size={10} />
+                                  0
+                                </span>
+                              </div>
+                            </div>
+                            {task.assignee && (
+                              <div className="flex-shrink-0">
+                                <div className="w-6 h-6 rounded-full bg-[rgba(94,106,210,0.15)]
+                                  flex items-center justify-center">
+                                  <span className="text-[10px] font-medium text-[#5e6ad2]">
+                                    {task.assignee.name.slice(0, 2).toUpperCase()}
+                                  </span>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </Link>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Right Column */}
+            <div className="space-y-6">
+              
+              {/* Quick Actions */}
+              <div className="rounded-xl border border-[rgba(255,255,255,0.06)] bg-[#111111] p-4">
+                <h3 className="text-[13px] font-medium text-[#e8e8e8] mb-3">Quick Actions</h3>
+                <div className="space-y-2">
+                  <button
+                    onClick={() => openTaskForm()}
+                    className="w-full flex items-center gap-2 px-3 py-2 rounded-lg
+                      text-[12px] text-[#888] hover:text-[#e8e8e8] hover:bg-white/5
+                      transition-all duration-150"
+                  >
+                    <Plus size={12} className="text-[#5e6ad2]" />
+                    Create New Task
+                  </button>
+                  <Link
+                    href={`/${slug}/projects`}
+                    className="w-full flex items-center gap-2 px-3 py-2 rounded-lg
+                      text-[12px] text-[#888] hover:text-[#e8e8e8] hover:bg-white/5
+                      transition-all duration-150"
+                  >
+                    <Briefcase size={12} className="text-[#5e6ad2]" />
+                    View All Projects
+                  </Link>
+                </div>
               </div>
 
-              <p className={`text-[20px] sm:text-[28px] lg:text-[32px] font-bold tracking-[-0.04em] leading-none ${valueColor ?? "text-bright"}`}>
-                {value}
-              </p>
-              <p className="mt-2 text-[11px] font-medium text-dim-app">{label}</p>
-              <p className="mt-0.5 text-[11px] text-dim-app">{sub}</p>
+              {/* Active Projects List */}
+              <div className="rounded-xl border border-[rgba(255,255,255,0.06)] bg-[#111111] p-4">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-[13px] font-medium text-[#e8e8e8]">Active Projects</h3>
+                  <Link 
+                    href={`/${slug}/projects`}
+                    className="text-[11px] text-[#5e6ad2] hover:text-[#7e8ae6]"
+                  >
+                    Manage →
+                  </Link>
+                </div>
+                
+                {activeProjects.length === 0 ? (
+                  <p className="text-[12px] text-[#555] text-center py-3">No active projects</p>
+                ) : (
+                  <div className="space-y-2">
+                    {activeProjects.slice(0, 4).map((project) => (
+                      <Link 
+                        key={project.id}
+                        href={`/${slug}/projects/${project.id}`}
+                        className="flex items-center justify-between py-1.5 group"
+                      >
+                        <span className="text-[12px] text-[#888] group-hover:text-[#e8e8e8] transition-colors">
+                          {project.name}
+                        </span>
+                        <ArrowRight size={10} className="text-[#333] group-hover:text-[#5e6ad2]" />
+                      </Link>
+                    ))}
+                  </div>
+                )}
+              </div>
 
-              {progress !== undefined && taskStats.total > 0 && (
-                <div className="mt-3 h-1 w-full rounded-full bg-surface-inset overflow-hidden">
-                  <div
-                    className="h-full rounded-full bg-violet-500 transition-[width] duration-700"
-                    style={{ width: `${progress}%` }}
-                  />
+              {/* Upcoming Tasks */}
+              {taskStats.dueSoon > 0 && (
+                <div className="rounded-xl border border-[rgba(255,255,255,0.06)] bg-[#111111] p-4">
+                  <div className="flex items-center gap-2 mb-3">
+                    <AlertCircle size={12} className="text-[#e79d13]" />
+                    <h3 className="text-[13px] font-medium text-[#e8e8e8]">Due This Week</h3>
+                  </div>
+                  <p className="text-[20px] font-semibold text-[#e79d13] mb-1">{taskStats.dueSoon}</p>
+                  <p className="text-[11px] text-[#555]">Tasks need attention</p>
                 </div>
               )}
             </div>
           </div>
-        ))}
-      </div>
-
-      {/* ── Quick actions ───────────────────────────────────────────────────── */}
-      <div
-        className="mb-6 flex flex-wrap items-center gap-2 animate-in"
-        style={{ animationDelay: "340ms" }}
-      >
-        <div className="flex items-center gap-2">
-          <Zap className="h-3.5 w-3.5 text-dim-app" />
-          <span className="text-[11px] font-semibold uppercase tracking-widest text-dim-app">Quick links</span>
         </div>
-        <div className="flex flex-wrap gap-2">
-          {[
-            { href: `/${slug}/projects`, label: "Projects" },
-            { href: `/${slug}/clients`,  label: "Clients"  },
-            { href: `/${slug}/invoices`, label: "Invoices" },
-          ].map(({ href, label }) => (
-            <Link
-              key={href}
-              href={href}
-              className="rounded-lg border border-surface bg-surface-card px-3 py-1 text-[12px] font-medium text-muted-app hover:border-violet-500/30 hover:text-violet-400 hover:bg-violet-500/5 transition-[background-color,border-color,color] duration-150"
-            >
-              {label}
-            </Link>
-          ))}
-        </div>
-      </div>
-
-      {/* ── Recent tasks ────────────────────────────────────────────────────── */}
-      <div
-        className="rounded-2xl border border-surface bg-surface-card overflow-x-auto animate-in"
-        style={{ animationDelay: "400ms" }}
-      >
-        <div className="flex items-center justify-between px-6 py-4 border-b border-surface">
-          <div>
-            <h2 className="text-[13px] font-semibold tracking-[-0.02em] text-bright">Recent Tasks</h2>
-            <p className="text-[11px] text-dim-app mt-0.5">{taskStats.total} total tasks</p>
-          </div>
-          <Link
-            href={`/${slug}/tasks`}
-            className="group flex items-center gap-1 rounded-lg px-3 py-1.5 text-[12px] font-medium text-faint-app border border-surface hover:border-violet-500/30 hover:text-violet-500 dark:hover:text-violet-400 hover:bg-violet-500/5 transition-[background-color,border-color,color] duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/40"
-          >
-            View all
-            <ArrowUpRight className="h-3 w-3 transition-transform duration-150 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
-          </Link>
-        </div>
-
-        {recentTasks.length === 0 ? (
-          <div className="py-16 text-center">
-            <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-surface-inset border border-surface">
-              <CheckSquare className="h-5 w-5 text-dim-app" />
-            </div>
-            <p className="text-sm font-medium text-faint-app">No tasks yet</p>
-            <p className="mt-1 text-xs text-dim-app">Create your first task to get started</p>
-            <button
-              onClick={() => openTaskForm()}
-              className="mt-4 rounded-lg px-4 py-2 text-xs font-medium text-violet-400 border border-violet-500/20 hover:bg-violet-500/10 transition-[background-color] duration-150"
-            >
-              + Create task
-            </button>
-          </div>
-        ) : (
-          <>
-            <div className="grid grid-cols-[1fr_80px_60px] sm:grid-cols-[1fr_140px_100px_90px] gap-2 sm:gap-4 px-3 sm:px-6 py-2.5 text-[10px] font-semibold uppercase tracking-widest text-dim-app border-b border-surface">
-              <span>Task</span>
-              <span>Status</span>
-              <span className="hidden sm:block">Assignee</span>
-              <span className="text-right">Due</span>
-            </div>
-
-            <ul>
-              {recentTasks.map((task, idx) => {
-                const statusCfg   = STATUS_CONFIG[task.status ?? "todo"] ?? STATUS_CONFIG.todo;
-                const priorityCfg = PRIORITY_CONFIG[task.priority ?? "normal"] ?? PRIORITY_CONFIG.normal;
-
-                return (
-                  <li
-                    key={task.id}
-                    className={[
-                      "animate-in",
-                      idx < recentTasks.length - 1 ? "border-b border-surface" : "",
-                    ].join(" ")}
-                    style={{ animationDelay: `${460 + idx * 30}ms` }}
-                  >
-                    <Link
-                      href={`/${slug}/tasks/${task.id}`}
-                      className="group grid grid-cols-[1fr_80px_60px] sm:grid-cols-[1fr_140px_100px_90px] gap-2 sm:gap-4 items-center px-3 sm:px-6 py-3.5 hover:bg-overlay-xs transition-[background-color] duration-100 focus-visible:outline-none focus-visible:bg-overlay-sm"
-                    >
-                      <div className="flex items-center gap-3 min-w-0">
-                        <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${priorityCfg.dot}`} />
-                        <span className="truncate text-[13px] font-medium text-secondary-app group-hover:text-bright transition-colors duration-100">
-                          {task.title}
-                        </span>
-                      </div>
-
-                      <div>
-                        <span className={`inline-flex items-center gap-1 sm:gap-1.5 rounded-full px-2 sm:px-2.5 py-1 text-[10px] sm:text-[11px] font-medium ${statusCfg.bg} ${statusCfg.text}`}>
-                          <span className={`h-1 w-1 rounded-full ${statusCfg.dot}`} />
-                          {statusCfg.label}
-                        </span>
-                      </div>
-
-                      <div className="hidden sm:flex items-center gap-2">
-                        {task.assignee ? (
-                          <>
-                            <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-violet-500/15 text-[9px] font-bold text-violet-300 ring-1 ring-violet-500/20">
-                              {task.assignee.name.slice(0, 2).toUpperCase()}
-                            </div>
-                            <span className="truncate text-[12px] text-faint-app group-hover:text-muted-app transition-colors">
-                              {task.assignee.name.split(" ")[0]}
-                            </span>
-                          </>
-                        ) : (
-                          <div className="h-6 w-6 rounded-full bg-surface-inset ring-1 ring-surface" />
-                        )}
-                      </div>
-
-                      <span className="text-right text-[12px] text-dim-app group-hover:text-faint-app transition-colors tabular-nums">
-                        {task.due_date ? formatDate(task.due_date) : "—"}
-                      </span>
-                    </Link>
-                  </li>
-                );
-              })}
-            </ul>
-          </>
-        )}
       </div>
     </div>
   );

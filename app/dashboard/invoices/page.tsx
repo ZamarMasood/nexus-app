@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { getInvoices, getInvoicesByMember } from "@/lib/db/invoices";
+import { getInvoicesPaginated, getInvoicesByMemberPaginated } from "@/lib/db/invoices";
 
 export const metadata: Metadata = { title: "Invoices" };
 import { getClientsForList, getClientsForListByMember } from "@/lib/db/clients";
@@ -9,6 +9,8 @@ import InvoicesClient from "./InvoicesClient";
 
 export const dynamic = "force-dynamic";
 
+const PAGE_SIZE = 5;
+
 export default async function InvoicesPage() {
   const supabase = createSupabaseServerClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -17,14 +19,23 @@ export default async function InvoicesPage() {
   const memberId = member?.id ?? '';
   const hasMember = Boolean(member);
 
-  const [invoices, clients] = await Promise.all([
+  const [invoicesResult, clients] = await Promise.all([
     !hasMember
-      ? []
-      : isAdmin ? getInvoices() : getInvoicesByMember(memberId),
+      ? { data: [], total: 0 }
+      : isAdmin
+        ? getInvoicesPaginated(0, PAGE_SIZE)
+        : getInvoicesByMemberPaginated(memberId, 0, PAGE_SIZE),
     !hasMember
       ? []
       : isAdmin ? getClientsForList() : getClientsForListByMember(memberId),
   ]);
 
-  return <InvoicesClient initialInvoices={invoices} clients={clients} isAdmin={isAdmin} />;
+  return (
+    <InvoicesClient
+      initialInvoices={invoicesResult.data}
+      totalInvoices={invoicesResult.total}
+      clients={clients}
+      isAdmin={isAdmin}
+    />
+  );
 }

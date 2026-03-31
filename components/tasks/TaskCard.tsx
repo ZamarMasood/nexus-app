@@ -18,45 +18,32 @@ interface TaskCardProps {
 const PRIORITY_CONFIG = {
   urgent: {
     label: "Urgent",
-    badge: "bg-rose-500/10 text-rose-400 ring-1 ring-rose-500/20",
-    border: "border-l-rose-500/80",
-    hoverGlow: "hover:shadow-[0_0_28px_rgba(239,68,68,0.2),0_8px_32px_rgba(0,0,0,0.6)]",
+    badge: "bg-[rgba(229,72,77,0.12)] text-[#e5484d]",
+    borderColor: "#e5484d",
     icon: AlertCircle,
-    iconColor: "text-rose-400",
   },
   high: {
     label: "High",
-    badge: "bg-orange-500/10 text-orange-400 ring-1 ring-orange-500/20",
-    border: "border-l-orange-500/70",
-    hoverGlow: "hover:shadow-[0_0_28px_rgba(249,115,22,0.2),0_8px_32px_rgba(0,0,0,0.6)]",
+    badge: "bg-[rgba(231,157,19,0.12)] text-[#e79d13]",
+    borderColor: "#e79d13",
     icon: ArrowUp,
-    iconColor: "text-orange-400",
   },
   normal: {
     label: "Normal",
-    badge: "bg-sky-500/10 text-sky-400 ring-1 ring-sky-500/20",
-    border: "border-l-sky-500/60",
-    hoverGlow: "hover:shadow-[0_0_28px_rgba(14,165,233,0.18),0_8px_32px_rgba(0,0,0,0.6)]",
+    badge: "bg-[rgba(94,106,210,0.12)] text-[#5e6ad2]",
+    borderColor: "#5e6ad2",
     icon: Minus,
-    iconColor: "text-sky-400",
   },
   low: {
     label: "Low",
-    badge: "bg-surface-subtle text-muted-app ring-1 ring-surface",
-    border: "border-l-surface",
-    hoverGlow: "hover:shadow-[0_0_28px_rgba(139,92,246,0.14),0_8px_32px_rgba(0,0,0,0.6)]",
+    badge: "bg-[rgba(136,136,136,0.12)] text-[#888]",
+    borderColor: "#888",
     icon: ArrowDown,
-    iconColor: "text-faint-app",
   },
 } as const;
 
 function getInitials(name: string): string {
-  return name
-    .split(" ")
-    .map((n) => n[0])
-    .join("")
-    .toUpperCase()
-    .slice(0, 2);
+  return name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2);
 }
 
 function isOverdue(dueDate: string | null): boolean {
@@ -77,36 +64,33 @@ export function TaskCard({ task, onClick, isDragging = false, isLocked = false }
       onClick={() => onClick?.(task)}
       onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onClick?.(task); } }}
       className={[
-        "group relative flex flex-col gap-3 rounded-xl border border-surface bg-surface-page p-4",
-        "border-l-4",
-        config.border,
+        "group relative flex flex-col gap-3 rounded-lg p-4",
+        "bg-[#161616] border border-[rgba(255,255,255,0.06)]",
+        "border-l-[3px]",
         "select-none",
         isLocked ? "cursor-default opacity-60" : "cursor-pointer",
-        "shadow-[0_2px_8px_rgba(0,0,0,0.5),0_1px_2px_rgba(0,0,0,0.7)]",
-        isLocked ? "" : config.hoverGlow,
-        isLocked ? "" : "hover:-translate-y-0.5",
-        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400/50",
+        isLocked ? "" : "hover:bg-[#1c1c1c]",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(94,106,210,0.35)]",
         isLocked ? "" : "active:scale-[0.99]",
-        "transition-[transform,box-shadow,border-color,opacity]",
-        isDragging ? "opacity-80 rotate-1 scale-[1.02] shadow-[0_20px_48px_rgba(0,0,0,0.7)]" : "",
+        "transition-colors duration-150",
+        isDragging ? "opacity-80 rotate-1 scale-[1.02] shadow-[0_8px_32px_rgba(0,0,0,0.6)]" : "",
       ].join(" ")}
+      style={{ borderLeftColor: config.borderColor }}
     >
       {/* Title + priority badge */}
       <div className="flex items-start justify-between gap-3">
         <p className={[
-          "text-sm font-semibold leading-snug tracking-[-0.01em] line-clamp-2",
-          isLocked ? "text-muted-app" : "text-secondary-app group-hover:text-bright transition-colors duration-100",
+          "text-[13px] font-medium leading-snug tracking-[-0.01em] line-clamp-2",
+          isLocked ? "text-[#555]" : "text-[#f0f0f0]",
         ].join(" ")}>
           {task.title}
         </p>
         <div className="flex shrink-0 items-center gap-1.5">
           {isLocked && (
-            <Lock className="h-3 w-3 text-faint-app" />
+            <Lock className="h-3 w-3 text-[#3a3a3a]" />
           )}
-          <span
-            className={`inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium ${config.badge}`}
-          >
-            <PriorityIcon className={`h-2.5 w-2.5 ${config.iconColor}`} />
+          <span className={`inline-flex shrink-0 items-center gap-1 rounded-sm px-2 py-0.5 text-[11px] font-medium ${config.badge}`}>
+            <PriorityIcon className="h-2.5 w-2.5" />
             {config.label}
           </span>
         </div>
@@ -114,7 +98,7 @@ export function TaskCard({ task, onClick, isDragging = false, isLocked = false }
 
       {/* Description */}
       {task.description && (
-        <p className="text-xs leading-relaxed text-muted-app line-clamp-2">
+        <p className="text-[12px] leading-relaxed text-[#555] line-clamp-2">
           {task.description}
         </p>
       )}
@@ -129,36 +113,29 @@ export function TaskCard({ task, onClick, isDragging = false, isLocked = false }
                 alt={task.assignee.name}
                 width={20}
                 height={20}
-                className="h-5 w-5 rounded-full object-cover ring-1 ring-white shadow-sm"
+                className="h-5 w-5 rounded-full object-cover"
               />
             ) : (
-              <div className="flex h-5 w-5 items-center justify-center rounded-full bg-violet-500/15 ring-1 ring-violet-500/25">
-                <span className="text-[9px] font-bold text-violet-300">
+              <div className="flex h-5 w-5 items-center justify-center rounded-full bg-[rgba(94,106,210,0.15)]">
+                <span className="text-[9px] font-medium text-[#5e6ad2]">
                   {getInitials(task.assignee.name)}
                 </span>
               </div>
             )}
-            <span className="text-[11px] text-muted-app">{task.assignee.name}</span>
+            <span className="text-[11px] text-[#8a8a8a]">{task.assignee.name}</span>
           </div>
         ) : (
           <div className="flex items-center gap-1.5">
-            <div className="h-5 w-5 rounded-full border border-dashed border-surface bg-overlay-sm" />
-            <span className="text-[11px] text-faint-app">Unassigned</span>
+            <div className="h-5 w-5 rounded-full border border-dashed border-[rgba(255,255,255,0.10)]" />
+            <span className="text-[11px] text-[#555]">Unassigned</span>
           </div>
         )}
 
         {task.due_date && (
-          <div
-            className={`flex items-center gap-1 text-[11px] font-medium ${
-              overdue ? "text-rose-400" : "text-faint-app"
-            }`}
-          >
+          <div className={`flex items-center gap-1 text-[11px] font-medium ${overdue ? "text-[#e5484d]" : "text-[#555]"}`}>
             <CalendarDays className="h-3 w-3" />
             <span>
-              {new Date(task.due_date).toLocaleDateString(undefined, {
-                month: "short",
-                day: "numeric",
-              })}
+              {new Date(task.due_date).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
             </span>
           </div>
         )}

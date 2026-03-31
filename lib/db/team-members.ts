@@ -57,6 +57,44 @@ export async function getTeamMembersWithProjects(): Promise<TeamMemberWithProjec
   return (data ?? []) as TeamMemberWithProjects[];
 }
 
+export interface PaginatedTeamMembers {
+  data: TeamMemberWithProjects[];
+  total: number;
+}
+
+/** Fetch a page of team members with projects (0-indexed). Pass orgId to skip re-auth. */
+export async function getTeamMembersWithProjectsPaginated(page: number, pageSize: number, orgIdOverride?: string): Promise<PaginatedTeamMembers> {
+  const orgId = orgIdOverride ?? await getCallerOrgId();
+  const from = page * pageSize;
+  const to = from + pageSize - 1;
+
+  const adminAny = supabase as any;
+  const { data, error, count } = await adminAny
+    .from('team_members')
+    .select(`
+      id,
+      name,
+      email,
+      role,
+      avatar_url,
+      user_role,
+      is_owner,
+      project_members!project_members_member_id_fkey (
+        project_id,
+        projects (
+          id,
+          name
+        )
+      )
+    `, { count: 'exact' })
+    .eq('org_id', orgId)
+    .order('name', { ascending: true })
+    .range(from, to);
+
+  if (error) throw new Error(`Failed to fetch team members: ${error.message}`);
+  return { data: (data ?? []) as TeamMemberWithProjects[], total: count ?? 0 };
+}
+
 export async function getTeamMemberByEmail(email: string): Promise<TeamMember | null> {
   const { data, error } = await (supabase as any)
     .from('team_members')

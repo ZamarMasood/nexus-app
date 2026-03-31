@@ -11,6 +11,7 @@ import {
   updateTeamMemberFull,
   deleteTeamMember,
   replaceProjectAssignments,
+  getTeamMembersWithProjectsPaginated,
 } from '@/lib/db/team-members';
 // ── Validation helpers ───────────────────────────────────────────────────────
 function isValidEmail(email: string): boolean {
@@ -188,4 +189,13 @@ export async function deleteTeamMemberAction(
     const msg = err instanceof Error ? err.message : 'Something went wrong. Please try again.';
     return { error: msg, success: null };
   }
+}
+
+export async function fetchTeamMembersPageAction(page: number, pageSize: number) {
+  const { email } = await requireAdmin();
+  const member = await getTeamMemberByEmail(email);
+  if (!member?.org_id) return { members: [], total: 0 };
+
+  const result = await getTeamMembersWithProjectsPaginated(page, pageSize, member.org_id);
+  return { members: result.data, total: result.total };
 }

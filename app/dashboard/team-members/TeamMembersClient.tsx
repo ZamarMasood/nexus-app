@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useFormState, useFormStatus } from "react-dom";
 import { useRouter } from "next/navigation";
 import {
@@ -15,33 +15,39 @@ import {
   ShieldCheck,
   User,
   Send,
+  Layers,
+  Search,
+  Users,
+  Mail,
+  Briefcase,
+  ChevronRight,
+  ChevronLeft
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
-  DialogHeader,
-  DialogTitle,
 } from "@/components/ui/dialog";
 import type { Project, TeamMemberWithProjects } from "@/lib/types";
 import {
   addTeamMemberAction,
   editTeamMemberAction,
   deleteTeamMemberAction,
+  fetchTeamMembersPageAction,
   type AddMemberState,
   type EditMemberState,
   type DeleteMemberState,
 } from "./actions";
 
+const PAGE_SIZE = 5;
+
 // ── Avatar helpers ────────────────────────────────────────────────────────────
 
 const AVATAR_PALETTES = [
-  "bg-violet-500/15 text-violet-300 ring-violet-500/25",
-  "bg-sky-500/15    text-sky-300    ring-sky-500/25",
-  "bg-emerald-500/15 text-emerald-300 ring-emerald-500/25",
-  "bg-amber-500/15  text-amber-300  ring-amber-500/25",
-  "bg-rose-500/15   text-rose-300   ring-rose-500/25",
-  "bg-indigo-500/15 text-indigo-300 ring-indigo-500/25",
+  "bg-[rgba(94,106,210,0.15)] text-[#5e6ad2]",
+  "bg-[rgba(38,201,127,0.15)] text-[#26c97f]",
+  "bg-[rgba(231,157,19,0.15)] text-[#e79d13]",
+  "bg-[rgba(229,72,77,0.15)] text-[#e5484d]",
+  "bg-[rgba(136,136,136,0.15)] text-[#888]",
 ];
 
 function getAvatarColor(name: string) {
@@ -69,18 +75,20 @@ function ToastContainer({ toasts, onDismiss }: { toasts: Toast[]; onDismiss: (id
         <div
           key={t.id}
           className={[
-            "flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium shadow-lg pointer-events-auto",
+            "flex items-center gap-3 rounded-lg px-4 py-3 text-[13px] font-medium pointer-events-auto",
+            "bg-[#1c1c1c] border border-[rgba(255,255,255,0.10)] shadow-[0_8px_32px_rgba(0,0,0,0.6)]",
             "animate-in slide-in-from-right-4 duration-200",
-            t.type === "success"
-              ? "bg-emerald-500 text-white"
-              : "bg-rose-500 text-white",
           ].join(" ")}
         >
-          {t.type === "success" ? <CheckCircle className="h-4 w-4 shrink-0" /> : <AlertCircle className="h-4 w-4 shrink-0" />}
-          <span>{t.message}</span>
+          {t.type === "success" ? (
+            <CheckCircle className="h-4 w-4 shrink-0 text-[#26c97f]" />
+          ) : (
+            <AlertCircle className="h-4 w-4 shrink-0 text-[#e5484d]" />
+          )}
+          <span className="text-[#f0f0f0]">{t.message}</span>
           <button
             onClick={() => onDismiss(t.id)}
-            className="ml-2 opacity-70 hover:opacity-100 transition-opacity"
+            className="ml-2 text-[#555] hover:text-[#8a8a8a] transition-colors duration-150"
           >
             <X className="h-3.5 w-3.5" />
           </button>
@@ -107,7 +115,7 @@ function useToast() {
   return { toasts, push, dismiss };
 }
 
-// ── Submit button (reads pending state from form context) ─────────────────────
+// ── Submit button ─────────────────────────────────────────────────────────────
 
 function SubmitButton({ label, pendingLabel, className }: { label: string; pendingLabel: string; className: string }) {
   const { pending } = useFormStatus();
@@ -119,12 +127,12 @@ function SubmitButton({ label, pendingLabel, className }: { label: string; pendi
   );
 }
 
-// ── Input / field class ───────────────────────────────────────────────────────
+// ── Input field class ─────────────────────────────────────────────────────────
 
 const fieldCls =
-  "w-full rounded-lg bg-surface-inset border border-surface px-3 py-2.5 text-[13px] text-primary-app placeholder:text-dim-app outline-none focus:border-violet-500/50 focus:ring-1 focus:ring-violet-500/30 transition-[border-color,box-shadow] duration-150";
+  "w-full px-3 py-2 rounded-lg bg-[#1a1a1a] border border-[rgba(255,255,255,0.08)] text-[#f0f0f0] text-[13px] placeholder:text-[#555] focus:outline-none focus:border-[rgba(94,106,210,0.5)] focus:ring-1 focus:ring-[rgba(94,106,210,0.3)] transition-all duration-150";
 
-const labelCls = "block text-[11px] font-semibold uppercase tracking-widest text-faint-app mb-1";
+const labelCls = "block text-[11px] font-medium text-[#8a8a8a] mb-1.5";
 
 // ── Project multi-select checklist ────────────────────────────────────────────
 
@@ -139,7 +147,7 @@ function ProjectChecklist({
 }) {
   if (projects.length === 0) {
     return (
-      <p className="text-[12px] text-dim-app italic">
+      <p className="text-[12px] text-[#3a3a3a] italic py-2">
         No projects available. Create projects first.
       </p>
     );
@@ -152,58 +160,42 @@ function ProjectChecklist({
   }
 
   return (
-    <div className="rounded-xl border border-surface overflow-hidden bg-surface-inset max-h-28 overflow-y-auto mt-2 mb-2">
-      <table className="w-full">
-        <thead>
-          <tr className="border-b border-surface bg-surface-inset">
-            <th className="px-5 py-3 text-left text-[10px] font-semibold uppercase tracking-widest text-dim-app w-8">
-              <span className="sr-only">Select</span>
-            </th>
-            <th className="px-5 py-3 text-left text-[10px] font-semibold uppercase tracking-widest text-dim-app">
-              Project Name
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          {projects.map((p) => {
-            const checked = selected.includes(p.id);
-            return (
-              <tr
-                key={p.id}
-                onClick={() => toggle(p.id)}
+    <div className="rounded-lg border border-[rgba(255,255,255,0.06)] overflow-hidden bg-[#1a1a1a] max-h-32 overflow-y-auto">
+      <div className="divide-y divide-[rgba(255,255,255,0.06)]">
+        {projects.map((p) => {
+          const checked = selected.includes(p.id);
+          return (
+            <div
+              key={p.id}
+              onClick={() => toggle(p.id)}
+              className={[
+                "flex items-center gap-3 px-3 py-2 cursor-pointer transition-colors duration-[120ms]",
+                checked ? "bg-[rgba(94,106,210,0.08)] hover:bg-[rgba(94,106,210,0.12)]" : "hover:bg-[#1c1c1c]",
+              ].join(" ")}
+            >
+              <div
                 className={[
-                  "border-b border-surface last:border-0 cursor-pointer transition-[background-color] duration-100",
-                  checked ? "bg-violet-500/8 hover:bg-violet-500/12" : "hover:bg-overlay-sm",
+                  "flex h-4 w-4 shrink-0 items-center justify-center rounded border transition-colors duration-150",
+                  checked
+                    ? "border-[#5e6ad2] bg-[#5e6ad2]"
+                    : "border-[rgba(255,255,255,0.10)] bg-[#1a1a1a]",
                 ].join(" ")}
               >
-                <td className="px-5 py-4">
-                  <div
-                    className={[
-                      "flex h-4 w-4 shrink-0 items-center justify-center rounded border transition-colors duration-150",
-                      checked
-                        ? "border-violet-500 bg-violet-500"
-                        : "border-surface bg-surface-inset",
-                    ].join(" ")}
-                  >
-                    {checked && <span className="block h-2 w-2 rounded-sm bg-white" />}
-                  </div>
-                  <input
-                    type="checkbox"
-                    name="project_ids"
-                    value={p.id}
-                    checked={checked}
-                    onChange={() => toggle(p.id)}
-                    className="sr-only"
-                  />
-                </td>
-                <td className="px-5 py-4 text-[13px] font-medium text-secondary-app">
-                  {p.name}
-                </td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
+                {checked && <CheckCircle className="h-3 w-3 text-white" />}
+              </div>
+              <span className="text-[13px] text-[#8a8a8a] flex-1">{p.name}</span>
+              <input
+                type="checkbox"
+                name="project_ids"
+                value={p.id}
+                checked={checked}
+                onChange={() => toggle(p.id)}
+                className="sr-only"
+              />
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -216,25 +208,28 @@ function ProjectPills({ member }: { member: TeamMemberWithProjects }) {
     .filter((p): p is { id: string; name: string } => p !== null);
 
   if (allProjects.length === 0) {
-    return <span className="text-xs text-dim-app">—</span>;
+    return <span className="text-xs text-[#3a3a3a]">—</span>;
   }
 
   const visible = allProjects.slice(0, 3);
   const extra   = allProjects.length - 3;
 
   return (
-    <div className="flex flex-wrap gap-1">
+    <div className="flex flex-wrap gap-1.5">
       {visible.map((p) => (
         <span
           key={p.id}
-          className="inline-block rounded-full bg-surface-subtle border border-surface px-2 py-0.5 text-[11px] font-medium text-secondary-app"
+          className="inline-block rounded-md bg-[rgba(255,255,255,0.06)] px-2 py-1 text-[11px] font-medium text-[#8a8a8a]"
         >
           {p.name}
         </span>
       ))}
       {extra > 0 && (
-        <span className="inline-block rounded-full bg-violet-500/10 border border-violet-500/20 px-2 py-0.5 text-[11px] font-medium text-violet-400">
-          +{extra} more
+        <span
+          className="inline-block rounded-md px-2 py-1 text-[11px] font-medium"
+          style={{ background: 'rgba(94,106,210,0.12)', color: '#5e6ad2' }}
+        >
+          +{extra}
         </span>
       )}
     </div>
@@ -247,42 +242,26 @@ function RoleBadge({ userRole, isOwner }: { userRole: string | null; isOwner?: b
   const isAdmin = userRole === "admin";
   return (
     <div className="flex items-center gap-1.5">
-      <span
-        className={[
-          "inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[11px] font-semibold",
-          isAdmin
-            ? "bg-violet-500/15 text-violet-300 ring-1 ring-violet-500/25"
-            : "bg-surface-subtle text-muted-app ring-1 ring-surface",
-        ].join(" ")}
-      >
-        {isAdmin ? <ShieldCheck className="h-3 w-3" /> : <User className="h-3 w-3" />}
-        {isAdmin ? "Admin" : "Member"}
-      </span>
+      {isAdmin ? (
+        <span
+          className="inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-[11px] font-medium"
+          style={{ background: 'rgba(94,106,210,0.12)', color: '#5e6ad2' }}
+        >
+          <ShieldCheck className="h-3 w-3" />
+          Admin
+        </span>
+      ) : (
+        <span className="inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-[11px] font-medium bg-[rgba(255,255,255,0.06)] text-[#8a8a8a]">
+          <User className="h-3 w-3" />
+          Member
+        </span>
+      )}
       {isOwner && (
-        <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/15 text-amber-300 ring-1 ring-amber-500/25 px-2 py-0.5 text-[10px] font-semibold">
+        <span className="inline-flex items-center gap-1 rounded-md bg-[rgba(231,157,19,0.12)] text-[#e79d13] px-2 py-1 text-[10px] font-medium">
           Owner
         </span>
       )}
     </div>
-  );
-}
-
-// ── Skeleton row ──────────────────────────────────────────────────────────────
-
-function SkeletonRow() {
-  return (
-    <tr className="border-b border-surface animate-pulse">
-      <td className="px-5 py-4">
-        <div className="flex items-center gap-3">
-          <div className="h-9 w-9 rounded-full bg-surface-subtle" />
-          <div className="h-3.5 w-28 rounded bg-surface-subtle" />
-        </div>
-      </td>
-      <td className="hidden sm:table-cell px-5 py-4"><div className="h-3 w-36 rounded bg-surface-subtle" /></td>
-      <td className="px-5 py-4"><div className="h-5 w-16 rounded-full bg-surface-subtle" /></td>
-      <td className="hidden lg:table-cell px-5 py-4"><div className="h-5 w-32 rounded bg-surface-subtle" /></td>
-      <td className="px-5 py-4"><div className="h-7 w-16 rounded bg-surface-subtle" /></td>
-    </tr>
   );
 }
 
@@ -316,64 +295,68 @@ function AddMemberModal({
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
-      <DialogContent className="max-w-lg bg-surface-card border-surface text-primary-app">
-        <DialogHeader>
-          <DialogTitle className="text-lg font-semibold tracking-[-0.02em] text-bright flex items-center gap-2">
-            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-violet-500/10">
-              <Send className="h-3.5 w-3.5 text-violet-400" />
+      <DialogContent className="
+        bg-[#111111] border border-[rgba(255,255,255,0.08)] rounded-xl
+        shadow-2xl p-0 gap-0 max-w-[520px] w-full">
+        
+        <div className="flex items-center justify-between px-6 pt-5 pb-4
+          border-b border-[rgba(255,255,255,0.06)]">
+          <div>
+            <h3 className="text-[15px] font-semibold text-[#f0f0f0]">Invite Team Member</h3>
+            <p className="text-[11px] text-[#555] mt-1">Send an invitation to join your workspace</p>
+          </div>
+        </div>
+
+        <div className="px-6 py-5">
+          <form action={formAction} className="space-y-4">
+            <div>
+              <label htmlFor="add-name" className={labelCls}>Full Name <span className="text-[#e5484d]">*</span></label>
+              <input id="add-name" name="name" type="text" required placeholder="Jane Smith" className={fieldCls} />
             </div>
-            Invite Team Member
-          </DialogTitle>
-        </DialogHeader>
 
-        <p className="text-[13px] text-muted-app mt-1">
-          An email invitation will be sent so they can set their own password and join the workspace.
-        </p>
-
-        <form action={formAction} className="mt-4 space-y-4">
-          <div className="space-y-1">
-            <label htmlFor="add-name" className={labelCls}>Full Name <span className="text-rose-400">*</span></label>
-            <input id="add-name" name="name" type="text" required placeholder="Jane Smith" className={fieldCls} />
-          </div>
-
-          <div className="space-y-1">
-            <label htmlFor="add-email" className={labelCls}>Email <span className="text-rose-400">*</span></label>
-            <input id="add-email" name="email" type="email" required placeholder="jane@company.com" className={fieldCls} />
-          </div>
-
-          <input type="hidden" name="user_role" value="member" />
-
-          <div className="space-y-1.5">
-            <label className={labelCls}>Assign Projects</label>
-            <ProjectChecklist
-              projects={projects}
-              selected={selectedProjects}
-              onChange={setSelectedProjects}
-            />
-          </div>
-
-          {state.error && (
-            <div className="flex items-center gap-2 rounded-lg bg-rose-500/10 border border-rose-500/20 px-4 py-3 text-sm text-rose-400">
-              <AlertCircle className="h-4 w-4 shrink-0" />
-              {state.error}
+            <div>
+              <label htmlFor="add-email" className={labelCls}>Email <span className="text-[#e5484d]">*</span></label>
+              <input id="add-email" name="email" type="email" required placeholder="jane@company.com" className={fieldCls} />
             </div>
-          )}
 
-          <div className="flex justify-end gap-2 pt-1">
-            <button
-              type="button"
-              onClick={onClose}
-              className="rounded-lg px-4 py-2.5 text-[13px] font-medium text-secondary-app bg-surface-subtle hover:bg-surface-inset border border-surface transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/40"
-            >
-              Cancel
-            </button>
-            <SubmitButton
-              label="Send Invite"
-              pendingLabel="Sending…"
-              className="flex items-center gap-2 rounded-lg bg-violet-600 hover:bg-violet-500 px-5 py-2.5 text-[13px] font-semibold text-white shadow-[0_4px_16px_rgba(139,92,246,0.3)] hover:shadow-[0_4px_20px_rgba(139,92,246,0.45)] transition-[background-color,box-shadow] duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/60 active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed"
-            />
-          </div>
-        </form>
+            <input type="hidden" name="user_role" value="member" />
+
+            <div>
+              <label className={labelCls}>Assign Projects</label>
+              <ProjectChecklist
+                projects={projects}
+                selected={selectedProjects}
+                onChange={setSelectedProjects}
+              />
+            </div>
+
+            {state.error && (
+              <div className="flex items-center gap-2 rounded-lg bg-[#e5484d]/10 border border-[#e5484d]/20 px-3 py-2 text-[12px] text-[#e5484d]">
+                <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+                {state.error}
+              </div>
+            )}
+
+            <div className="flex justify-end gap-2 pt-2">
+              <button
+                type="button"
+                onClick={onClose}
+                className="px-3 py-1.5 rounded-lg text-[12px] font-medium text-[#8a8a8a]
+                  hover:bg-white/5 hover:text-[#f0f0f0] transition-all duration-150"
+              >
+                Cancel
+              </button>
+              <SubmitButton
+                label="Send Invite"
+                pendingLabel="Sending..."
+                className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-[12px] font-medium
+                  bg-[#5e6ad2] hover:bg-[#6872e5] text-white
+                  active:scale-[0.98] transition-all duration-150
+                  disabled:opacity-50 disabled:cursor-not-allowed"
+              />
+            </div>
+          </form>
+        </div>
       </DialogContent>
     </Dialog>
   );
@@ -420,98 +403,104 @@ function EditMemberModal({
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
-      <DialogContent className="max-w-lg bg-surface-card border-surface text-primary-app">
-        <DialogHeader>
-          <DialogTitle className="text-lg font-semibold tracking-[-0.02em] text-bright flex items-center gap-2">
-            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-violet-500/10">
-              <Pencil className="h-3.5 w-3.5 text-violet-400" />
+      <DialogContent className="
+        bg-[#111111] border border-[rgba(255,255,255,0.08)] rounded-xl
+        shadow-2xl p-0 gap-0 max-w-[520px] w-full">
+        
+        <div className="flex items-center justify-between px-6 pt-5 pb-4
+          border-b border-[rgba(255,255,255,0.06)]">
+          <div>
+            <h3 className="text-[15px] font-semibold text-[#f0f0f0]">Edit Member</h3>
+            <p className="text-[11px] text-[#555] mt-1">Update member information and permissions</p>
+          </div>
+        </div>
+
+        <div className="px-6 py-5">
+          <form action={formAction} className="space-y-4">
+            <input type="hidden" name="id" value={member.id} />
+
+            <div>
+              <label htmlFor="edit-name" className={labelCls}>Full Name <span className="text-[#e5484d]">*</span></label>
+              <input id="edit-name" name="name" type="text" required defaultValue={member.name} className={fieldCls} />
             </div>
-            Edit Member
-          </DialogTitle>
-        </DialogHeader>
 
-        <form action={formAction} className="mt-4 space-y-4">
-          <input type="hidden" name="id" value={member.id} />
+            <div>
+              <label className={labelCls}>Email</label>
+              <input
+                type="email"
+                value={member.email}
+                readOnly
+                className="w-full rounded-lg bg-[rgba(255,255,255,0.06)] border border-[rgba(255,255,255,0.08)] px-3 py-2 text-[13px] text-[#555] cursor-not-allowed"
+              />
+              <p className="text-[10px] text-[#3a3a3a] mt-1">Email cannot be changed</p>
+            </div>
 
-          <div className="space-y-1">
-            <label htmlFor="edit-name" className={labelCls}>Full Name <span className="text-rose-400">*</span></label>
-            <input id="edit-name" name="name" type="text" required defaultValue={member.name} className={fieldCls} />
-          </div>
+            <input type="hidden" name="original_user_role" value={member.user_role ?? 'member'} />
+            <div>
+              <label htmlFor="edit-role" className={labelCls}>Role</label>
+              {isOwner && !member.is_owner ? (
+                <select
+                  id="edit-role"
+                  name="user_role"
+                  value={role}
+                  onChange={(e) => setRole(e.target.value)}
+                  className={fieldCls}
+                >
+                  <option value="admin">Admin</option>
+                  <option value="member">Member</option>
+                </select>
+              ) : (
+                <>
+                  <input type="hidden" name="user_role" value={role} />
+                  <input
+                    type="text"
+                    value={member.is_owner ? 'Owner (Admin)' : role === 'admin' ? 'Admin' : 'Member'}
+                    readOnly
+                    className="w-full rounded-lg bg-[rgba(255,255,255,0.06)] border border-[rgba(255,255,255,0.08)] px-3 py-2 text-[13px] text-[#555] cursor-not-allowed"
+                  />
+                  <p className="text-[10px] text-[#3a3a3a] mt-1">
+                    {member.is_owner ? 'Owner role cannot be changed' : 'Only workspace owner can change roles'}
+                  </p>
+                </>
+              )}
+            </div>
 
-          {/* Email — read-only */}
-          <div className="space-y-1">
-            <label className={labelCls}>Email</label>
-            <input
-              type="email"
-              value={member.email}
-              readOnly
-              className="w-full rounded-lg bg-surface-subtle border border-surface px-3 py-2.5 text-[13px] text-faint-app cursor-not-allowed select-none"
-            />
-            <p className="text-[11px] text-dim-app">Email cannot be changed here.</p>
-          </div>
+            <div>
+              <label className={labelCls}>Assign Projects</label>
+              <ProjectChecklist
+                projects={projects}
+                selected={selectedProjects}
+                onChange={setSelectedProjects}
+              />
+            </div>
 
-          {/* Role selector — only owner can change roles, and owner's own role is locked */}
-          <input type="hidden" name="original_user_role" value={member.user_role ?? 'member'} />
-          <div className="space-y-1">
-            <label htmlFor="edit-role" className={labelCls}>Role</label>
-            {isOwner && !member.is_owner ? (
-              <select
-                id="edit-role"
-                name="user_role"
-                value={role}
-                onChange={(e) => setRole(e.target.value)}
-                className={fieldCls}
-              >
-                <option value="admin">Admin</option>
-                <option value="member">Member</option>
-              </select>
-            ) : (
-              <>
-                <input type="hidden" name="user_role" value={role} />
-                <input
-                  type="text"
-                  value={member.is_owner ? 'Owner (Admin)' : role === 'admin' ? 'Admin' : 'Member'}
-                  readOnly
-                  className="w-full rounded-lg bg-surface-subtle border border-surface px-3 py-2.5 text-[13px] text-faint-app cursor-not-allowed select-none"
-                />
-                <p className="text-[11px] text-dim-app">
-                  {member.is_owner ? 'Owner role cannot be changed.' : 'Only the workspace owner can change roles.'}
-                </p>
-              </>
+            {state.error && (
+              <div className="flex items-center gap-2 rounded-lg bg-[#e5484d]/10 border border-[#e5484d]/20 px-3 py-2 text-[12px] text-[#e5484d]">
+                <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+                {state.error}
+              </div>
             )}
-          </div>
 
-          <div className="space-y-1.5">
-            <label className={labelCls}>Assign Projects</label>
-            <ProjectChecklist
-              projects={projects}
-              selected={selectedProjects}
-              onChange={setSelectedProjects}
-            />
-          </div>
-
-          {state.error && (
-            <div className="flex items-center gap-2 rounded-lg bg-rose-500/10 border border-rose-500/20 px-4 py-3 text-sm text-rose-400">
-              <AlertCircle className="h-4 w-4 shrink-0" />
-              {state.error}
+            <div className="flex justify-end gap-2 pt-2">
+              <button
+                type="button"
+                onClick={onClose}
+                className="px-3 py-1.5 rounded-lg text-[12px] font-medium text-[#8a8a8a]
+                  hover:bg-white/5 hover:text-[#f0f0f0] transition-all duration-150"
+              >
+                Cancel
+              </button>
+              <SubmitButton
+                label="Save Changes"
+                pendingLabel="Saving..."
+                className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-[12px] font-medium
+                  bg-[#5e6ad2] hover:bg-[#6872e5] text-white
+                  active:scale-[0.98] transition-all duration-150
+                  disabled:opacity-50 disabled:cursor-not-allowed"
+              />
             </div>
-          )}
-
-          <div className="flex justify-end gap-2 pt-1">
-            <button
-              type="button"
-              onClick={onClose}
-              className="rounded-lg px-4 py-2.5 text-[13px] font-medium text-secondary-app bg-surface-subtle hover:bg-surface-inset border border-surface transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/40"
-            >
-              Cancel
-            </button>
-            <SubmitButton
-              label="Save Changes"
-              pendingLabel="Saving…"
-              className="flex items-center gap-2 rounded-lg bg-violet-600 hover:bg-violet-500 px-5 py-2.5 text-[13px] font-semibold text-white shadow-[0_4px_16px_rgba(139,92,246,0.3)] hover:shadow-[0_4px_20px_rgba(139,92,246,0.45)] transition-[background-color,box-shadow] duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/60 active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed"
-            />
-          </div>
-        </form>
+          </form>
+        </div>
       </DialogContent>
     </Dialog>
   );
@@ -542,47 +531,54 @@ function DeleteMemberModal({
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
-      <DialogContent className="max-w-md bg-surface-card border-surface text-primary-app">
-        <DialogHeader>
-          <DialogTitle className="text-lg font-semibold tracking-[-0.02em] text-bright flex items-center gap-2">
-            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-rose-500/10">
-              <Trash2 className="h-3.5 w-3.5 text-rose-400" />
-            </div>
-            Remove Member
-          </DialogTitle>
-        </DialogHeader>
-
-        <form action={formAction} className="mt-4 space-y-4">
-          <input type="hidden" name="id" value={member.id} />
-
-          <p className="text-sm text-secondary-app">
-            Are you sure you want to remove{" "}
-            <span className="font-semibold text-bright">{member.name}</span> from the team?
-            This action cannot be undone.
-          </p>
-
-          {state.error && (
-            <div className="flex items-center gap-2 rounded-lg bg-rose-500/10 border border-rose-500/20 px-4 py-3 text-sm text-rose-400">
-              <AlertCircle className="h-4 w-4 shrink-0" />
-              {state.error}
-            </div>
-          )}
-
-          <div className="flex justify-end gap-2 pt-1">
-            <button
-              type="button"
-              onClick={onClose}
-              className="rounded-lg px-4 py-2.5 text-[13px] font-medium text-secondary-app bg-surface-subtle hover:bg-surface-inset border border-surface transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/40"
-            >
-              Cancel
-            </button>
-            <SubmitButton
-              label="Confirm Delete"
-              pendingLabel="Deleting…"
-              className="flex items-center gap-2 rounded-lg bg-rose-600 hover:bg-rose-500 px-5 py-2.5 text-[13px] font-semibold text-white shadow-[0_4px_16px_rgba(239,68,68,0.25)] hover:shadow-[0_4px_20px_rgba(239,68,68,0.4)] transition-[background-color,box-shadow] duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/60 active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed"
-            />
+      <DialogContent className="
+        bg-[#111111] border border-[rgba(255,255,255,0.08)] rounded-xl
+        shadow-2xl p-0 gap-0 max-w-[480px] w-full">
+        
+        <div className="flex items-center justify-between px-6 pt-5 pb-4
+          border-b border-[rgba(255,255,255,0.06)]">
+          <div>
+            <h3 className="text-[15px] font-semibold text-[#f0f0f0]">Remove Member</h3>
+            <p className="text-[11px] text-[#555] mt-1">This action cannot be undone</p>
           </div>
-        </form>
+        </div>
+
+        <div className="px-6 py-5">
+          <form action={formAction} className="space-y-4">
+            <input type="hidden" name="id" value={member.id} />
+
+            <p className="text-[13px] text-[#8a8a8a]">
+              Are you sure you want to remove{" "}
+              <span className="font-semibold text-[#f0f0f0]">{member.name}</span> from the team?
+            </p>
+
+            {state.error && (
+              <div className="flex items-center gap-2 rounded-lg bg-[#e5484d]/10 border border-[#e5484d]/20 px-3 py-2 text-[12px] text-[#e5484d]">
+                <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+                {state.error}
+              </div>
+            )}
+
+            <div className="flex justify-end gap-2 pt-2">
+              <button
+                type="button"
+                onClick={onClose}
+                className="px-3 py-1.5 rounded-lg text-[12px] font-medium text-[#8a8a8a]
+                  hover:bg-white/5 hover:text-[#f0f0f0] transition-all duration-150"
+              >
+                Cancel
+              </button>
+              <SubmitButton
+                label="Remove Member"
+                pendingLabel="Removing..."
+                className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-[12px] font-medium
+                  bg-[#e5484d] hover:bg-[#e5484d]/90 text-white
+                  active:scale-[0.98] transition-all duration-150
+                  disabled:opacity-50 disabled:cursor-not-allowed"
+              />
+            </div>
+          </form>
+        </div>
       </DialogContent>
     </Dialog>
   );
@@ -592,6 +588,7 @@ function DeleteMemberModal({
 
 interface TeamMembersClientProps {
   initialMembers: TeamMemberWithProjects[];
+  totalMembers: number;
   projects: Project[];
   currentUserId: string;
   isOwner: boolean;
@@ -599,6 +596,7 @@ interface TeamMembersClientProps {
 
 export default function TeamMembersClient({
   initialMembers,
+  totalMembers: initialTotal,
   projects,
   currentUserId,
   isOwner,
@@ -607,171 +605,295 @@ export default function TeamMembersClient({
   const { toasts, push, dismiss } = useToast();
 
   const [members, setMembers] = useState<TeamMemberWithProjects[]>(initialMembers);
-  const [addOpen, setAddOpen]     = useState(false);
-  const [addKey, setAddKey]       = useState(0);
+  const [total, setTotal] = useState(initialTotal);
+  const [currentPage, setCurrentPage] = useState(0);
+  const [loading, setLoading] = useState(false);
+  const [addOpen, setAddOpen] = useState(false);
+  const [addKey, setAddKey] = useState(0);
   const [editMember, setEditMember] = useState<TeamMemberWithProjects | null>(null);
-  const [editKey, setEditKey]     = useState(0);
+  const [editKey, setEditKey] = useState(0);
   const [deleteMember, setDeleteMember] = useState<TeamMemberWithProjects | null>(null);
   const [deleteKey, setDeleteKey] = useState(0);
+  const [searchQuery, setSearchQuery] = useState("");
 
-  useEffect(() => { setMembers(initialMembers); }, [initialMembers]);
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+
+  useEffect(() => {
+    setMembers(initialMembers);
+    setTotal(initialTotal);
+    setCurrentPage(0);
+  }, [initialMembers, initialTotal]);
+
+  const fetchPage = useCallback(async (page: number) => {
+    setLoading(true);
+    try {
+      const result = await fetchTeamMembersPageAction(page, PAGE_SIZE);
+      setMembers(result.members);
+      setTotal(result.total);
+      setCurrentPage(page);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  // Calculate stats from current page
+  const adminCount = members.filter(m => m.user_role === "admin").length;
+
+  // Filter members (client-side on current page)
+  const filteredMembers = members.filter(member =>
+    member.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    member.email.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   function handleSuccess(msg: string) {
     push(msg, "success");
     setAddOpen(false);
     setEditMember(null);
     setDeleteMember(null);
+    fetchPage(0);
     router.refresh();
   }
 
   return (
-    <>
+    <div className="flex flex-col h-full bg-[#0d0d0d]">
       <ToastContainer toasts={toasts} onDismiss={dismiss} />
 
-      <div className="p-6 sm:p-8 lg:p-10">
-
-        {/* ── Header ─────────────────────────────────────────────────────── */}
-        <div
-          className="mb-8 flex flex-wrap items-start justify-between gap-3 animate-in"
-          style={{ animationDelay: "0ms" }}
-        >
-          <div>
-            <h1 className="text-2xl font-bold tracking-[-0.03em] text-bright leading-none">
-              Team Members
-            </h1>
-            <p className="mt-1.5 text-sm text-faint-app">
-              Manage your team and project assignments
-            </p>
-          </div>
-          <Button
-            onClick={() => { setAddOpen(true); setAddKey((k) => k + 1); }}
-            className="gap-1.5 bg-violet-600 hover:bg-violet-500 text-white shadow-[0_4px_24px_rgba(139,92,246,0.35),0_1px_4px_rgba(0,0,0,0.4)] hover:shadow-[0_4px_28px_rgba(139,92,246,0.5)] transition-[background-color,box-shadow] focus-visible:ring-violet-500"
-          >
-            <Send className="h-4 w-4" />
-            Invite Member
-          </Button>
+      {/* Header toolbar */}
+      <div className="flex items-center justify-between px-6 h-[60px] border-b border-[rgba(255,255,255,0.06)] shrink-0">
+        <div className="flex items-center gap-3">
+          <Layers size={16} className="text-[#555]" />
+          <h1 className="text-[15px] font-medium text-[#e8e8e8]">Team Members</h1>
+          <span className="text-[12px] text-[#555]">{total} total</span>
         </div>
+        {isOwner && (
+          <button
+            onClick={() => { setAddOpen(true); setAddKey((k) => k + 1); }}
+            className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium
+              bg-[#5e6ad2] hover:bg-[#6872e5] text-white transition-all duration-150"
+          >
+            <Plus size={14} />
+            Invite Member
+          </button>
+        )}
+      </div>
 
-        {/* ── Table ──────────────────────────────────────────────────────── */}
-        <div
-          className="rounded-xl border border-surface animate-in"
-          style={{ animationDelay: "80ms" }}
-        >
-          <div className="overflow-x-auto rounded-xl bg-surface-card">
-            {members.length === 0 ? (
-              <div className="flex flex-col items-center justify-center gap-3 py-20 text-center">
-                <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-surface-subtle border border-surface">
-                  <UserCog className="h-6 w-6 text-faint-app" />
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-muted-app">No team members yet.</p>
-                  <p className="text-xs text-dim-app mt-0.5">Invite your first member to get started.</p>
-                </div>
-                <button
-                  onClick={() => setAddOpen(true)}
-                  className="mt-1 text-xs font-semibold text-violet-400 hover:text-violet-300 transition-colors"
-                >
-                  + Invite Member
-                </button>
+      {/* Main content */}
+      <div className="flex-1 overflow-y-auto">
+        <div className="p-6">
+          
+          {/* Stats cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+            <div className="rounded-xl border border-[rgba(255,255,255,0.06)] bg-[#111111] p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <Users size={14} className="text-[#5e6ad2]" />
+                <span className="text-[11px] text-[#555]">Total Members</span>
               </div>
-            ) : (
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b border-surface bg-overlay-xs">
-                    <th className="px-5 py-3 text-left text-[10px] font-semibold uppercase tracking-widest text-dim-app">
-                      Member
-                    </th>
-                    <th className="hidden sm:table-cell px-5 py-3 text-left text-[10px] font-semibold uppercase tracking-widest text-dim-app">
-                      Email
-                    </th>
-                    <th className="px-5 py-3 text-left text-[10px] font-semibold uppercase tracking-widest text-dim-app">
-                      Role
-                    </th>
-                    <th className="hidden lg:table-cell px-5 py-3 text-left text-[10px] font-semibold uppercase tracking-widest text-dim-app">
-                      Assigned Projects
-                    </th>
-                    <th className="px-5 py-3 text-right text-[10px] font-semibold uppercase tracking-widest text-dim-app">
-                      Actions
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {members.map((member, i) => (
-                    <tr
-                      key={member.id}
-                      className="border-b border-surface last:border-0 transition-[background-color] duration-100 hover:bg-overlay-sm animate-in"
-                      style={{ animationDelay: `${120 + i * 40}ms` }}
-                    >
-                      {/* Avatar + Name */}
-                      <td className="px-5 py-4">
-                        <div className="flex items-center gap-3">
-                          <div
-                            className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[11px] font-bold ring-1 ${getAvatarColor(member.name)}`}
-                          >
-                            {initials(member.name)}
+              <p className="text-[24px] font-medium text-[#e8e8e8]">{total}</p>
+            </div>
+            
+            <div className="rounded-xl border border-[rgba(255,255,255,0.06)] bg-[#111111] p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <ShieldCheck size={14} className="text-[#26c97f]" />
+                <span className="text-[11px] text-[#555]">Admins</span>
+              </div>
+              <p className="text-[24px] font-medium text-[#e8e8e8]">{adminCount}</p>
+            </div>
+            
+            <div className="rounded-xl border border-[rgba(255,255,255,0.06)] bg-[#111111] p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <User size={14} className="text-[#e79d13]" />
+                <span className="text-[11px] text-[#555]">Members</span>
+              </div>
+              <p className="text-[24px] font-medium text-[#e8e8e8]">{total - adminCount}</p>
+            </div>
+          </div>
+
+          {/* Search bar */}
+          <div className="mb-6">
+            <div className="relative">
+              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#555]" />
+              <input
+                type="text"
+                placeholder="Search team members..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-9 pr-3 py-2 rounded-lg
+                  bg-[#111111] border border-[rgba(255,255,255,0.08)]
+                  text-[13px] text-[#f0f0f0] placeholder:text-[#555]
+                  focus:outline-none focus:border-[rgba(94,106,210,0.5)]
+                  transition-all duration-150"
+              />
+            </div>
+          </div>
+
+          {/* Members Table */}
+          {filteredMembers.length === 0 && !loading ? (
+            <div className="text-center py-12">
+              <p className="text-[13px] text-[#888] mb-2">
+                {searchQuery ? "No members found" : "No team members yet"}
+              </p>
+              {isOwner && !searchQuery && (
+                <button
+                  onClick={() => { setAddOpen(true); setAddKey((k) => k + 1); }}
+                  className="text-[12px] text-[#5e6ad2] hover:text-[#7e8ae6]"
+                >
+                  Invite your first member →
+                </button>
+              )}
+            </div>
+          ) : (
+            <div className="rounded-lg border border-[rgba(255,255,255,0.06)] overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b border-[rgba(255,255,255,0.06)] bg-[#111111]">
+                      <th className="px-5 py-3 text-left text-[11px] font-medium text-[#555] uppercase tracking-[0.06em]">
+                        Member
+                      </th>
+                      <th className="px-5 py-3 text-left text-[11px] font-medium text-[#555] uppercase tracking-[0.06em] hidden sm:table-cell">
+                        Contact
+                      </th>
+                      <th className="px-5 py-3 text-left text-[11px] font-medium text-[#555] uppercase tracking-[0.06em]">
+                        Role
+                      </th>
+                      <th className="px-5 py-3 text-left text-[11px] font-medium text-[#555] uppercase tracking-[0.06em] hidden lg:table-cell">
+                        Projects
+                      </th>
+                      <th className="px-5 py-3 text-right text-[11px] font-medium text-[#555] uppercase tracking-[0.06em]">
+                        Actions
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className={loading ? 'opacity-50 pointer-events-none' : ''}>
+                    {filteredMembers.map((member) => (
+                      <tr
+                        key={member.id}
+                        className="group border-b border-[rgba(255,255,255,0.06)] last:border-0
+                          hover:bg-[#1c1c1c] transition-colors duration-[120ms]"
+                      >
+                        <td className="px-5 py-3.5">
+                          <div className="flex items-center gap-3">
+                            <div
+                              className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[11px] font-medium ${getAvatarColor(member.name)}`}
+                            >
+                              {initials(member.name)}
+                            </div>
+                            <div>
+                              <span className="text-[13px] font-medium text-[#f0f0f0] block">
+                                {member.name}
+                              </span>
+                              {member.id === currentUserId && (
+                                <span className="text-[10px] text-[#5e6ad2] font-medium">You</span>
+                              )}
+                            </div>
                           </div>
-                          <div>
-                            <span className="block text-[13px] font-semibold text-bright">
-                              {member.name}
+                        </td>
+
+                        <td className="px-5 py-3.5 hidden sm:table-cell">
+                          <div className="flex items-center gap-1.5">
+                            <Mail size={12} className="text-[#555]" />
+                            <span className="text-[12px] text-[#888] truncate">
+                              {member.email}
                             </span>
-                            {member.id === currentUserId && (
-                              <span className="block text-[10px] text-violet-400 font-medium">You</span>
+                          </div>
+                        </td>
+
+                        <td className="px-5 py-3.5">
+                          <RoleBadge userRole={member.user_role} isOwner={member.is_owner} />
+                        </td>
+
+                        <td className="px-5 py-3.5 hidden lg:table-cell">
+                          <ProjectPills member={member} />
+                        </td>
+
+                        <td className="px-5 py-3.5">
+                          <div className="flex items-center justify-end gap-1.5">
+                            {(!member.is_owner || isOwner) && (
+                              <button
+                                onClick={() => { setEditMember(member); setEditKey((k) => k + 1); }}
+                                className="p-1.5 rounded-md text-[#555] hover:text-[#f0f0f0] hover:bg-white/5
+                                  transition-all duration-150"
+                                title="Edit member"
+                              >
+                                <Pencil size={14} />
+                              </button>
+                            )}
+                            {(!member.is_owner || isOwner) && member.id !== currentUserId && (
+                              <button
+                                onClick={() => { setDeleteMember(member); setDeleteKey((k) => k + 1); }}
+                                disabled={member.is_owner}
+                                title={member.is_owner ? "Owner cannot be removed" : "Remove member"}
+                                className="p-1.5 rounded-md text-[#555] hover:text-[#e5484d] hover:bg-[#e5484d]/10
+                                  transition-all duration-150 disabled:opacity-30 disabled:cursor-not-allowed
+                                  disabled:hover:text-[#555] disabled:hover:bg-transparent"
+                              >
+                                <Trash2 size={14} />
+                              </button>
                             )}
                           </div>
-                        </div>
-                      </td>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
 
-                      {/* Email */}
-                      <td className="hidden sm:table-cell px-5 py-4 text-[13px] text-muted-app">
-                        {member.email}
-                      </td>
-
-                      {/* Role badge */}
-                      <td className="px-5 py-4">
-                        <RoleBadge userRole={member.user_role} isOwner={member.is_owner} />
-                      </td>
-
-                      {/* Assigned projects */}
-                      <td className="hidden lg:table-cell px-5 py-4">
-                        <ProjectPills member={member} />
-                      </td>
-
-                      {/* Actions */}
-                      <td className="px-5 py-4">
-                        <div className="flex items-center justify-end gap-1.5">
-                          {/* Hide edit/delete for the owner unless you ARE the owner */}
-                          {(!member.is_owner || isOwner) && (
-                            <button
-                              onClick={() => { setEditMember(member); setEditKey((k) => k + 1); }}
-                              className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[12px] font-medium text-secondary-app bg-surface-subtle hover:bg-violet-500/10 hover:text-violet-400 border border-surface hover:border-violet-500/20 transition-[background-color,color,border-color] duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/40"
-                            >
-                              <Pencil className="h-3 w-3" />
-                              <span className="hidden sm:inline">Edit</span>
-                            </button>
-                          )}
-                          {(!member.is_owner || isOwner) && (
-                            <button
-                              onClick={() => { setDeleteMember(member); setDeleteKey((k) => k + 1); }}
-                              disabled={member.id === currentUserId || member.is_owner}
-                              title={member.is_owner ? "The workspace owner cannot be removed" : member.id === currentUserId ? "You cannot remove your own account" : undefined}
-                              className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[12px] font-medium text-secondary-app bg-surface-subtle hover:bg-rose-500/10 hover:text-rose-400 border border-surface hover:border-rose-500/20 transition-[background-color,color,border-color] duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/40 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-surface-subtle disabled:hover:text-secondary-app disabled:hover:border-surface"
-                            >
-                              <Trash2 className="h-3 w-3" />
-                              <span className="hidden sm:inline">Delete</span>
-                            </button>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
-          </div>
+              {/* Pagination controls */}
+              {totalPages > 1 && (
+                <div className="flex items-center justify-between px-5 py-3
+                  border-t border-[rgba(255,255,255,0.06)] bg-[#111111]">
+                  <span className="text-[12px] text-[#555]">
+                    Page {currentPage + 1} of {totalPages}
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => fetchPage(currentPage - 1)}
+                      disabled={currentPage === 0 || loading}
+                      className="flex items-center gap-1 px-3 py-1.5 rounded-md text-[12px] font-medium
+                        text-[#888] hover:text-[#e8e8e8] hover:bg-white/5
+                        disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-[#888]
+                        transition-colors duration-150"
+                    >
+                      <ChevronLeft size={14} />
+                      Previous
+                    </button>
+                    <div className="flex items-center gap-1">
+                      {Array.from({ length: totalPages }, (_, i) => (
+                        <button
+                          key={i}
+                          onClick={() => fetchPage(i)}
+                          disabled={loading}
+                          className={`w-8 h-8 rounded-md text-[12px] font-medium transition-colors duration-150
+                            ${i === currentPage
+                              ? 'bg-[#5e6ad2] text-white'
+                              : 'text-[#888] hover:text-[#e8e8e8] hover:bg-white/5'
+                            }
+                            disabled:cursor-not-allowed`}
+                        >
+                          {i + 1}
+                        </button>
+                      ))}
+                    </div>
+                    <button
+                      onClick={() => fetchPage(currentPage + 1)}
+                      disabled={currentPage >= totalPages - 1 || loading}
+                      className="flex items-center gap-1 px-3 py-1.5 rounded-md text-[12px] font-medium
+                        text-[#888] hover:text-[#e8e8e8] hover:bg-white/5
+                        disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-[#888]
+                        transition-colors duration-150"
+                    >
+                      Next
+                      <ChevronRight size={14} />
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
-      {/* ── Modals ─────────────────────────────────────────────────────────── */}
+      {/* Modals */}
       <AddMemberModal
         key={addKey}
         open={addOpen}
@@ -797,6 +919,6 @@ export default function TeamMembersClient({
         onClose={() => setDeleteMember(null)}
         onSuccess={handleSuccess}
       />
-    </>
+    </div>
   );
 }

@@ -2,22 +2,25 @@
 
 import { useState, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import {
   Search,
-  CheckCircle,
-  FileText,
-  RefreshCw,
+  CalendarDays,
+  DollarSign,
+  Pencil,
   Check,
-  Download,
+  X,
   Receipt,
   ArrowLeft,
-  Pencil,
-  X,
-  Loader2,
   Users,
   Hash,
-  DollarSign,
-  CalendarDays,
+  RefreshCw,
+  FileText,
+  Download,
+  CheckCircle,
+  AlertCircle,
+  Layers,
+  Loader2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -28,7 +31,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { getInvoiceById, updateInvoice } from "@/lib/db/invoices";
-import { updateInvoiceAction } from "@/app/dashboard/invoices/actions";
+import { updateInvoiceAction, searchInvoicesForSidebarAction } from "@/app/dashboard/invoices/actions";
 import { revalidateDashboard } from "@/app/dashboard/actions";
 import type { InvoiceListItem } from "@/lib/db/invoices";
 import type { ClientListItem } from "@/lib/db/clients";
@@ -36,33 +39,191 @@ import { formatCurrency, formatDate } from "@/lib/utils";
 import { useWorkspaceSlug } from "@/app/dashboard/workspace-context";
 import type { Invoice, InvoiceStatus } from "@/lib/types";
 
-const STATUS_BADGE: Record<InvoiceStatus, string> = {
-  paid: "bg-emerald-400/10 text-emerald-400 ring-1 ring-emerald-400/20",
-  pending: "bg-amber-400/10 text-amber-400 ring-1 ring-amber-400/20",
-  overdue: "bg-rose-400/10 text-rose-400 ring-1 ring-rose-400/20",
+// Status configuration matching project detail style
+const STATUS_CONFIG: Record<string, { label: string; dot: string; badge: string; icon: any }> = {
+  paid: { 
+    label: "Paid", 
+    dot: "bg-[#26c97f]", 
+    badge: "text-[#26c97f] bg-[rgba(38,201,127,0.10)] border-[rgba(38,201,127,0.20)]",
+    icon: CheckCircle
+  },
+  pending: { 
+    label: "Pending", 
+    dot: "bg-[#e79d13]", 
+    badge: "text-[#e79d13] bg-[rgba(231,157,19,0.10)] border-[rgba(231,157,19,0.20)]",
+    icon: AlertCircle
+  },
+  overdue: { 
+    label: "Overdue", 
+    dot: "bg-[#e5484d]", 
+    badge: "text-[#e5484d] bg-[rgba(229,72,77,0.10)] border-[rgba(229,72,77,0.20)]",
+    icon: AlertCircle
+  },
 };
 
-const STATUS_DOT: Record<InvoiceStatus, string> = {
-  paid: "bg-emerald-400",
-  pending: "bg-amber-400",
-  overdue: "bg-rose-400",
-};
+function getStatusConfig(status: string | null) {
+  return STATUS_CONFIG[status ?? ""] ?? {
+    label: status ?? "Unknown",
+    dot: "bg-[#888888]",
+    badge: "text-[#8a8a8a] bg-[rgba(255,255,255,0.06)] border-[rgba(255,255,255,0.06)]",
+    icon: Receipt,
+  };
+}
 
 const EDIT_STATUS_OPTIONS: { value: InvoiceStatus; label: string; color: string }[] = [
-  { value: "pending", label: "Pending", color: "text-amber-400" },
-  { value: "paid",    label: "Paid",    color: "text-emerald-400" },
-  { value: "overdue", label: "Overdue", color: "text-rose-400" },
+  { value: "pending", label: "Pending", color: "text-[#e79d13]" },
+  { value: "paid", label: "Paid", color: "text-[#26c97f]" },
+  { value: "overdue", label: "Overdue", color: "text-[#e5484d]" },
 ];
 
-const LABEL = "block text-[11px] font-semibold uppercase tracking-widest text-faint-app mb-1";
-const FIELD = "w-full rounded-lg border border-surface bg-surface-inset px-3 py-2.5 text-[13px] text-primary-app placeholder:text-dim-app outline-none focus:border-violet-500/50 focus:ring-1 focus:ring-violet-500/30 transition-[border-color,box-shadow] duration-150";
-const SELECT_TRIGGER = "w-full rounded-lg border border-surface bg-surface-inset h-[42px] text-[13px] text-primary-app focus:ring-1 focus:ring-violet-500/40 focus:border-violet-500/50 data-[placeholder]:text-dim-app";
-const SELECT_CONTENT = "bg-surface-card border-surface text-primary-app";
-const SELECT_ITEM = "text-[13px] text-primary-app focus:bg-violet-500/10 focus:text-violet-300 cursor-pointer";
+// Edit Form Component
+interface EditFormProps {
+  invoice: Invoice;
+  clients: ClientListItem[];
+  onSave: (updated: Invoice) => void;
+  onCancel: () => void;
+}
 
+function EditForm({ invoice, clients, onSave, onCancel }: EditFormProps) {
+  const [clientId, setClientId] = useState(invoice.client_id ?? "");
+  const [invoiceNumber, setInvoiceNumber] = useState(invoice.invoice_number ?? "");
+  const [amount, setAmount] = useState(invoice.amount != null ? String(invoice.amount) : "");
+  const [dueDate, setDueDate] = useState(invoice.due_date ?? "");
+  const [status, setStatus] = useState((invoice.status ?? "pending") as InvoiceStatus);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const fieldClass =
+    "w-full px-3 py-2 rounded-lg bg-[#1a1a1a] border border-[rgba(255,255,255,0.08)] text-[#f0f0f0] text-[13px] placeholder:text-[#555] focus:outline-none focus:border-[rgba(94,106,210,0.5)] focus:ring-1 focus:ring-[rgba(94,106,210,0.3)] transition-all duration-150";
+
+  async function handleSave(e: React.FormEvent) {
+    e.preventDefault();
+    if (!clientId) { setError("Please select a client."); return; }
+    if (!invoiceNumber.trim()) { setError("Invoice number is required."); return; }
+    if (!amount || isNaN(parseFloat(amount)) || parseFloat(amount) < 0) { setError("Enter a valid positive amount."); return; }
+
+    setSaving(true);
+    setError(null);
+    try {
+      const updated = await updateInvoiceAction(invoice.id, {
+        client_id: clientId,
+        invoice_number: invoiceNumber.trim(),
+        amount: parseFloat(amount),
+        due_date: dueDate || null,
+        status,
+      });
+      onSave(updated);
+      await revalidateDashboard();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to save");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <form onSubmit={handleSave} className="space-y-4">
+      <div>
+        <label className="block text-[11px] font-medium text-[#8a8a8a] mb-1.5">
+          <span className="flex items-center gap-1.5">
+            <Users className="h-3 w-3" /> Client <span className="text-[#e5484d]">*</span>
+          </span>
+        </label>
+        <select value={clientId} onChange={(e) => setClientId(e.target.value)} className={fieldClass} required>
+          <option value="">Select a client</option>
+          {clients.map((c) => (
+            <option key={c.id} value={c.id}>{c.name}</option>
+          ))}
+        </select>
+      </div>
+      
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <label className="block text-[11px] font-medium text-[#8a8a8a] mb-1.5">
+            <span className="flex items-center gap-1.5">
+              <Hash className="h-3 w-3" /> Invoice # <span className="text-[#e5484d]">*</span>
+            </span>
+          </label>
+          <input 
+            value={invoiceNumber} 
+            onChange={(e) => setInvoiceNumber(e.target.value)} 
+            className={`${fieldClass} font-mono`} 
+            required
+          />
+        </div>
+        <div>
+          <label className="block text-[11px] font-medium text-[#8a8a8a] mb-1.5">Status</label>
+          <select value={status} onChange={(e) => setStatus(e.target.value as InvoiceStatus)} className={fieldClass}>
+            {EDIT_STATUS_OPTIONS.map((o) => (
+              <option key={o.value} value={o.value}>{o.label}</option>
+            ))}
+          </select>
+        </div>
+      </div>
+      
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <label className="block text-[11px] font-medium text-[#8a8a8a] mb-1.5">
+            <span className="flex items-center gap-1.5">
+              <DollarSign className="h-3 w-3" /> Amount <span className="text-[#e5484d]">*</span>
+            </span>
+          </label>
+          <input 
+            type="number" 
+            value={amount} 
+            onChange={(e) => setAmount(e.target.value)} 
+            placeholder="0.00" 
+            min="0" 
+            step="0.01" 
+            className={fieldClass} 
+            required
+          />
+        </div>
+        <div>
+          <label className="block text-[11px] font-medium text-[#8a8a8a] mb-1.5">
+            <span className="flex items-center gap-1.5">
+              <CalendarDays className="h-3 w-3" /> Due Date
+            </span>
+          </label>
+          <input 
+            type="date" 
+            value={dueDate} 
+            onChange={(e) => setDueDate(e.target.value)} 
+            className={fieldClass} 
+          />
+        </div>
+      </div>
+      
+      {error && (
+        <div className="rounded-lg bg-[rgba(229,72,77,0.10)] px-3 py-2 text-[12px] text-[#e5484d] border border-[rgba(229,72,77,0.2)]">
+          {error}
+        </div>
+      )}
+      
+      <div className="flex justify-end gap-2 pt-2">
+        <button 
+          type="button" 
+          onClick={onCancel} 
+          className="px-3 py-1.5 rounded-lg text-[12px] font-medium text-[#8a8a8a] hover:bg-white/5 hover:text-[#f0f0f0] transition-all duration-150 flex items-center gap-1.5"
+        >
+          <X className="h-3.5 w-3.5" /> Cancel
+        </button>
+        <button 
+          type="submit" 
+          disabled={saving} 
+          className="px-3 py-1.5 rounded-lg text-[12px] font-medium bg-[#5e6ad2] hover:bg-[#6872e5] text-white active:scale-[0.98] transition-all duration-150 flex items-center gap-1.5 disabled:opacity-50"
+        >
+          <Check className="h-3.5 w-3.5" /> {saving ? "Saving..." : "Save Changes"}
+        </button>
+      </div>
+    </form>
+  );
+}
+
+// Props & Component
 interface InvoiceDetailClientProps {
   invoiceId: string;
-  allInvoices: InvoiceListItem[];
+  initialSidebarInvoices: InvoiceListItem[];
   clients: ClientListItem[];
   initialInvoice: Invoice;
   isAdmin: boolean;
@@ -75,7 +236,7 @@ function findClientInList(clientId: string | null, clients: ClientListItem[]) {
 
 export default function InvoiceDetailClient({
   invoiceId,
-  allInvoices,
+  initialSidebarInvoices,
   clients,
   initialInvoice,
   isAdmin,
@@ -84,19 +245,20 @@ export default function InvoiceDetailClient({
   const slug = useWorkspaceSlug();
   const [selectedId, setSelectedId] = useState(invoiceId);
   const [search, setSearch] = useState("");
-  // Initialize from server-fetched props — no loading on first render
+
   const [invoice, setInvoice] = useState<Invoice | null>(initialInvoice);
   const [client, setClient] = useState<ClientListItem | null>(() => findClientInList(initialInvoice.client_id, clients));
+  const [sidebarInvoices, setSidebarInvoices] = useState<InvoiceListItem[]>(initialSidebarInvoices);
+  const [sidebarSearching, setSidebarSearching] = useState(false);
+  const [sidebarPage, setSidebarPage] = useState(0);
+  const [sidebarHasMore, setSidebarHasMore] = useState(initialSidebarInvoices.length === 5);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [editing, setEditing] = useState(false);
   const [markingPaid, setMarkingPaid] = useState(false);
   const [generatingPdf, setGeneratingPdf] = useState(false);
   const [showPdf, setShowPdf] = useState(false);
   const [pdfCacheBust, setPdfCacheBust] = useState(() => Date.now());
-  const [editing, setEditing] = useState(false);
-  const [editForm, setEditForm] = useState({ client_id: "", invoice_number: "", amount: "", due_date: "", status: "pending" as InvoiceStatus });
-  const [editError, setEditError] = useState<string | null>(null);
-  const [saving, setSaving] = useState(false);
 
   const clientMap = useMemo(() => {
     const m: Record<string, string> = {};
@@ -104,28 +266,41 @@ export default function InvoiceDetailClient({
     return m;
   }, [clients]);
 
-  const filteredInvoices = useMemo(() => {
-    if (!search.trim()) return allInvoices;
-    const q = search.toLowerCase();
-    return allInvoices.filter((inv) => {
-      const clientName = inv.client_id ? clientMap[inv.client_id] ?? "" : "";
-      return (
-        (inv.invoice_number ?? "").toLowerCase().includes(q) ||
-        clientName.toLowerCase().includes(q) ||
-        (inv.amount != null && formatCurrency(inv.amount).toLowerCase().includes(q))
-      );
-    });
-  }, [allInvoices, search, clientMap]);
+  // Fetch sidebar page (search + pagination)
+  async function fetchSidebar(page: number, query?: string) {
+    setSidebarSearching(true);
+    try {
+      const results = await searchInvoicesForSidebarAction(query ?? search, page);
+      setSidebarInvoices(results);
+      setSidebarPage(page);
+      setSidebarHasMore(results.length === 5);
+    } finally {
+      setSidebarSearching(false);
+    }
+  }
 
-  // Track which invoice is currently loaded to avoid redundant fetches
+  // Debounced search — resets to page 0
+  useEffect(() => {
+    if (!search.trim()) {
+      setSidebarInvoices(initialSidebarInvoices);
+      setSidebarPage(0);
+      setSidebarHasMore(initialSidebarInvoices.length === 5);
+      return;
+    }
+    const timer = setTimeout(() => fetchSidebar(0, search), 300);
+    return () => clearTimeout(timer);
+  }, [search, initialSidebarInvoices]);
+
+  const filteredInvoices = sidebarInvoices;
+
   const [loadedId, setLoadedId] = useState(invoiceId);
 
-  // Fetch when switching to a different invoice
   useEffect(() => {
     if (selectedId === loadedId) return;
     async function load() {
       setLoading(true);
       setError(null);
+      setEditing(false);
       setShowPdf(false);
       try {
         const inv = await getInvoiceById(selectedId);
@@ -133,7 +308,7 @@ export default function InvoiceDetailClient({
         setClient(findClientInList(inv.client_id, clients));
         setLoadedId(selectedId);
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Failed to load invoice.");
+        setError(err instanceof Error ? err.message : "Failed to load invoice");
       } finally {
         setLoading(false);
       }
@@ -201,438 +376,320 @@ export default function InvoiceDetailClient({
     }
   }
 
-  function openEditForm() {
-    if (!invoice) return;
-    setEditForm({
-      client_id: invoice.client_id ?? "",
-      invoice_number: invoice.invoice_number ?? "",
-      amount: invoice.amount != null ? String(invoice.amount) : "",
-      due_date: invoice.due_date ?? "",
-      status: (invoice.status ?? "pending") as InvoiceStatus,
-    });
-    setEditError(null);
-    setEditing(true);
-  }
-
-  async function handleEditSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    if (!invoice) return;
-    if (!editForm.client_id) { setEditError("Please select a client."); return; }
-    if (!editForm.invoice_number.trim()) { setEditError("Invoice number is required."); return; }
-    if (!editForm.amount || isNaN(parseFloat(editForm.amount)) || parseFloat(editForm.amount) < 0) { setEditError("Enter a valid positive amount."); return; }
-
-    setEditError(null);
-    setSaving(true);
-    try {
-      const updated = await updateInvoiceAction(invoice.id, {
-        client_id: editForm.client_id,
-        invoice_number: editForm.invoice_number.trim(),
-        amount: parseFloat(editForm.amount),
-        due_date: editForm.due_date || null,
-        status: editForm.status,
-      });
-      setInvoice(updated);
-      setClient(findClientInList(updated.client_id, clients));
-      setEditing(false);
-
-      // Regenerate PDF with updated data
-      try {
-        const res = await fetch("/api/generate-invoice-pdf", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ invoiceId: updated.id }),
-        });
-        const json = (await res.json()) as { invoice?: Invoice; error?: string };
-        if (json.invoice) {
-          setInvoice(json.invoice);
-          setPdfCacheBust(Date.now());
-        }
-      } catch {
-        setEditError('Invoice updated but PDF regeneration failed. You can retry later.');
-      }
-      await revalidateDashboard();
-    } catch (err) {
-      setEditError(err instanceof Error ? err.message : "Failed to update invoice.");
-    } finally {
-      setSaving(false);
-    }
-  }
-
   const status = invoice ? ((invoice.status ?? "pending") as InvoiceStatus) : "pending";
+  const cfg = invoice ? getStatusConfig(invoice.status) : getStatusConfig(null);
+  const StatusIcon = cfg.icon;
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8">
-      {/* Mobile back button */}
-      <button
-        onClick={() => router.push(`/${slug}/invoices`)}
-        className="flex lg:hidden items-center gap-1.5 mb-4 rounded text-sm text-faint-app transition-colors hover:text-muted-app focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500"
-      >
-        <ArrowLeft className="h-3.5 w-3.5" />
-        Back to Invoices
-      </button>
-
-      <div className="flex gap-6 items-start">
-        {/* ── Left sidebar — Invoice list card ─────────────────────── */}
-        <aside className="hidden lg:flex w-[300px] shrink-0 flex-col rounded-xl border border-surface bg-surface-card overflow-hidden sticky top-6 h-[calc(100vh-112px)]">
-          <div className="px-4 pt-4 pb-3 border-b border-surface/60">
-            <div className="flex items-center gap-2 mb-3">
-              <button
-                onClick={() => router.push(`/${slug}/invoices`)}
-                className="flex items-center justify-center h-7 w-7 rounded-lg text-faint-app hover:text-bright hover:bg-surface-subtle transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500"
-                title="Back to Invoices"
-              >
-                <ArrowLeft className="h-4 w-4" />
-              </button>
-              <h2 className="text-[15px] font-bold tracking-[-0.02em] text-bright flex items-center gap-2">
-                <Receipt className="h-4 w-4 text-violet-400" />
-                Invoices
-              </h2>
-            </div>
-            <div className="relative">
-              <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-app" />
-              <input
-                type="text"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search invoices…"
-                className="w-full rounded-lg bg-surface-subtle border border-surface pl-9 pr-3 py-2 text-[13px] text-primary-app placeholder:text-muted-app outline-none focus:border-violet-500/40 transition-[border-color] duration-150"
-              />
-            </div>
+    <div className="flex flex-col h-full bg-[#0d0d0d]">
+      
+      {/* Header toolbar */}
+      <div className="flex items-center justify-between px-6 h-[60px] border-b border-[rgba(255,255,255,0.06)] shrink-0">
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => router.push(`/${slug}/invoices`)}
+            className="p-1.5 rounded-lg text-[#555] hover:text-[#e8e8e8] hover:bg-white/5 transition-all duration-150"
+            title="Back to Invoices"
+          >
+            <ArrowLeft size={16} />
+          </button>
+          <div className="w-px h-5 bg-[rgba(255,255,255,0.06)]" />
+          <div className="flex items-center gap-2">
+            <Receipt size={16} className="text-[#5e6ad2]" />
+            <h1 className="text-[15px] font-medium text-[#e8e8e8]">Invoice Details</h1>
           </div>
-
-          <div className="flex-1 overflow-y-auto">
-            {filteredInvoices.length === 0 ? (
-              <div className="flex flex-col items-center justify-center gap-2 py-12 text-center px-4">
-                <Receipt className="h-5 w-5 text-faint-app" />
-                <p className="text-xs text-dim-app">No invoices found</p>
-              </div>
-            ) : (
-              filteredInvoices.map((inv) => {
-                const invStatus = (inv.status ?? "pending") as InvoiceStatus;
-                const isActive = inv.id === selectedId;
-                return (
-                  <button
-                    key={inv.id}
-                    onClick={() => selectInvoice(inv.id)}
-                    className={[
-                      "w-full text-left px-4 py-3 border-b border-surface/40 last:border-0 transition-[background-color] duration-150 group",
-                      "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-violet-500",
-                      isActive
-                        ? "bg-violet-500/[0.08]"
-                        : "hover:bg-overlay-xs",
-                    ].join(" ")}
-                  >
-                    <div className="flex items-center justify-between gap-2 mb-1">
-                      <span className={["font-mono text-[13px] font-semibold", isActive ? "text-violet-400" : "text-primary-app group-hover:text-violet-400"].join(" ")}>
-                        {inv.invoice_number ?? "—"}
-                      </span>
-                      <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium capitalize ${STATUS_BADGE[invStatus]}`}>
-                        <span className={`h-1.5 w-1.5 rounded-full ${STATUS_DOT[invStatus]}`} />
-                        {invStatus}
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="text-[12px] text-secondary-app truncate">
-                        {inv.client_id ? clientMap[inv.client_id] ?? "Unknown" : "No client"}
-                      </span>
-                      <span className="text-[12px] font-semibold text-bright tabular-nums shrink-0">
-                        {inv.amount != null ? formatCurrency(inv.amount) : "—"}
-                      </span>
-                    </div>
-                    {inv.due_date && (
-                      <p className="mt-1 text-[11px] text-dim-app">Due {formatDate(inv.due_date)}</p>
-                    )}
-                  </button>
-                );
-              })
-            )}
-          </div>
-        </aside>
-
-        {/* ── Right panel — Invoice detail ────────────────────────────── */}
-        <div className="flex-1 min-w-0">
-        {loading ? (
-          <div className="space-y-6 animate-pulse">
-            {/* Skeleton: invoice header card */}
-            <div className="rounded-xl border border-surface bg-surface-card overflow-hidden">
-              <div className="flex items-start justify-between border-b border-surface bg-surface-inset px-6 py-5">
-                <div className="space-y-2">
-                  <div className="h-3 w-16 rounded bg-overlay-xs" />
-                  <div className="h-6 w-32 rounded bg-overlay-xs" />
-                </div>
-                <div className="h-6 w-20 rounded-full bg-overlay-xs" />
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-surface">
-                {[0, 1, 2].map((i) => (
-                  <div key={i} className="px-6 py-4 space-y-2">
-                    <div className="h-3 w-14 rounded bg-overlay-xs" />
-                    <div className="h-4 w-24 rounded bg-overlay-xs" />
-                  </div>
-                ))}
-              </div>
-              <div className="flex gap-2 border-t border-surface px-6 py-4">
-                <div className="h-9 w-32 rounded-lg bg-overlay-xs" />
-                <div className="h-9 w-32 rounded-lg bg-overlay-xs" />
-              </div>
-            </div>
-            {/* Skeleton: PDF section */}
-            <div className="rounded-xl border border-surface bg-surface-card p-6">
-              <div className="flex flex-col items-center gap-4 py-8">
-                <div className="h-14 w-14 rounded-full bg-overlay-xs" />
-                <div className="h-4 w-40 rounded bg-overlay-xs" />
-                <div className="h-3 w-56 rounded bg-overlay-xs" />
-              </div>
-            </div>
-          </div>
-        ) : error || !invoice ? (
-          <div className="">
-            <div className="rounded-xl bg-rose-500/10 border border-rose-500/20 px-6 py-4 text-sm text-rose-400">
-              {error ?? "Invoice not found."}
-            </div>
-          </div>
-        ) : (
-          <div className="space-y-4 sm:space-y-6 animate-in">
-            {/* Invoice header card */}
-            <div className="overflow-hidden rounded-xl border border-surface bg-surface-card">
-              {/* Top band — invoice number + status */}
-              <div className="flex items-start justify-between border-b border-surface bg-surface-inset px-4 sm:px-6 py-4 sm:py-5">
-                <div>
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-dim-app">Invoice</p>
-                  <p className="mt-1 font-mono text-lg sm:text-xl font-bold text-bright">{invoice.invoice_number ?? "—"}</p>
-                </div>
-                <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold capitalize ${STATUS_BADGE[status]}`}>
-                  {status}
-                </span>
-              </div>
-
-              {/* Details — 2-col on mobile, 3-col on sm+ */}
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-3 px-4 sm:px-6 py-4">
-                <div className="col-span-2 sm:col-span-1">
-                  <p className="text-[11px] font-semibold uppercase tracking-wide text-dim-app">Client</p>
-                  <p className="mt-0.5 text-sm font-semibold text-secondary-app">{client?.name ?? "—"}</p>
-                  {client?.email && <p className="mt-0.5 text-xs text-faint-app truncate">{client.email}</p>}
-                </div>
-                <div>
-                  <p className="text-[11px] font-semibold uppercase tracking-wide text-dim-app">Amount</p>
-                  <p className="mt-0.5 text-sm font-semibold text-secondary-app">{invoice.amount != null ? formatCurrency(invoice.amount) : "—"}</p>
-                </div>
-                <div>
-                  <p className="text-[11px] font-semibold uppercase tracking-wide text-dim-app">Due Date</p>
-                  <p className="mt-0.5 text-sm font-semibold text-secondary-app">{invoice.due_date ? formatDate(invoice.due_date) : "—"}</p>
-                </div>
-              </div>
-
-              {/* Actions */}
-              <div className="border-t border-surface px-4 sm:px-6 py-3 sm:py-4 space-y-3">
-                {/* Status + Edit row */}
-                <div className="flex items-center justify-between gap-2">
-                  {invoice.status !== "paid" ? (
-                    isAdmin ? (
-                      <Button onClick={markAsPaid} disabled={markingPaid} size="sm" className="gap-1.5 bg-emerald-600 hover:bg-emerald-500 text-white focus-visible:ring-emerald-500">
-                        <CheckCircle className="h-3.5 w-3.5" />
-                        {markingPaid ? "Updating…" : "Mark as Paid"}
-                      </Button>
-                    ) : (
-                      <div className="flex items-center gap-1.5 text-sm font-medium text-amber-400">
-                        <CheckCircle className="h-4 w-4" /> Pending
-                      </div>
-                    )
-                  ) : (
-                    <div className="flex items-center gap-1.5 text-sm font-medium text-emerald-400">
-                      <Check className="h-4 w-4" /> Paid
-                    </div>
-                  )}
-                  {isAdmin && (
-                    <Button onClick={openEditForm} variant="outline" size="sm" className="gap-1.5 border-surface bg-surface-subtle text-muted-app hover:bg-overlay-sm hover:text-primary-app">
-                      <Pencil className="h-3.5 w-3.5" /> Edit
-                    </Button>
-                  )}
-                </div>
-                {/* Action buttons — equal width on mobile */}
-                <div className="flex gap-2">
-                  {invoice.pdf_url ? (
-                    <a href={invoice.pdf_url} download className="inline-flex items-center justify-center gap-1.5 rounded-md border border-surface bg-surface-subtle px-2.5 py-1.5 text-xs font-medium text-muted-app hover:bg-overlay-sm hover:text-primary-app transition-[background-color,color] duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500">
-                      <Download className="h-3.5 w-3.5" /> Download PDF
-                    </a>
-                  ) : (
-                    <Button variant="outline" size="sm" onClick={generatePdf} disabled={generatingPdf} className="gap-1.5 border-surface bg-surface-subtle text-muted-app hover:bg-overlay-sm hover:text-primary-app justify-center">
-                      <RefreshCw className={`h-3.5 w-3.5 ${generatingPdf ? "animate-spin" : ""}`} />
-                      {generatingPdf ? "Generating…" : "Generate PDF"}
-                    </Button>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {/* PDF section */}
-            {invoice.pdf_url ? (
-              <div className="overflow-hidden rounded-xl border border-surface bg-surface-card">
-                <div className="flex items-center justify-between gap-3 border-b border-surface px-4 sm:px-5 py-3 sm:py-4">
-                  <div className="flex items-center gap-2">
-                    <FileText className="h-4 w-4 shrink-0 text-violet-400" />
-                    <span className="text-sm font-semibold text-muted-app">Invoice PDF</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Button variant="outline" size="sm" onClick={generatePdf} disabled={generatingPdf} className="gap-1 border-surface bg-surface-subtle text-xs text-faint-app hover:bg-overlay-sm hover:text-muted-app hidden sm:inline-flex">
-                      <RefreshCw className={`h-3 w-3 ${generatingPdf ? "animate-spin" : ""}`} /> Regenerate
-                    </Button>
-                    <Button size="sm" onClick={() => setShowPdf((v) => !v)} className="gap-1.5 bg-violet-600 hover:bg-violet-500 text-white shadow-[0_2px_10px_rgba(139,92,246,0.35)] transition-[background-color,box-shadow] text-xs">
-                      <FileText className="h-3.5 w-3.5" /> {showPdf ? "Hide" : "View PDF"}
-                    </Button>
-                  </div>
-                </div>
-                {showPdf && (
-                  <iframe src={`${invoice.pdf_url}?t=${pdfCacheBust}#toolbar=0`} className="h-[400px] sm:h-[750px] w-full" title={`Invoice ${invoice.invoice_number}`} />
-                )}
-              </div>
-            ) : (
-              <div className="flex flex-col items-center justify-center gap-3 rounded-xl border border-surface bg-surface-card py-10 sm:py-16">
-                <div className="flex h-12 w-12 sm:h-14 sm:w-14 items-center justify-center rounded-full border border-surface bg-surface-inset">
-                  <FileText className="h-5 w-5 sm:h-6 sm:w-6 text-faint-app" />
-                </div>
-                <div className="text-center px-4">
-                  <p className="text-sm font-semibold text-secondary-app">No PDF generated yet</p>
-                  <p className="mt-1 text-xs text-faint-app">Generate a PDF to preview and share.</p>
-                </div>
-                <Button size="sm" onClick={generatePdf} disabled={generatingPdf} className="gap-1.5 bg-violet-600 hover:bg-violet-500 text-white shadow-[0_4px_14px_rgba(139,92,246,0.4)]">
-                  <RefreshCw className={`h-3.5 w-3.5 ${generatingPdf ? "animate-spin" : ""}`} />
-                  {generatingPdf ? "Generating…" : "Generate PDF"}
-                </Button>
-              </div>
-            )}
-          </div>
-        )}
         </div>
       </div>
 
-      {/* ── Edit Invoice Dialog ─────────────────────────────────────── */}
-      {editing && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          {/* Backdrop */}
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setEditing(false)} />
-          {/* Panel */}
-          <div className="relative w-full max-w-lg rounded-xl border border-surface bg-surface-card shadow-2xl animate-in">
-            {/* Header */}
-            <div className="flex items-center justify-between border-b border-surface px-5 py-4">
-              <h3 className="text-[15px] font-bold text-bright flex items-center gap-2">
-                <Pencil className="h-4 w-4 text-violet-400" />
-                Edit Invoice
-              </h3>
-              <button
-                onClick={() => setEditing(false)}
-                className="flex items-center justify-center h-7 w-7 rounded-lg text-faint-app hover:text-bright hover:bg-surface-subtle transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-            {/* Form */}
-            <form onSubmit={handleEditSubmit} className="p-5 space-y-4">
-              {editError && (
-                <div className="flex items-center gap-2 rounded-lg bg-rose-500/10 border border-rose-500/20 px-3 py-2.5 text-sm text-rose-400">
-                  {editError}
+      {/* Main content */}
+      <div className="flex-1 overflow-y-auto">
+        <div className="p-6">
+          
+          {/* Invoice sidebar and content - 2 column layout */}
+          <div className="flex gap-6 items-start">
+            
+            {/* Left sidebar - Invoice list */}
+            <aside className="hidden lg:block w-[320px] shrink-0">
+              <div className="rounded-xl border border-[rgba(255,255,255,0.06)] bg-[#111111] overflow-hidden sticky top-6">
+                <div className="p-4 border-b border-[rgba(255,255,255,0.06)]">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Layers size={14} className="text-[#5e6ad2]" />
+                    <h2 className="text-[13px] font-medium text-[#e8e8e8]">All Invoices</h2>
+                  </div>
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-[#555]" />
+                    <input
+                      type="text"
+                      value={search}
+                      onChange={(e) => setSearch(e.target.value)}
+                      placeholder="Search invoices..."
+                      className="w-full pl-9 pr-3 py-2 rounded-lg bg-[#1a1a1a] border border-[rgba(255,255,255,0.08)] text-[#f0f0f0] text-[13px] placeholder:text-[#555] focus:outline-none focus:border-[rgba(94,106,210,0.5)] transition-all duration-150"
+                    />
+                  </div>
+                </div>
+
+                <div className="max-h-[calc(100vh-200px)] overflow-y-auto">
+                  {sidebarSearching ? (
+                    <div className="flex flex-col items-center justify-center gap-2 py-12 text-center">
+                      <div className="w-5 h-5 border-2 border-[#5e6ad2] border-t-transparent rounded-full animate-spin" />
+                      <p className="text-[12px] text-[#555]">Searching...</p>
+                    </div>
+                  ) : filteredInvoices.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center gap-2 py-12 text-center">
+                      <Receipt className="h-8 w-8 text-[#3a3a3a]" />
+                      <p className="text-[12px] text-[#555]">No invoices found</p>
+                    </div>
+                  ) : (
+                    filteredInvoices.map((inv) => {
+                      const invCfg = getStatusConfig(inv.status);
+                      const isActive = inv.id === selectedId;
+                      return (
+                        <button
+                          key={inv.id}
+                          onClick={() => selectInvoice(inv.id)}
+                          className={[
+                            "w-full text-left px-4 py-3 border-b border-[rgba(255,255,255,0.06)] last:border-0 transition-all duration-150",
+                            isActive
+                              ? "bg-[rgba(94,106,210,0.08)] border-l-2 border-l-[#5e6ad2]"
+                              : "hover:bg-white/5",
+                          ].join(" ")}
+                        >
+                          <div className="flex items-center justify-between gap-2 mb-1.5">
+                            <span className={[
+                              "font-mono text-[13px] font-medium truncate",
+                              isActive ? "text-[#5e6ad2]" : "text-[#e8e8e8]"
+                            ].join(" ")}>
+                              {inv.invoice_number ?? "—"}
+                            </span>
+                            <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-medium ${invCfg.badge}`}>
+                              <span className={`h-1.5 w-1.5 rounded-full ${invCfg.dot}`} />
+                              {invCfg.label}
+                            </span>
+                          </div>
+                          <div className="flex items-center justify-between gap-2 text-[11px]">
+                            <span className="text-[#555] truncate">
+                              {inv.client_id ? clientMap[inv.client_id] ?? "No client" : "No client"}
+                            </span>
+                            <span className="text-[#888] font-medium tabular-nums">
+                              {inv.amount != null ? formatCurrency(inv.amount) : "—"}
+                            </span>
+                          </div>
+                          {inv.due_date && (
+                            <p className="mt-1 text-[11px] text-[#555]">Due {formatDate(inv.due_date)}</p>
+                          )}
+                        </button>
+                      );
+                    })
+                  )}
+                </div>
+
+                {/* Sidebar pagination */}
+                {(sidebarPage > 0 || sidebarHasMore) && (
+                  <div className="flex items-center justify-between px-4 py-2
+                    border-t border-[rgba(255,255,255,0.06)] bg-[#111111]">
+                    <button
+                      onClick={() => fetchSidebar(sidebarPage - 1)}
+                      disabled={sidebarPage === 0 || sidebarSearching}
+                      className="text-[11px] font-medium text-[#888] hover:text-[#e8e8e8]
+                        disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:text-[#888]
+                        transition-colors duration-150"
+                    >
+                      ← Previous
+                    </button>
+                    <span className="text-[10px] text-[#555]">{sidebarPage + 1}</span>
+                    <button
+                      onClick={() => fetchSidebar(sidebarPage + 1)}
+                      disabled={!sidebarHasMore || sidebarSearching}
+                      className="text-[11px] font-medium text-[#888] hover:text-[#e8e8e8]
+                        disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:text-[#888]
+                        transition-colors duration-150"
+                    >
+                      Next →
+                    </button>
+                  </div>
+                )}
+              </div>
+            </aside>
+
+            {/* Right panel - Invoice detail */}
+            <div className="flex-1 min-w-0">
+              {loading ? (
+                <div className="space-y-6 animate-pulse">
+                  <div className="rounded-xl border border-[rgba(255,255,255,0.06)] bg-[#111111] overflow-hidden">
+                    <div className="p-6">
+                      <div className="h-8 w-64 bg-white/5 rounded mb-3" />
+                      <div className="h-4 w-32 bg-white/5 rounded" />
+                    </div>
+                    <div className="grid grid-cols-4 gap-4 p-6 border-t border-[rgba(255,255,255,0.06)]">
+                      {[1,2,3,4].map(i => (
+                        <div key={i} className="space-y-2">
+                          <div className="h-3 w-16 bg-white/5 rounded" />
+                          <div className="h-5 w-20 bg-white/5 rounded" />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="rounded-xl border border-[rgba(255,255,255,0.06)] bg-[#111111] p-6">
+                    <div className="flex flex-col items-center gap-4 py-8">
+                      <div className="h-14 w-14 rounded-full bg-white/5" />
+                      <div className="h-4 w-40 bg-white/5 rounded" />
+                      <div className="h-3 w-56 bg-white/5 rounded" />
+                    </div>
+                  </div>
+                </div>
+              ) : error || !invoice ? (
+                <div className="rounded-xl bg-[rgba(229,72,77,0.10)] border border-[rgba(229,72,77,0.2)] p-6">
+                  <p className="text-[13px] text-[#e5484d]">{error ?? "Invoice not found."}</p>
+                </div>
+              ) : (
+                <div className="space-y-6">
+                  
+                  {/* Invoice header card */}
+                  <div className="rounded-xl border border-[rgba(255,255,255,0.06)] bg-[#111111] overflow-hidden">
+                    <div className="p-6">
+                      <div className="flex items-start justify-between gap-4 mb-4">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-2">
+                            <StatusIcon size={16} className={cfg.text} />
+                            <h1 className="text-xl font-semibold text-[#e8e8e8] truncate">
+                              {invoice.invoice_number ?? "—"}
+                            </h1>
+                          </div>
+                          {client && (
+                            <Link 
+                              href={`/${slug}/clients/${client.id}`}
+                              className="inline-flex items-center gap-1.5 text-[13px] text-[#555] hover:text-[#5e6ad2] transition-colors"
+                            >
+                              <Users size={12} />
+                              {client.name}
+                            </Link>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2 shrink-0">
+                          <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-medium ${cfg.badge}`}>
+                            <span className={`h-1.5 w-1.5 rounded-full ${cfg.dot}`} />
+                            {cfg.label}
+                          </span>
+                          {isAdmin && !editing && (
+                            <button 
+                              onClick={() => setEditing(true)} 
+                              className="px-3 py-1.5 rounded-lg text-[12px] font-medium text-[#8a8a8a] hover:text-[#e8e8e8] hover:bg-white/5 border border-[rgba(255,255,255,0.08)] transition-all duration-150 flex items-center gap-1.5"
+                            >
+                              <Pencil className="h-3.5 w-3.5" /> Edit
+                            </button>
+                          )}
+                        </div>
+                      </div>
+
+                      {editing ? (
+                        <EditForm 
+                          invoice={invoice} 
+                          clients={clients} 
+                          onSave={(updated) => { 
+                            setInvoice(updated); 
+                            setClient(findClientInList(updated.client_id, clients)); 
+                            setEditing(false); 
+                          }} 
+                          onCancel={() => setEditing(false)} 
+                        />
+                      ) : (
+                        <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 pt-4 border-t border-[rgba(255,255,255,0.06)]">
+                          <div>
+                            <p className="text-[11px] font-medium text-[#555] uppercase tracking-[0.06em] mb-1.5">Client</p>
+                            <div className="flex items-center gap-1.5">
+                              <Users size={14} className="text-[#555]" />
+                              <span className="text-[13px] font-medium text-[#e8e8e8]">
+                                {client?.name ?? "—"}
+                              </span>
+                            </div>
+                          </div>
+                          
+                          <div>
+                            <p className="text-[11px] font-medium text-[#555] uppercase tracking-[0.06em] mb-1.5">Amount</p>
+                            <div className="flex items-center gap-1.5">
+                              <DollarSign size={14} className="text-[#555]" />
+                              <span className="text-[13px] font-medium text-[#e8e8e8]">
+                                {invoice.amount != null ? formatCurrency(invoice.amount) : "—"}
+                              </span>
+                            </div>
+                          </div>
+                          
+                          <div>
+                            <p className="text-[11px] font-medium text-[#555] uppercase tracking-[0.06em] mb-1.5">Due Date</p>
+                            <div className="flex items-center gap-1.5">
+                              <CalendarDays size={14} className="text-[#555]" />
+                              <span className="text-[13px] font-medium text-[#e8e8e8]">
+                                {invoice.due_date ? formatDate(invoice.due_date) : "No due date"}
+                              </span>
+                            </div>
+                          </div>
+                          
+                          <div>
+                            <p className="text-[11px] font-medium text-[#555] uppercase tracking-[0.06em] mb-1.5">Invoice #</p>
+                            <div className="flex items-center gap-1.5">
+                              <Hash size={14} className="text-[#555]" />
+                              <span className="text-[13px] font-medium text-[#e8e8e8] font-mono">
+                                {invoice.invoice_number ?? "—"}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Actions */}
+                      {!editing && (
+                        <div className="flex items-center justify-between gap-2 mt-6 pt-4 border-t border-[rgba(255,255,255,0.06)]">
+                          <div className="flex gap-2">
+                            {invoice.status !== "paid" && isAdmin && (
+                              <button 
+                                onClick={markAsPaid} 
+                                disabled={markingPaid} 
+                                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-[#26c97f] hover:bg-[#2ed98a] text-white transition-all duration-150 disabled:opacity-50"
+                              >
+                                <CheckCircle className="h-3.5 w-3.5" />
+                                {markingPaid ? "Updating..." : "Mark as Paid"}
+                              </button>
+                            )}
+                            {invoice.pdf_url ? (
+                              <a href={invoice.pdf_url} download className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-[#888] hover:text-[#e8e8e8] hover:bg-white/5 border border-[rgba(255,255,255,0.08)] transition-all duration-150">
+                                <Download className="h-3.5 w-3.5" /> Download PDF
+                              </a>
+                            ) : (
+                              <button 
+                                onClick={generatePdf} 
+                                disabled={generatingPdf} 
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-[#888] hover:text-[#e8e8e8] hover:bg-white/5 border border-[rgba(255,255,255,0.08)] transition-all duration-150 disabled:opacity-50"
+                              >
+                                <RefreshCw className={`h-3.5 w-3.5 ${generatingPdf ? "animate-spin" : ""}`} />
+                                {generatingPdf ? "Generating..." : "Generate PDF"}
+                              </button>
+                            )}
+                          </div>
+                          {invoice.pdf_url && (
+                            <button 
+                              onClick={() => setShowPdf(!showPdf)} 
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-[#5e6ad2] hover:bg-[#6872e5] text-white transition-all duration-150"
+                            >
+                              <FileText className="h-3.5 w-3.5" /> {showPdf ? "Hide PDF" : "View PDF"}
+                            </button>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* PDF section */}
+                  {invoice.pdf_url && showPdf && (
+                    <div className="rounded-xl border border-[rgba(255,255,255,0.06)] bg-[#111111] overflow-hidden">
+                      <iframe src={`${invoice.pdf_url}?t=${pdfCacheBust}#toolbar=0`} className="h-[500px] w-full" title={`Invoice ${invoice.invoice_number}`} />
+                    </div>
+                  )}
                 </div>
               )}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-4">
-                {/* Client */}
-                <div className="sm:col-span-2">
-                  <label className={LABEL}>
-                    <span className="flex items-center gap-1.5">
-                      <Users className="h-3 w-3" /> Client
-                    </span>
-                  </label>
-                  <Select value={editForm.client_id} onValueChange={(v) => setEditForm((p) => ({ ...p, client_id: v }))}>
-                    <SelectTrigger className={SELECT_TRIGGER}>
-                      <SelectValue placeholder="Select client" />
-                    </SelectTrigger>
-                    <SelectContent className={SELECT_CONTENT}>
-                      {clients.map((c) => (
-                        <SelectItem key={c.id} value={c.id} className={SELECT_ITEM}>{c.name}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                {/* Invoice number */}
-                <div>
-                  <label className={LABEL}>
-                    <span className="flex items-center gap-1.5">
-                      <Hash className="h-3 w-3" /> Invoice #
-                    </span>
-                  </label>
-                  <input
-                    value={editForm.invoice_number}
-                    onChange={(e) => setEditForm((p) => ({ ...p, invoice_number: e.target.value }))}
-                    className={`${FIELD} font-mono`}
-                  />
-                </div>
-                {/* Status */}
-                <div>
-                  <label className={LABEL}>Status</label>
-                  <Select value={editForm.status} onValueChange={(v) => setEditForm((p) => ({ ...p, status: v as InvoiceStatus }))}>
-                    <SelectTrigger className={SELECT_TRIGGER}>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent className={SELECT_CONTENT}>
-                      {EDIT_STATUS_OPTIONS.map((o) => (
-                        <SelectItem key={o.value} value={o.value} className={`${SELECT_ITEM} ${o.color}`}>{o.label}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                {/* Amount */}
-                <div>
-                  <label className={LABEL}>
-                    <span className="flex items-center gap-1.5">
-                      <DollarSign className="h-3 w-3" /> Amount
-                    </span>
-                  </label>
-                  <input
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={editForm.amount}
-                    onChange={(e) => setEditForm((p) => ({ ...p, amount: e.target.value }))}
-                    placeholder="0.00"
-                    className={FIELD}
-                  />
-                </div>
-                {/* Due date */}
-                <div>
-                  <label className={LABEL}>
-                    <span className="flex items-center gap-1.5">
-                      <CalendarDays className="h-3 w-3" /> Due Date
-                    </span>
-                  </label>
-                  <input
-                    type="date"
-                    value={editForm.due_date}
-                    onChange={(e) => setEditForm((p) => ({ ...p, due_date: e.target.value }))}
-                    className={FIELD}
-                  />
-                </div>
-              </div>
-              {/* Footer */}
-              <div className="flex justify-end gap-2 pt-2 border-t border-surface">
-                <button
-                  type="button"
-                  onClick={() => setEditing(false)}
-                  disabled={saving}
-                  className="rounded-lg px-4 py-2 text-sm font-medium text-secondary-app hover:text-primary-app hover:bg-surface-subtle transition-[background-color,color] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 disabled:opacity-50"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={saving}
-                  className="flex items-center gap-2 rounded-lg bg-violet-600 px-4 py-2 text-sm font-semibold text-white shadow-[0_4px_16px_rgba(139,92,246,0.3)] hover:bg-violet-500 hover:shadow-[0_4px_20px_rgba(139,92,246,0.4)] active:scale-[0.97] transition-[background-color,box-shadow,transform] disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400"
-                >
-                  {saving && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-                  {saving ? "Saving…" : "Save Changes"}
-                </button>
-              </div>
-            </form>
+            </div>
           </div>
         </div>
-      )}
+      </div>
     </div>
   );
 }

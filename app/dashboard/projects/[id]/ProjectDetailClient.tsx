@@ -14,9 +14,15 @@ import {
   Plus,
   FolderKanban,
   ArrowLeft,
+  Briefcase,
+  Clock,
+  AlertCircle,
+  Layers,
+  CheckCircle
 } from "lucide-react";
 import { updateProject } from "@/lib/db/projects";
 import { revalidateDashboard } from "@/app/dashboard/actions";
+import { searchProjectsForSidebarAction } from "@/app/dashboard/projects/actions";
 import type { ProjectListItem } from "@/lib/db/projects";
 import type { ClientListItem } from "@/lib/db/clients";
 import { getProjectById } from "@/lib/db/projects";
@@ -27,27 +33,47 @@ import type { Project } from "@/lib/types";
 import type { TaskWithAssignee } from "@/lib/db/tasks";
 import { useTaskForm } from "../../task-form-context";
 
-// ── Status config ──────────────────────────────────────────────────────────────
-
-const STATUS_CONFIG: Record<string, { label: string; dot: string; badge: string }> = {
-  active:      { label: "Active",      dot: "bg-emerald-400", badge: "text-emerald-400 bg-emerald-400/10 border-emerald-400/20" },
-  in_progress: { label: "In Progress", dot: "bg-amber-400",   badge: "text-amber-400 bg-amber-400/10 border-amber-400/20" },
-  completed:   { label: "Completed",   dot: "bg-slate-400",   badge: "text-muted-app bg-surface-subtle border-surface" },
-  paused:      { label: "Paused",      dot: "bg-orange-400",  badge: "text-orange-400 bg-orange-400/10 border-orange-400/20" },
+// Status configuration
+const STATUS_CONFIG: Record<string, { label: string; dot: string; badge: string; icon: any }> = {
+  active: { 
+    label: "Active", 
+    dot: "bg-[#26c97f]", 
+    badge: "text-[#26c97f] bg-[rgba(38,201,127,0.10)] border-[rgba(38,201,127,0.20)]",
+    icon: CheckCircle
+  },
+  in_progress: { 
+    label: "In Progress", 
+    dot: "bg-[#5e6ad2]", 
+    badge: "text-[#5e6ad2] bg-[rgba(94,106,210,0.15)] border-[rgba(94,106,210,0.20)]",
+    icon: Clock
+  },
+  completed: { 
+    label: "Completed", 
+    dot: "bg-[#888888]", 
+    badge: "text-[#8a8a8a] bg-[rgba(255,255,255,0.06)] border-[rgba(255,255,255,0.06)]",
+    icon: CheckCircle
+  },
+  paused: { 
+    label: "Paused", 
+    dot: "bg-[#e79d13]", 
+    badge: "text-[#e79d13] bg-[rgba(231,157,19,0.10)] border-[rgba(231,157,19,0.20)]",
+    icon: AlertCircle
+  },
 };
 
 function getStatusConfig(status: string | null) {
   return STATUS_CONFIG[status ?? ""] ?? {
     label: status ?? "Unknown",
-    dot: "bg-slate-300",
-    badge: "text-muted-app bg-surface-subtle border-surface",
+    dot: "bg-[#888888]",
+    badge: "text-[#8a8a8a] bg-[rgba(255,255,255,0.06)] border-[rgba(255,255,255,0.06)]",
+    icon: Briefcase,
   };
 }
 
 const TASK_STATUS_STYLES = {
-  todo:        "bg-surface-subtle text-muted-app",
-  in_progress: "bg-amber-400/10 text-amber-400",
-  done:        "bg-emerald-400/10 text-emerald-400",
+  todo:        "bg-[rgba(255,255,255,0.06)] text-[#888888]",
+  in_progress: "bg-[rgba(94,106,210,0.15)] text-[#5e6ad2]",
+  done:        "bg-[rgba(38,201,127,0.10)] text-[#26c97f]",
 } as const;
 
 const TASK_STATUS_LABELS = {
@@ -57,14 +83,13 @@ const TASK_STATUS_LABELS = {
 } as const;
 
 const PRIORITY_STYLES = {
-  urgent: "bg-rose-500/10 text-rose-400 ring-1 ring-rose-500/20",
-  high:   "bg-orange-500/10 text-orange-400 ring-1 ring-orange-500/20",
-  normal: "bg-sky-500/10 text-sky-400 ring-1 ring-sky-500/20",
-  low:    "bg-surface-subtle text-faint-app ring-1 ring-surface",
+  urgent: "bg-[rgba(229,72,77,0.10)] text-[#e5484d]",
+  high:   "bg-[rgba(231,157,19,0.10)] text-[#e79d13]",
+  normal: "bg-[rgba(94,106,210,0.15)] text-[#5e6ad2]",
+  low:    "bg-[rgba(255,255,255,0.06)] text-[#8a8a8a]",
 } as const;
 
-// ── Edit form ──────────────────────────────────────────────────────────────────
-
+// Edit Form Component
 interface EditFormProps {
   project: Project;
   clients: ClientListItem[];
@@ -82,7 +107,7 @@ function EditForm({ project, clients, onSave, onCancel }: EditFormProps) {
   const [error, setError] = useState<string | null>(null);
 
   const fieldClass =
-    "w-full rounded-lg border border-surface bg-surface-inset px-3 py-2 text-sm text-primary-app placeholder:text-dim-app focus:outline-none focus:ring-2 focus:ring-violet-500/50 focus:border-violet-500 transition-[border-color,box-shadow]";
+    "w-full px-3 py-2 rounded-lg bg-[#1a1a1a] border border-[rgba(255,255,255,0.08)] text-[#f0f0f0] text-[13px] placeholder:text-[#555] focus:outline-none focus:border-[rgba(94,106,210,0.5)] focus:ring-1 focus:ring-[rgba(94,106,210,0.3)] transition-all duration-150";
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
@@ -108,15 +133,22 @@ function EditForm({ project, clients, onSave, onCancel }: EditFormProps) {
 
   return (
     <form onSubmit={handleSave} className="space-y-4">
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <div className="sm:col-span-2 space-y-1.5">
-          <label className="text-[11px] font-semibold uppercase tracking-wider text-dim-app">
-            Project Name <span className="text-rose-400 normal-case tracking-normal">*</span>
-          </label>
-          <input value={name} onChange={(e) => setName(e.target.value)} className={fieldClass} required />
-        </div>
-        <div className="space-y-1.5">
-          <label className="text-[11px] font-semibold uppercase tracking-wider text-dim-app">Client</label>
+      <div>
+        <label className="block text-[11px] font-medium text-[#8a8a8a] mb-1.5">
+          Project Name <span className="text-[#e5484d]">*</span>
+        </label>
+        <input 
+          value={name} 
+          onChange={(e) => setName(e.target.value)} 
+          className={fieldClass} 
+          required 
+          autoFocus
+        />
+      </div>
+      
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <label className="block text-[11px] font-medium text-[#8a8a8a] mb-1.5">Client</label>
           <select value={clientId} onChange={(e) => setClientId(e.target.value)} className={fieldClass}>
             <option value="">No client</option>
             {clients.map((c) => (
@@ -124,8 +156,8 @@ function EditForm({ project, clients, onSave, onCancel }: EditFormProps) {
             ))}
           </select>
         </div>
-        <div className="space-y-1.5">
-          <label className="text-[11px] font-semibold uppercase tracking-wider text-dim-app">Status</label>
+        <div>
+          <label className="block text-[11px] font-medium text-[#8a8a8a] mb-1.5">Status</label>
           <select value={status} onChange={(e) => setStatus(e.target.value)} className={fieldClass}>
             <option value="active">Active</option>
             <option value="in_progress">In Progress</option>
@@ -133,33 +165,62 @@ function EditForm({ project, clients, onSave, onCancel }: EditFormProps) {
             <option value="completed">Completed</option>
           </select>
         </div>
-        <div className="space-y-1.5">
-          <label className="text-[11px] font-semibold uppercase tracking-wider text-dim-app">Total Value ($)</label>
-          <input type="number" value={totalValue} onChange={(e) => setTotalValue(e.target.value)} placeholder="0.00" min="0" step="0.01" className={fieldClass} />
+      </div>
+      
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <label className="block text-[11px] font-medium text-[#8a8a8a] mb-1.5">Total Value ($)</label>
+          <input 
+            type="number" 
+            value={totalValue} 
+            onChange={(e) => setTotalValue(e.target.value)} 
+            placeholder="0.00" 
+            min="0" 
+            step="0.01" 
+            className={fieldClass} 
+          />
         </div>
-        <div className="space-y-1.5">
-          <label className="text-[11px] font-semibold uppercase tracking-wider text-dim-app">Deadline</label>
-          <input type="date" value={deadline} onChange={(e) => setDeadline(e.target.value)} className={fieldClass} />
+        <div>
+          <label className="block text-[11px] font-medium text-[#8a8a8a] mb-1.5">Deadline</label>
+          <input 
+            type="date" 
+            value={deadline} 
+            onChange={(e) => setDeadline(e.target.value)} 
+            className={fieldClass} 
+          />
         </div>
       </div>
-      {error && <div className="rounded-lg bg-rose-500/10 px-3 py-2 text-sm text-rose-400 ring-1 ring-rose-500/20">{error}</div>}
-      <div className="flex justify-end gap-2 pt-1">
-        <button type="button" onClick={onCancel} className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium text-faint-app transition-colors hover:bg-overlay-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400">
+      
+      {error && (
+        <div className="rounded-lg bg-[rgba(229,72,77,0.10)] px-3 py-2 text-[12px] text-[#e5484d] border border-[rgba(229,72,77,0.2)]">
+          {error}
+        </div>
+      )}
+      
+      <div className="flex justify-end gap-2 pt-2">
+        <button 
+          type="button" 
+          onClick={onCancel} 
+          className="px-3 py-1.5 rounded-lg text-[12px] font-medium text-[#8a8a8a] hover:bg-white/5 hover:text-[#f0f0f0] transition-all duration-150 flex items-center gap-1.5"
+        >
           <X className="h-3.5 w-3.5" /> Cancel
         </button>
-        <button type="submit" disabled={saving} className="flex items-center gap-1.5 rounded-lg bg-violet-600 px-3 py-1.5 text-sm font-medium text-white shadow-[0_2px_8px_rgba(139,92,246,0.3)] transition-[background-color,opacity] hover:bg-violet-700 disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400">
-          <Check className="h-3.5 w-3.5" /> {saving ? "Saving…" : "Save"}
+        <button 
+          type="submit" 
+          disabled={saving} 
+          className="px-3 py-1.5 rounded-lg text-[12px] font-medium bg-[#5e6ad2] hover:bg-[#6872e5] text-white active:scale-[0.98] transition-all duration-150 flex items-center gap-1.5 disabled:opacity-50"
+        >
+          <Check className="h-3.5 w-3.5" /> {saving ? "Saving..." : "Save Changes"}
         </button>
       </div>
     </form>
   );
 }
 
-// ── Props & Component ──────────────────────────────────────────────────────────
-
+// Props & Component
 interface ProjectDetailClientProps {
   projectId: string;
-  allProjects: ProjectListItem[];
+  initialSidebarProjects: ProjectListItem[];
   clients: ClientListItem[];
   initialProject: Project;
   initialTasks: TaskWithAssignee[];
@@ -173,7 +234,7 @@ function findClientInList(clientId: string | null, clients: ClientListItem[]) {
 
 export default function ProjectDetailClient({
   projectId,
-  allProjects,
+  initialSidebarProjects,
   clients,
   initialProject,
   initialTasks,
@@ -184,19 +245,19 @@ export default function ProjectDetailClient({
   const [selectedId, setSelectedId] = useState(projectId);
   const [search, setSearch] = useState("");
 
-  // Initialize from server-fetched props — no loading on first render
   const [project, setProject] = useState<Project | null>(initialProject);
   const [client, setClient] = useState<ClientListItem | null>(() => findClientInList(initialProject.client_id, clients));
   const [tasks, setTasks] = useState<TaskWithAssignee[]>(initialTasks);
+  const [sidebarProjects, setSidebarProjects] = useState<ProjectListItem[]>(initialSidebarProjects);
+  const [sidebarSearching, setSidebarSearching] = useState(false);
+  const [sidebarPage, setSidebarPage] = useState(0);
+  const [sidebarHasMore, setSidebarHasMore] = useState(initialSidebarProjects.length === 5);
   const [loading, setLoading] = useState(false);
-  const [tasksLoading, setTasksLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [editing, setEditing] = useState(false);
 
   const { openTaskForm } = useTaskForm();
 
-  // Sync tasks when server re-renders with fresh data (e.g. after task creation)
-  // Only apply if we're still viewing the original server-rendered project
   useEffect(() => {
     if (selectedId === projectId) {
       setTasks(initialTasks);
@@ -209,28 +270,39 @@ export default function ProjectDetailClient({
     return m;
   }, [clients]);
 
-  const filteredProjects = useMemo(() => {
-    if (!search.trim()) return allProjects;
-    const q = search.toLowerCase();
-    return allProjects.filter((p) => {
-      const clientName = p.client_id ? clientMap[p.client_id] ?? "" : "";
-      return (
-        p.name.toLowerCase().includes(q) ||
-        clientName.toLowerCase().includes(q) ||
-        (p.status ?? "").toLowerCase().includes(q)
-      );
-    });
-  }, [allProjects, search, clientMap]);
+  // Fetch sidebar page (search + pagination)
+  async function fetchSidebar(page: number, query?: string) {
+    setSidebarSearching(true);
+    try {
+      const results = await searchProjectsForSidebarAction(query ?? search, page);
+      setSidebarProjects(results);
+      setSidebarPage(page);
+      setSidebarHasMore(results.length === 5);
+    } finally {
+      setSidebarSearching(false);
+    }
+  }
 
-  // Track which project is currently loaded to avoid redundant fetches
+  // Debounced search — resets to page 0
+  useEffect(() => {
+    if (!search.trim()) {
+      setSidebarProjects(initialSidebarProjects);
+      setSidebarPage(0);
+      setSidebarHasMore(initialSidebarProjects.length === 5);
+      return;
+    }
+    const timer = setTimeout(() => fetchSidebar(0, search), 300);
+    return () => clearTimeout(timer);
+  }, [search, initialSidebarProjects]);
+
+  const filteredProjects = sidebarProjects;
+
   const [loadedId, setLoadedId] = useState(projectId);
 
-  // Fetch when switching to a different project
   useEffect(() => {
     if (selectedId === loadedId) return;
     async function load() {
       setLoading(true);
-      setTasksLoading(true);
       setError(null);
       setEditing(false);
       try {
@@ -246,7 +318,6 @@ export default function ProjectDetailClient({
         setError(err instanceof Error ? err.message : "Failed to load project");
       } finally {
         setLoading(false);
-        setTasksLoading(false);
       }
     }
     load();
@@ -259,267 +330,351 @@ export default function ProjectDetailClient({
   }
 
   const cfg = project ? getStatusConfig(project.status) : getStatusConfig(null);
+  const StatusIcon = cfg.icon;
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const isOverdue = project?.deadline && new Date(project.deadline) < today && project.status !== "completed";
   const doneTasks = tasks.filter((t) => t.status === "done").length;
   const totalTasks = tasks.length;
+  const progressPercent = totalTasks > 0 ? Math.round((doneTasks / totalTasks) * 100) : 0;
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8">
-      {/* Mobile back button */}
-      <button
-        onClick={() => router.push(`/${slug}/projects`)}
-        className="flex lg:hidden items-center gap-1.5 mb-4 rounded text-sm text-faint-app transition-colors hover:text-muted-app focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500"
-      >
-        <ArrowLeft className="h-3.5 w-3.5" />
-        Back to Projects
-      </button>
-
-      <div className="flex gap-6 items-start">
-        {/* ── Left sidebar — Project list card ──────────────────────── */}
-        <aside className="hidden lg:flex w-[300px] shrink-0 flex-col rounded-xl border border-surface bg-surface-card overflow-hidden sticky top-6 h-[calc(100vh-112px)]">
-          <div className="px-4 pt-4 pb-3 border-b border-surface/60">
-            <div className="flex items-center gap-2 mb-3">
-              <button
-                onClick={() => router.push(`/${slug}/projects`)}
-                className="flex items-center justify-center h-7 w-7 rounded-lg text-faint-app hover:text-bright hover:bg-surface-subtle transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500"
-                title="Back to Projects"
-              >
-                <ArrowLeft className="h-4 w-4" />
-              </button>
-              <h2 className="text-[15px] font-bold tracking-[-0.02em] text-bright flex items-center gap-2">
-                <FolderKanban className="h-4 w-4 text-violet-400" />
-                Projects
-              </h2>
-            </div>
-            <div className="relative">
-              <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-app" />
-              <input
-                type="text"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search projects…"
-                className="w-full rounded-lg bg-surface-subtle border border-surface pl-9 pr-3 py-2 text-[13px] text-primary-app placeholder:text-muted-app outline-none focus:border-violet-500/40 transition-[border-color] duration-150"
-              />
-            </div>
+    <div className="flex flex-col h-full bg-[#0d0d0d]">
+      
+      {/* Header toolbar */}
+      <div className="flex items-center justify-between px-6 h-[60px] border-b border-[rgba(255,255,255,0.06)] shrink-0">
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => router.push(`/${slug}/projects`)}
+            className="p-1.5 rounded-lg text-[#555] hover:text-[#e8e8e8] hover:bg-white/5 transition-all duration-150"
+            title="Back to Projects"
+          >
+            <ArrowLeft size={16} />
+          </button>
+          <div className="w-px h-5 bg-[rgba(255,255,255,0.06)]" />
+          <div className="flex items-center gap-2">
+            <FolderKanban size={16} className="text-[#5e6ad2]" />
+            <h1 className="text-[15px] font-medium text-[#e8e8e8]">Project Details</h1>
           </div>
+        </div>
+      </div>
 
-          <div className="flex-1 overflow-y-auto">
-            {filteredProjects.length === 0 ? (
-              <div className="flex flex-col items-center justify-center gap-2 py-12 text-center px-4">
-                <FolderKanban className="h-5 w-5 text-faint-app" />
-                <p className="text-xs text-dim-app">No projects found</p>
-              </div>
-            ) : (
-              filteredProjects.map((p) => {
-                const pCfg = getStatusConfig(p.status);
-                const isActive = p.id === selectedId;
-                return (
-                  <button
-                    key={p.id}
-                    onClick={() => selectProject(p.id)}
-                    className={[
-                      "w-full text-left px-4 py-3 border-b border-surface/40 last:border-0 transition-[background-color] duration-150 group",
-                      "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-violet-500",
-                      isActive
-                        ? "bg-violet-500/[0.08]"
-                        : "hover:bg-overlay-xs",
-                    ].join(" ")}
-                  >
-                    <div className="flex items-center justify-between gap-2 mb-1">
-                      <span className={["text-[13px] font-semibold truncate", isActive ? "text-violet-400" : "text-primary-app group-hover:text-violet-400"].join(" ")}>
-                        {p.name}
-                      </span>
-                      <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-medium ${pCfg.badge}`}>
-                        <span className={`h-1.5 w-1.5 rounded-full ${pCfg.dot}`} />
-                        {pCfg.label}
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="text-[12px] text-secondary-app truncate">
-                        {p.client_id ? clientMap[p.client_id] ?? "No client" : "No client"}
-                      </span>
-                      <span className="text-[12px] font-semibold text-bright tabular-nums shrink-0">
-                        {p.total_value != null ? formatCurrency(p.total_value) : "—"}
-                      </span>
-                    </div>
-                    {p.deadline && (
-                      <p className="mt-1 text-[11px] text-dim-app">Due {formatDate(p.deadline)}</p>
-                    )}
-                  </button>
-                );
-              })
-            )}
-          </div>
-        </aside>
-
-        {/* ── Right panel — Project detail ────────────────────────────── */}
-        <div className="flex-1 min-w-0">
-        {loading ? (
-          <div className="space-y-6 animate-pulse">
-            <div className="rounded-2xl border border-surface bg-surface-card overflow-hidden">
-              <div className="flex items-start justify-between gap-4 border-b border-surface px-6 py-5">
-                <div className="space-y-2 min-w-0">
-                  <div className="h-7 w-48 rounded bg-overlay-xs" />
-                  <div className="h-4 w-28 rounded bg-overlay-xs" />
-                </div>
-                <div className="flex gap-2 shrink-0">
-                  <div className="h-6 w-20 rounded-full bg-overlay-xs" />
-                  <div className="h-7 w-14 rounded-lg bg-overlay-xs" />
-                </div>
-              </div>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-5 px-6 py-5">
-                {[0, 1, 2, 3].map((i) => (
-                  <div key={i} className="space-y-2">
-                    <div className="h-3 w-16 rounded bg-overlay-xs" />
-                    <div className="h-4 w-24 rounded bg-overlay-xs" />
+      {/* Main content */}
+      <div className="flex-1 overflow-y-auto">
+        <div className="p-6">
+          
+          {/* Project sidebar and content - 2 column layout */}
+          <div className="flex gap-6 items-start">
+            
+            {/* Left sidebar - Project list */}
+            <aside className="hidden lg:block w-[320px] shrink-0">
+              <div className="rounded-xl border border-[rgba(255,255,255,0.06)] bg-[#111111] overflow-hidden sticky top-6">
+                <div className="p-4 border-b border-[rgba(255,255,255,0.06)]">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Layers size={14} className="text-[#5e6ad2]" />
+                    <h2 className="text-[13px] font-medium text-[#e8e8e8]">All Projects</h2>
                   </div>
-                ))}
-              </div>
-            </div>
-            <div className="rounded-xl border border-surface bg-surface-card divide-y divide-surface">
-              {[0, 1, 2].map((i) => (
-                <div key={i} className="flex items-center gap-3 px-5 py-3.5">
-                  <div className="flex-1 space-y-1.5">
-                    <div className="h-4 w-40 rounded bg-overlay-xs" />
-                    <div className="h-3 w-24 rounded bg-overlay-xs" />
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-[#555]" />
+                    <input
+                      type="text"
+                      value={search}
+                      onChange={(e) => setSearch(e.target.value)}
+                      placeholder="Search projects..."
+                      className="w-full pl-9 pr-3 py-2 rounded-lg bg-[#1a1a1a] border border-[rgba(255,255,255,0.08)] text-[#f0f0f0] text-[13px] placeholder:text-[#555] focus:outline-none focus:border-[rgba(94,106,210,0.5)] transition-all duration-150"
+                    />
                   </div>
-                  <div className="h-5 w-14 rounded-full bg-overlay-xs" />
-                  <div className="h-5 w-16 rounded-full bg-overlay-xs" />
                 </div>
-              ))}
-            </div>
-          </div>
-        ) : error || !project ? (
-          <div>
-            <div className="rounded-xl bg-rose-500/10 px-5 py-4 text-sm text-rose-400 ring-1 ring-rose-500/20">
-              {error ?? "Project not found."}
-            </div>
-          </div>
-        ) : (
-          <div className="space-y-6 animate-in">
-            {/* Project card */}
-            <div className="rounded-2xl bg-surface-card border border-surface">
-              <div className="flex items-start justify-between gap-4 border-b border-surface px-6 py-5">
-                <div className="min-w-0">
-                  <h1 className="truncate text-2xl font-bold tracking-[-0.03em] text-bright">{project.name}</h1>
-                  {client && (
-                    <Link href={`/${slug}/clients/${client.id}`} className="mt-0.5 text-sm text-faint-app hover:text-violet-400 transition-colors">
-                      {client.name}
-                    </Link>
-                  )}
-                </div>
-                <div className="flex shrink-0 items-center gap-2">
-                  <span className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium ${cfg.badge}`}>
-                    <span className={`h-1.5 w-1.5 rounded-full ${cfg.dot}`} />
-                    {cfg.label}
-                  </span>
-                  {isAdmin && !editing && (
-                    <button onClick={() => setEditing(true)} className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-faint-app ring-1 ring-surface transition-[background-color,color] hover:bg-overlay-xs hover:text-secondary-app focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400">
-                      <Pencil className="h-3.5 w-3.5" /> Edit
-                    </button>
-                  )}
-                </div>
-              </div>
 
-              <div className="px-6 py-5">
-                {editing ? (
-                  <EditForm project={project} clients={clients} onSave={(updated) => { setProject(updated); setClient(findClientInList(updated.client_id, clients)); setEditing(false); }} onCancel={() => setEditing(false)} />
-                ) : (
-                  <div className="grid grid-cols-2 gap-3 sm:gap-5 sm:grid-cols-4">
-                    <div>
-                      <p className="text-[11px] font-semibold uppercase tracking-wider text-dim-app">Deadline</p>
-                      <p className={`mt-1 flex items-center gap-1.5 text-sm font-medium ${isOverdue ? "text-rose-400" : "text-secondary-app"}`}>
-                        <Calendar className="h-3.5 w-3.5 shrink-0" />
-                        {project.deadline ? formatDate(project.deadline) : "—"}
-                      </p>
+                <div className="max-h-[calc(100vh-200px)] overflow-y-auto">
+                  {sidebarSearching ? (
+                    <div className="flex flex-col items-center justify-center gap-2 py-12 text-center">
+                      <div className="w-5 h-5 border-2 border-[#5e6ad2] border-t-transparent rounded-full animate-spin" />
+                      <p className="text-[12px] text-[#555]">Searching...</p>
                     </div>
-                    <div>
-                      <p className="text-[11px] font-semibold uppercase tracking-wider text-dim-app">Total Value</p>
-                      <p className="mt-1 flex items-center gap-1.5 text-sm font-medium text-secondary-app">
-                        <DollarSign className="h-3.5 w-3.5 shrink-0 text-dim-app" />
-                        {project.total_value != null ? formatCurrency(project.total_value) : "—"}
-                      </p>
+                  ) : filteredProjects.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center gap-2 py-12 text-center">
+                      <FolderKanban className="h-8 w-8 text-[#3a3a3a]" />
+                      <p className="text-[12px] text-[#555]">No projects found</p>
                     </div>
-                    <div>
-                      <p className="text-[11px] font-semibold uppercase tracking-wider text-dim-app">Tasks Done</p>
-                      <p className="mt-1 flex items-center gap-1.5 text-sm font-medium text-secondary-app">
-                        <CheckSquare className="h-3.5 w-3.5 shrink-0 text-dim-app" />
-                        {doneTasks} / {totalTasks}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-[11px] font-semibold uppercase tracking-wider text-dim-app">Progress</p>
-                      <div className="mt-2 h-1.5 rounded-full bg-overlay-sm">
-                        <div className="h-1.5 rounded-full bg-violet-500 transition-[width]" style={{ width: totalTasks > 0 ? `${Math.round((doneTasks / totalTasks) * 100)}%` : "0%" }} />
-                      </div>
-                      <p className="mt-1 text-xs text-dim-app">{totalTasks > 0 ? Math.round((doneTasks / totalTasks) * 100) : 0}%</p>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Tasks */}
-            <div>
-              <div className="mb-3 flex items-center justify-between">
-                <h2 className="text-sm font-semibold text-muted-app">
-                  Tasks
-                  <span className="ml-2 rounded-full bg-overlay-xs px-2 py-0.5 text-xs font-medium text-faint-app">{totalTasks}</span>
-                </h2>
-                {isAdmin && (
-                  <button
-                    onClick={() => openTaskForm(selectedId)}
-                    className="flex items-center gap-1.5 rounded-lg bg-violet-600 px-3 py-1.5 text-xs font-semibold text-white shadow-[0_2px_8px_rgba(139,92,246,0.3)] transition-[background-color,box-shadow] hover:bg-violet-700 hover:shadow-[0_4px_12px_rgba(139,92,246,0.4)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400 focus-visible:ring-offset-2"
-                  >
-                    <Plus className="h-3.5 w-3.5" /> Add Task
-                  </button>
-                )}
-              </div>
-
-              <div className="rounded-xl bg-surface-card border border-surface">
-                {tasks.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center gap-2 py-12">
-                    <CheckSquare className="h-8 w-8 text-dim-app" />
-                    <p className="text-sm text-faint-app">No tasks yet for this project.</p>
-                  </div>
-                ) : (
-                  <ul className="divide-y divide-surface">
-                    {tasks.map((task) => {
-                      const tstatus = (task.status ?? "todo") as keyof typeof TASK_STATUS_STYLES;
-                      const tpriority = (task.priority ?? "normal") as keyof typeof PRIORITY_STYLES;
+                  ) : (
+                    filteredProjects.map((p) => {
+                      const pCfg = getStatusConfig(p.status);
+                      const isActive = p.id === selectedId;
                       return (
-                        <li key={task.id}>
-                          <button
-                            onClick={() => router.push(`/${slug}/tasks/${task.id}`)}
-                            className="flex w-full items-center gap-3 px-5 py-3.5 text-left transition-colors hover:bg-overlay-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-violet-400"
-                          >
-                            <span className="flex-1 min-w-0">
-                              <span className="block truncate text-sm font-medium text-secondary-app">{task.title}</span>
-                              {task.due_date && (
-                                <span className="mt-0.5 flex items-center gap-1 text-[11px] text-dim-app">
-                                  <Calendar className="h-3 w-3 shrink-0" />
-                                  {formatDate(task.due_date)}
-                                </span>
-                              )}
+                        <button
+                          key={p.id}
+                          onClick={() => selectProject(p.id)}
+                          className={[
+                            "w-full text-left px-4 py-3 border-b border-[rgba(255,255,255,0.06)] last:border-0 transition-all duration-150",
+                            isActive
+                              ? "bg-[rgba(94,106,210,0.08)] border-l-2 border-l-[#5e6ad2]"
+                              : "hover:bg-white/5",
+                          ].join(" ")}
+                        >
+                          <div className="flex items-center justify-between gap-2 mb-1.5">
+                            <span className={[
+                              "text-[13px] font-medium truncate",
+                              isActive ? "text-[#5e6ad2]" : "text-[#e8e8e8]"
+                            ].join(" ")}>
+                              {p.name}
                             </span>
-                            <span className={`shrink-0 inline-flex rounded-full px-2 py-0.5 text-[11px] font-medium ${PRIORITY_STYLES[tpriority]}`}>
-                              {task.priority ? task.priority.charAt(0).toUpperCase() + task.priority.slice(1) : "—"}
+                            <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-medium ${pCfg.badge}`}>
+                              <span className={`h-1.5 w-1.5 rounded-full ${pCfg.dot}`} />
+                              {pCfg.label}
                             </span>
-                            <span className={`shrink-0 inline-flex rounded-full px-2 py-0.5 text-[11px] font-medium ${TASK_STATUS_STYLES[tstatus]}`}>
-                              {TASK_STATUS_LABELS[tstatus] ?? task.status}
+                          </div>
+                          <div className="flex items-center justify-between gap-2 text-[11px]">
+                            <span className="text-[#555] truncate">
+                              {p.client_id ? clientMap[p.client_id] ?? "No client" : "No client"}
                             </span>
-                          </button>
-                        </li>
+                            {p.total_value != null && (
+                              <span className="text-[#888] font-medium tabular-nums">
+                                {formatCurrency(p.total_value)}
+                              </span>
+                            )}
+                          </div>
+                        </button>
                       );
-                    })}
-                  </ul>
+                    })
+                  )}
+                </div>
+
+                {/* Sidebar pagination */}
+                {(sidebarPage > 0 || sidebarHasMore) && (
+                  <div className="flex items-center justify-between px-4 py-2
+                    border-t border-[rgba(255,255,255,0.06)] bg-[#111111]">
+                    <button
+                      onClick={() => fetchSidebar(sidebarPage - 1)}
+                      disabled={sidebarPage === 0 || sidebarSearching}
+                      className="text-[11px] font-medium text-[#888] hover:text-[#e8e8e8]
+                        disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:text-[#888]
+                        transition-colors duration-150"
+                    >
+                      ← Previous
+                    </button>
+                    <span className="text-[10px] text-[#555]">{sidebarPage + 1}</span>
+                    <button
+                      onClick={() => fetchSidebar(sidebarPage + 1)}
+                      disabled={!sidebarHasMore || sidebarSearching}
+                      className="text-[11px] font-medium text-[#888] hover:text-[#e8e8e8]
+                        disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:text-[#888]
+                        transition-colors duration-150"
+                    >
+                      Next →
+                    </button>
+                  </div>
                 )}
               </div>
+            </aside>
+
+            {/* Right panel - Project detail */}
+            <div className="flex-1 min-w-0">
+              {loading ? (
+                <div className="space-y-6 animate-pulse">
+                  <div className="rounded-xl border border-[rgba(255,255,255,0.06)] bg-[#111111] overflow-hidden">
+                    <div className="p-6">
+                      <div className="h-8 w-64 bg-white/5 rounded mb-3" />
+                      <div className="h-4 w-32 bg-white/5 rounded" />
+                    </div>
+                    <div className="grid grid-cols-4 gap-4 p-6 border-t border-[rgba(255,255,255,0.06)]">
+                      {[1,2,3,4].map(i => (
+                        <div key={i} className="space-y-2">
+                          <div className="h-3 w-16 bg-white/5 rounded" />
+                          <div className="h-5 w-20 bg-white/5 rounded" />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="rounded-xl border border-[rgba(255,255,255,0.06)] bg-[#111111] p-6">
+                    <div className="h-6 w-32 bg-white/5 rounded mb-4" />
+                    <div className="space-y-3">
+                      {[1,2,3].map(i => (
+                        <div key={i} className="h-12 bg-white/5 rounded" />
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              ) : error || !project ? (
+                <div className="rounded-xl bg-[rgba(229,72,77,0.10)] border border-[rgba(229,72,77,0.2)] p-6">
+                  <p className="text-[13px] text-[#e5484d]">{error ?? "Project not found."}</p>
+                </div>
+              ) : (
+                <div className="space-y-6">
+                  
+                  {/* Project header card */}
+                  <div className="rounded-xl border border-[rgba(255,255,255,0.06)] bg-[#111111] overflow-hidden">
+                    <div className="p-6">
+                      <div className="flex items-start justify-between gap-4 mb-4">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-2">
+                            <StatusIcon size={16} className={cfg.text} />
+                            <h1 className="text-xl font-semibold text-[#e8e8e8] truncate">
+                              {project.name}
+                            </h1>
+                          </div>
+                          {client && (
+                            <Link 
+                              href={`/${slug}/clients/${client.id}`}
+                              className="inline-flex items-center gap-1.5 text-[13px] text-[#555] hover:text-[#5e6ad2] transition-colors"
+                            >
+                              <Briefcase size={12} />
+                              {client.name}
+                            </Link>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2 shrink-0">
+                          <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-medium ${cfg.badge}`}>
+                            <span className={`h-1.5 w-1.5 rounded-full ${cfg.dot}`} />
+                            {cfg.label}
+                          </span>
+                          {isAdmin && !editing && (
+                            <button 
+                              onClick={() => setEditing(true)} 
+                              className="px-3 py-1.5 rounded-lg text-[12px] font-medium text-[#8a8a8a] hover:text-[#e8e8e8] hover:bg-white/5 border border-[rgba(255,255,255,0.08)] transition-all duration-150 flex items-center gap-1.5"
+                            >
+                              <Pencil className="h-3.5 w-3.5" /> Edit
+                            </button>
+                          )}
+                        </div>
+                      </div>
+
+                      {editing ? (
+                        <EditForm 
+                          project={project} 
+                          clients={clients} 
+                          onSave={(updated) => { 
+                            setProject(updated); 
+                            setClient(findClientInList(updated.client_id, clients)); 
+                            setEditing(false); 
+                          }} 
+                          onCancel={() => setEditing(false)} 
+                        />
+                      ) : (
+                        <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 pt-4 border-t border-[rgba(255,255,255,0.06)]">
+                          <div>
+                            <p className="text-[11px] font-medium text-[#555] uppercase tracking-[0.06em] mb-1.5">Deadline</p>
+                            <div className="flex items-center gap-1.5">
+                              <Calendar size={14} className={isOverdue ? "text-[#e5484d]" : "text-[#555]"} />
+                              <span className={`text-[13px] font-medium ${isOverdue ? "text-[#e5484d]" : "text-[#e8e8e8]"}`}>
+                                {project.deadline ? formatDate(project.deadline) : "No deadline"}
+                              </span>
+                            </div>
+                          </div>
+                          
+                          <div>
+                            <p className="text-[11px] font-medium text-[#555] uppercase tracking-[0.06em] mb-1.5">Total Value</p>
+                            <div className="flex items-center gap-1.5">
+                              <DollarSign size={14} className="text-[#555]" />
+                              <span className="text-[13px] font-medium text-[#e8e8e8]">
+                                {project.total_value != null ? formatCurrency(project.total_value) : "—"}
+                              </span>
+                            </div>
+                          </div>
+                          
+                          <div>
+                            <p className="text-[11px] font-medium text-[#555] uppercase tracking-[0.06em] mb-1.5">Task Progress</p>
+                            <div className="flex items-center gap-1.5">
+                              <CheckSquare size={14} className="text-[#555]" />
+                              <span className="text-[13px] font-medium text-[#e8e8e8]">
+                                {doneTasks}/{totalTasks} completed
+                              </span>
+                            </div>
+                          </div>
+                          
+                          <div>
+                            <p className="text-[11px] font-medium text-[#555] uppercase tracking-[0.06em] mb-1.5">Completion</p>
+                            <div>
+                              <div className="flex items-center justify-between mb-1">
+                                <span className="text-[11px] text-[#555]">{progressPercent}%</span>
+                              </div>
+                              <div className="h-1.5 rounded-full bg-[rgba(255,255,255,0.06)] overflow-hidden">
+                                <div 
+                                  className="h-full rounded-full transition-all duration-500"
+                                  style={{ width: `${progressPercent}%`, background: '#5e6ad2' }}
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Tasks section */}
+                  <div className="rounded-xl border border-[rgba(255,255,255,0.06)] bg-[#111111] overflow-hidden">
+                    <div className="flex items-center justify-between px-6 py-4 border-b border-[rgba(255,255,255,0.06)]">
+                      <div className="flex items-center gap-2">
+                        <CheckSquare size={14} className="text-[#5e6ad2]" />
+                        <h2 className="text-[13px] font-medium text-[#e8e8e8]">Tasks</h2>
+                        <span className="px-2 py-0.5 rounded-md text-[11px] font-medium bg-[rgba(255,255,255,0.06)] text-[#555]">
+                          {totalTasks}
+                        </span>
+                      </div>
+                      {isAdmin && (
+                        <button
+                          onClick={() => openTaskForm(selectedId)}
+                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-medium bg-[#5e6ad2] hover:bg-[#6872e5] text-white transition-all duration-150"
+                        >
+                          <Plus size={12} /> Add Task
+                        </button>
+                      )}
+                    </div>
+
+                    {tasks.length === 0 ? (
+                      <div className="flex flex-col items-center justify-center gap-3 py-12">
+                        <CheckSquare size={32} className="text-[#3a3a3a]" />
+                        <p className="text-[13px] text-[#555]">No tasks yet for this project</p>
+                        {isAdmin && (
+                          <button
+                            onClick={() => openTaskForm(selectedId)}
+                            className="text-[12px] text-[#5e6ad2] hover:text-[#7e8ae6]"
+                          >
+                            Create your first task →
+                          </button>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="divide-y divide-[rgba(255,255,255,0.06)]">
+                        {tasks.map((task) => {
+                          const tstatus = (task.status ?? "todo") as keyof typeof TASK_STATUS_STYLES;
+                          const tpriority = (task.priority ?? "normal") as keyof typeof PRIORITY_STYLES;
+                          return (
+                            <div key={task.id}>
+                              <button
+                                onClick={() => router.push(`/${slug}/tasks/${task.id}`)}
+                                className="flex w-full items-center gap-3 px-6 py-4 text-left transition-colors duration-150 hover:bg-[#1c1c1c]"
+                              >
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-[13px] font-medium text-[#e8e8e8] truncate mb-1">
+                                    {task.title}
+                                  </p>
+                                  {task.due_date && (
+                                    <div className="flex items-center gap-1">
+                                      <Calendar size={10} className="text-[#555]" />
+                                      <span className="text-[11px] text-[#555]">
+                                        {formatDate(task.due_date)}
+                                      </span>
+                                    </div>
+                                  )}
+                                </div>
+                                <span className={`shrink-0 inline-flex rounded-md px-2 py-0.5 text-[11px] font-medium ${PRIORITY_STYLES[tpriority]}`}>
+                                  {task.priority ? task.priority.charAt(0).toUpperCase() + task.priority.slice(1) : "Normal"}
+                                </span>
+                                <span className={`shrink-0 inline-flex rounded-md px-2 py-0.5 text-[11px] font-medium ${TASK_STATUS_STYLES[tstatus]}`}>
+                                  {TASK_STATUS_LABELS[tstatus] ?? task.status}
+                                </span>
+                              </button>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
-        )}
         </div>
       </div>
     </div>

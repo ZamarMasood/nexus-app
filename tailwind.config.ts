@@ -17,6 +17,15 @@ const config: Config = {
     },
     extend: {
       colors: {
+        'app':      '#0d0d0d',
+        'sidebar':  '#111111',
+        'surface':  '#161616',
+        'elevated': '#1c1c1c',
+        'input-bg': '#1a1a1a',
+        'accent': {
+          DEFAULT: '#5e6ad2',
+          hover: '#6872e5',
+        },
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",
@@ -38,10 +47,6 @@ const config: Config = {
           DEFAULT: "hsl(var(--muted))",
           foreground: "hsl(var(--muted-foreground))",
         },
-        accent: {
-          DEFAULT: "hsl(var(--accent))",
-          foreground: "hsl(var(--accent-foreground))",
-        },
         popover: {
           DEFAULT: "hsl(var(--popover))",
           foreground: "hsl(var(--popover-foreground))",
@@ -50,6 +55,9 @@ const config: Config = {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
+      },
+      fontFamily: {
+        sans: ['Geist', 'Inter', 'system-ui', 'sans-serif'],
       },
       borderRadius: {
         lg: "var(--radius)",

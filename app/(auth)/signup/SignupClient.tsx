@@ -2,73 +2,49 @@
 
 import { useFormState, useFormStatus } from 'react-dom';
 import { signupAction, type SignupState } from './actions';
-import { Eye, EyeOff, Layers, ArrowRight, Sun, Moon, ArrowLeft, Mail } from 'lucide-react';
+import { Eye, EyeOff } from 'lucide-react';
 import Link from 'next/link';
 import { useState, useEffect, useRef } from 'react';
-import { useTheme } from 'next-themes';
+import { Mail } from 'lucide-react';
 
-/* --- removed: Supabase browser client no longer needed for OTP ------------- */
-
-/* --- Submit button ---------------------------------------------------------- */
 function SubmitButton() {
   const { pending } = useFormStatus();
   return (
     <button
       type="submit"
       disabled={pending}
-      className="group relative w-full overflow-hidden rounded-xl py-3 text-[13px] font-semibold text-white transition-[transform,box-shadow] duration-200 disabled:opacity-60 hover:scale-[1.015] hover:shadow-[0_8px_40px_rgba(124,58,237,0.5)] active:scale-[0.985] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/60"
-      style={{
-        background: 'linear-gradient(135deg, #7c3aed 0%, #5b21b6 100%)',
-        boxShadow: '0 4px 24px rgba(124,58,237,0.4), 0 1px 0 rgba(255,255,255,0.1) inset',
-      }}
+      className="w-full py-2 rounded-md text-[13px] font-medium text-white
+        bg-[#5e6ad2] hover:bg-[#6872e5] active:scale-[0.99]
+        transition-colors duration-150
+        focus-visible:outline-none focus-visible:ring-2
+        focus-visible:ring-[rgba(94,106,210,0.35)]
+        disabled:opacity-50 disabled:cursor-not-allowed"
     >
-      <span
-        className="pointer-events-none absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-in-out"
-        style={{ background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent)' }}
-      />
-      {pending ? (
-        <span className="flex items-center justify-center gap-2.5">
-          <span className="size-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-          Sending verification code...
-        </span>
-      ) : (
-        <span className="flex items-center justify-center gap-2">
-          Continue
-          <ArrowRight className="size-4 transition-transform duration-200 group-hover:translate-x-0.5" />
-        </span>
-      )}
+      {pending ? 'Creating account...' : 'Continue'}
     </button>
   );
 }
 
-/* --- removed: LoadingButton no longer needed (OTP removed) ----------------- */
-
-/* --- Field error ------------------------------------------------------------ */
 function FieldError({ message }: { message?: string }) {
   if (!message) return null;
-  return (
-    <p className="mt-1.5 text-[12px]" style={{ color: '#fca5a5' }}>
-      {message}
-    </p>
-  );
+  return <p className="mt-1 text-[12px] text-[#e5484d]">{message}</p>;
 }
 
-/* --- removed: OtpInput no longer needed (OTP removed) ---------------------- */
-
-/* --- Slug generator --------------------------------------------------------- */
 function generateSlug(name: string): string {
-  return name
-    .toLowerCase()
-    .trim()
+  return name.toLowerCase().trim()
     .replace(/[^a-z0-9\s-]/g, '')
     .replace(/\s+/g, '-')
     .replace(/-+/g, '-')
     .replace(/^-|-$/g, '');
 }
 
-/* --- removed: FormDataSnapshot no longer needed (OTP removed) -------------- */
+const INPUT_CLASS = `w-full px-3 py-2 rounded-md
+  bg-[#1a1a1a] border border-[rgba(255,255,255,0.10)]
+  text-[#f0f0f0] text-[13px] placeholder:text-[#555]
+  focus:outline-none focus:border-[rgba(255,255,255,0.16)]
+  focus:ring-1 focus:ring-[rgba(94,106,210,0.35)]
+  transition-colors duration-150`;
 
-/* --- Page ------------------------------------------------------------------- */
 const initialState: SignupState = { error: null, fieldErrors: {} };
 
 export default function SignupClient() {
@@ -78,16 +54,9 @@ export default function SignupClient() {
   const [slug, setSlug] = useState('');
   const [slugManuallyEdited, setSlugManuallyEdited] = useState(false);
   const [termsChecked, setTermsChecked] = useState(false);
-  const { setTheme, resolvedTheme } = useTheme();
-  const [mounted, setMounted] = useState(false);
   const slugRef = useRef<HTMLInputElement>(null);
-
-  // Step state: form (fill details) → success (check your email)
   const [step, setStep] = useState<'form' | 'success'>('form');
 
-  useEffect(() => setMounted(true), []);
-
-  // After server action succeeds → show "check your email" screen
   useEffect(() => {
     if (state.success && state.email && step === 'form') {
       setStep('success');
@@ -95,27 +64,8 @@ export default function SignupClient() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state.success, state.email]);
 
-  const isDark = mounted ? resolvedTheme === 'dark' : true;
-
-  const bg         = mounted ? (isDark ? '#120828' : '#f5f3ff') : '#120828';
-  const cardBg     = mounted ? (isDark ? 'rgba(255,255,255,0.07)' : 'rgba(255,255,255,0.72)') : 'rgba(255,255,255,0.07)';
-  const cardBdr    = mounted ? (isDark ? 'rgba(255,255,255,0.12)' : 'rgba(124,58,237,0.18)') : 'rgba(255,255,255,0.12)';
-  const cardShadow = mounted
-    ? (isDark
-        ? '0 8px 64px rgba(0,0,0,0.4), 0 1px 0 rgba(255,255,255,0.1) inset'
-        : '0 8px 64px rgba(124,58,237,0.15), 0 1px 0 rgba(255,255,255,0.95) inset')
-    : '0 8px 64px rgba(0,0,0,0.4), 0 1px 0 rgba(255,255,255,0.1) inset';
-  const textH      = mounted ? (isDark ? '#ffffff' : '#180a2e') : '#ffffff';
-  const textSub    = mounted ? (isDark ? 'rgba(255,255,255,0.45)' : 'rgba(24,10,46,0.45)') : 'rgba(255,255,255,0.45)';
-  const inputBg    = mounted ? (isDark ? 'rgba(255,255,255,0.07)' : 'rgba(255,255,255,0.7)') : 'rgba(255,255,255,0.07)';
-  const inputBdr   = mounted ? (isDark ? 'rgba(255,255,255,0.12)' : 'rgba(124,58,237,0.18)') : 'rgba(255,255,255,0.12)';
-  const orbHigh    = mounted ? (isDark ? 'rgba(109,40,217,0.7)' : 'rgba(124,58,237,0.22)') : 'rgba(109,40,217,0.7)';
-  const orbMid     = mounted ? (isDark ? 'rgba(124,58,237,0.6)' : 'rgba(99,45,220,0.14)') : 'rgba(124,58,237,0.6)';
-
   function handleCompanyNameChange(e: React.ChangeEvent<HTMLInputElement>) {
-    if (!slugManuallyEdited) {
-      setSlug(generateSlug(e.target.value));
-    }
+    if (!slugManuallyEdited) setSlug(generateSlug(e.target.value));
   }
 
   function handleSlugChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -124,417 +74,210 @@ export default function SignupClient() {
   }
 
   return (
-    <>
-      <style suppressHydrationWarning>{`
-        @keyframes orb-a { 0%,100%{transform:translate(0,0) scale(1)}40%{transform:translate(50px,-70px) scale(1.07)}70%{transform:translate(-30px,35px) scale(0.95)} }
-        @keyframes orb-b { 0%,100%{transform:translate(0,0) scale(1)}35%{transform:translate(-55px,45px) scale(1.05)}70%{transform:translate(38px,-22px) scale(0.97)} }
-        @keyframes orb-c { 0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(28px,50px) scale(1.06)} }
-        @keyframes orb-d { 0%,100%{transform:translate(0,0) scale(1)}45%{transform:translate(-42px,-32px) scale(1.04)} }
-        @keyframes card-in { from{opacity:0;transform:translateY(24px) scale(0.97)} to{opacity:1;transform:translateY(0) scale(1)} }
-        @keyframes s-up { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+    <div className="min-h-screen bg-[#0d0d0d] flex items-center justify-center p-4">
+      <div className="w-full max-w-[400px]">
 
-        .orb-a { animation: orb-a 20s ease-in-out infinite; }
-        .orb-b { animation: orb-b 26s ease-in-out infinite; }
-        .orb-c { animation: orb-c 16s ease-in-out infinite; }
-        .orb-d { animation: orb-d 30s ease-in-out infinite; }
+        {/* Logo */}
+        <div className="flex justify-center mb-8">
+          <span className="text-[18px] font-medium text-[#f0f0f0] tracking-[-0.02em]">
+            Nexus
+          </span>
+        </div>
 
-        .card-in { animation: card-in 0.65s cubic-bezier(0.16,1,0.3,1) 0.05s both; }
-        .s1 { animation: s-up 0.5s cubic-bezier(0.16,1,0.3,1) 0.18s both; }
-        .s2 { animation: s-up 0.5s cubic-bezier(0.16,1,0.3,1) 0.27s both; }
-        .s3 { animation: s-up 0.5s cubic-bezier(0.16,1,0.3,1) 0.35s both; }
-        .s4 { animation: s-up 0.5s cubic-bezier(0.16,1,0.3,1) 0.43s both; }
-        .s5 { animation: s-up 0.5s cubic-bezier(0.16,1,0.3,1) 0.51s both; }
-        .s6 { animation: s-up 0.5s cubic-bezier(0.16,1,0.3,1) 0.58s both; }
-        .s7 { animation: s-up 0.5s cubic-bezier(0.16,1,0.3,1) 0.65s both; }
+        {/* Card */}
+        <div className="bg-[#161616] border border-[rgba(255,255,255,0.10)]
+          rounded-lg p-8 shadow-[0_8px_32px_rgba(0,0,0,0.6)]">
 
-        .signup-input {
-          width: 100%;
-          border-radius: 12px;
-          padding: 11px 14px;
-          font-size: 13px;
-          outline: none;
-          transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
-        }
-        .signup-input:focus {
-          border-color: rgba(124,58,237,0.65) !important;
-          box-shadow: 0 0 0 3px rgba(124,58,237,0.15);
-        }
-        .signup-input.has-error {
-          border-color: rgba(239,68,68,0.5) !important;
-        }
-
-        .terms-checkbox {
-          appearance: none;
-          -webkit-appearance: none;
-          width: 16px;
-          height: 16px;
-          min-width: 16px;
-          border-radius: 5px;
-          cursor: pointer;
-          transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
-          position: relative;
-        }
-        .terms-checkbox:checked {
-          background: linear-gradient(135deg, #7c3aed, #5b21b6);
-          border-color: transparent !important;
-          box-shadow: 0 0 0 2px rgba(124,58,237,0.3);
-        }
-        .terms-checkbox:checked::after {
-          content: '';
-          position: absolute;
-          left: 4px;
-          top: 2px;
-          width: 5px;
-          height: 8px;
-          border: 2px solid white;
-          border-top: none;
-          border-left: none;
-          transform: rotate(45deg);
-        }
-        .terms-checkbox:focus-visible {
-          outline: none;
-          box-shadow: 0 0 0 3px rgba(124,58,237,0.25);
-        }
-
-        .divider-line {
-          flex: 1;
-          height: 1px;
-        }
-      `}</style>
-
-      <div
-        className="relative flex min-h-screen items-center justify-center overflow-hidden px-4 py-6"
-        style={{
-          background: isDark
-            ? 'radial-gradient(ellipse 140% 120% at 50% 0%, #2d1060 0%, #1a0845 35%, #120828 65%, #0e0620 100%)'
-            : bg,
-        }}
-      >
-        {/* Dot grid */}
-        <div className="pointer-events-none absolute inset-0"
-          style={{
-            backgroundImage: `radial-gradient(${isDark ? 'rgba(255,255,255,0.06)' : 'rgba(124,58,237,0.12)'} 1px, transparent 1px)`,
-            backgroundSize: '28px 28px',
-          }}
-        />
-
-        {/* Animated orbs */}
-        <div className="orb-a pointer-events-none absolute -top-32 -left-32 size-[750px] rounded-full"
-          style={{ background: `radial-gradient(circle at 40% 40%, ${orbHigh} 0%, transparent 62%)`, filter: 'blur(28px)' }} />
-        <div className="orb-b pointer-events-none absolute -bottom-32 -right-32 size-[700px] rounded-full"
-          style={{ background: `radial-gradient(circle at 55% 55%, ${orbMid} 0%, transparent 62%)`, filter: 'blur(30px)' }} />
-        <div className="orb-c pointer-events-none absolute top-0 left-1/2 -translate-x-1/2 size-[600px] rounded-full"
-          style={{ background: `radial-gradient(circle, ${isDark ? 'rgba(139,92,246,0.45)' : 'rgba(139,92,246,0.1)'} 0%, transparent 58%)`, filter: 'blur(45px)' }} />
-        <div className="orb-d pointer-events-none absolute bottom-0 left-[15%] size-[500px] rounded-full"
-          style={{ background: `radial-gradient(circle, ${isDark ? 'rgba(91,33,182,0.55)' : 'rgba(124,58,237,0.1)'} 0%, transparent 60%)`, filter: 'blur(40px)' }} />
-
-        {/* Back button */}
-        <Link
-          href="/"
-          className="s1 group absolute top-5 left-5 z-20 flex items-center gap-1.5 rounded-xl px-3 py-2 text-[13px] font-medium transition-[background-color,transform,box-shadow] duration-200 hover:bg-violet-500/10 hover:shadow-[0_0_16px_rgba(124,58,237,0.18)] active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/40"
-          style={{ color: textSub, border: `1px solid ${cardBdr}`, backdropFilter: 'blur(8px)', background: cardBg }}
-        >
-          <ArrowLeft size={14} className="transition-transform duration-200 group-hover:-translate-x-0.5" />
-          Back
-        </Link>
-
-        {/* Theme toggle */}
-        <button
-          onClick={() => setTheme(isDark ? 'light' : 'dark')}
-          className="s1 group absolute top-5 right-5 z-20 flex size-9 items-center justify-center rounded-xl transition-[background-color,transform,box-shadow] duration-200 hover:bg-violet-500/10 hover:shadow-[0_0_16px_rgba(124,58,237,0.18)] active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/40"
-          style={{ color: textSub, border: `1px solid ${cardBdr}`, backdropFilter: 'blur(8px)', background: cardBg }}
-          aria-label="Toggle theme"
-        >
-          {isDark
-            ? <Sun size={15} className="transition-transform duration-300 group-hover:rotate-12 group-hover:scale-110" />
-            : <Moon size={15} className="transition-transform duration-300 group-hover:-rotate-12 group-hover:scale-110" />
-          }
-        </button>
-
-        {/* Glass card */}
-        <div
-          className="card-in relative z-10 w-full rounded-3xl p-7"
-          style={{
-            maxWidth: step === 'form' ? '780px' : '380px',
-            transition: 'max-width 0.4s cubic-bezier(0.16,1,0.3,1)',
-            background: cardBg,
-            border: `1px solid ${cardBdr}`,
-            backdropFilter: 'blur(28px)',
-            WebkitBackdropFilter: 'blur(28px)',
-            boxShadow: cardShadow,
-          }}
-        >
-          {/* Top highlight */}
-          <div className="pointer-events-none absolute inset-x-10 top-0 h-px rounded-full"
-            style={{ background: `linear-gradient(90deg, transparent, ${isDark ? 'rgba(255,255,255,0.18)' : 'rgba(255,255,255,0.9)'}, transparent)` }} />
-
-          {/* ================================================================ */}
-          {/* STEP: Signup form                                                */}
-          {/* ================================================================ */}
           {step === 'form' && (
             <>
-              {/* Logo + heading */}
-              <div className="s1 mb-5 flex flex-col items-center gap-3 text-center">
-                <div
-                  className="flex size-10 items-center justify-center rounded-2xl"
-                  style={{
-                    background: 'linear-gradient(135deg, #7c3aed 0%, #5b21b6 100%)',
-                    boxShadow: '0 0 0 1px rgba(124,58,237,0.5), 0 8px 32px rgba(124,58,237,0.4)',
-                  }}
-                >
-                  <Layers size={18} className="text-white" />
-                </div>
-                <div>
-                  <h1 className="text-[22px] font-semibold leading-tight tracking-[-0.03em]"
-                    style={{ color: textH, fontFamily: 'var(--font-display)' }}>
-                    Create your workspace
-                  </h1>
-                  <p className="mt-1 text-[13px]" style={{ color: textSub }}>
-                    Set up Nexus for your team in seconds
-                  </p>
-                </div>
-              </div>
+              <h1 className="text-[18px] font-medium text-[#f0f0f0] tracking-[-0.02em] mb-1">
+                Create your workspace
+              </h1>
+              <p className="text-[13px] text-[#8a8a8a] mb-6">
+                Set up Nexus for your team in seconds
+              </p>
 
-              {/* Global error */}
               {state.error && (
-                <div className="s1 mb-5 rounded-xl px-4 py-3 text-[13px]"
-                  style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', color: '#fca5a5' }}>
-                  {state.error}
-                </div>
+                <p className="mb-4 text-[13px] text-[#e5484d]">{state.error}</p>
               )}
 
-              <form action={action}>
-                <div className="s2 grid grid-cols-1 gap-x-5 gap-y-3.5 sm:grid-cols-2">
-                  <div>
-                    <label className="mb-1.5 block text-[12px] font-medium" style={{ color: textSub }}>Company Name</label>
-                    <input
-                      id="companyName"
-                      name="companyName"
-                      type="text"
-                      required
-                      autoComplete="organization"
-                      placeholder="Acme Ltd"
-                      onChange={handleCompanyNameChange}
-                      className={`signup-input${state.fieldErrors?.companyName ? ' has-error' : ''}`}
-                      style={{ background: inputBg, border: `1px solid ${inputBdr}`, color: textH }}
-                    />
-                    <FieldError message={state.fieldErrors?.companyName} />
-                  </div>
-
-                  <div>
-                    <label className="mb-1.5 block text-[12px] font-medium" style={{ color: textSub }}>Workspace URL</label>
-                    <input
-                      ref={slugRef}
-                      id="slug"
-                      name="slug"
-                      type="text"
-                      required
-                      placeholder="acme-ltd"
-                      value={slug}
-                      onChange={handleSlugChange}
-                      className={`signup-input${state.fieldErrors?.slug ? ' has-error' : ''}`}
-                      style={{ background: inputBg, border: `1px solid ${inputBdr}`, color: textH }}
-                    />
-                    {slug && (
-                      <p className="mt-1.5 text-[12px]" style={{ color: textSub }}>
-                        app.nexus.com/<span style={{ color: isDark ? 'rgba(167,139,250,0.9)' : '#7c3aed' }}>{slug}</span>
-                      </p>
-                    )}
-                    <FieldError message={state.fieldErrors?.slug} />
-                  </div>
-
-                  <div>
-                    <label className="mb-1.5 block text-[12px] font-medium" style={{ color: textSub }}>Full Name</label>
-                    <input
-                      id="fullName"
-                      name="fullName"
-                      type="text"
-                      required
-                      autoComplete="name"
-                      placeholder="Alex Johnson"
-                      className={`signup-input${state.fieldErrors?.fullName ? ' has-error' : ''}`}
-                      style={{ background: inputBg, border: `1px solid ${inputBdr}`, color: textH }}
-                    />
-                    <FieldError message={state.fieldErrors?.fullName} />
-                  </div>
-
-                  <div>
-                    <label className="mb-1.5 block text-[12px] font-medium" style={{ color: textSub }}>Email Address</label>
-                    <input
-                      id="email"
-                      name="email"
-                      type="email"
-                      required
-                      autoComplete="email"
-                      placeholder="alex@acme.com"
-                      className={`signup-input${state.fieldErrors?.email ? ' has-error' : ''}`}
-                      style={{ background: inputBg, border: `1px solid ${inputBdr}`, color: textH }}
-                    />
-                    <FieldError message={state.fieldErrors?.email} />
-                  </div>
-
-                  <div>
-                    <label className="mb-1.5 block text-[12px] font-medium" style={{ color: textSub }}>Password</label>
-                    <div className="relative">
-                      <input
-                        id="password"
-                        name="password"
-                        type={showPassword ? 'text' : 'password'}
-                        required
-                        autoComplete="new-password"
-                        placeholder="Min. 8 characters"
-                        className={`signup-input${state.fieldErrors?.password ? ' has-error' : ''}`}
-                        style={{ background: inputBg, border: `1px solid ${inputBdr}`, color: textH, paddingRight: '44px' }}
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowPassword(v => !v)}
-                        className="absolute right-4 top-1/2 -translate-y-1/2 transition-opacity duration-150 hover:opacity-70 active:scale-90 focus-visible:outline-none"
-                        style={{ color: textSub }}
-                        aria-label={showPassword ? 'Hide password' : 'Show password'}
-                      >
-                        {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
-                      </button>
-                    </div>
-                    <FieldError message={state.fieldErrors?.password} />
-                  </div>
-
-                  <div>
-                    <label className="mb-1.5 block text-[12px] font-medium" style={{ color: textSub }}>Confirm Password</label>
-                    <div className="relative">
-                      <input
-                        id="confirmPassword"
-                        name="confirmPassword"
-                        type={showConfirm ? 'text' : 'password'}
-                        required
-                        autoComplete="new-password"
-                        placeholder="Repeat password"
-                        className={`signup-input${state.fieldErrors?.confirmPassword ? ' has-error' : ''}`}
-                        style={{ background: inputBg, border: `1px solid ${inputBdr}`, color: textH, paddingRight: '44px' }}
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowConfirm(v => !v)}
-                        className="absolute right-4 top-1/2 -translate-y-1/2 transition-opacity duration-150 hover:opacity-70 active:scale-90 focus-visible:outline-none"
-                        style={{ color: textSub }}
-                        aria-label={showConfirm ? 'Hide confirm password' : 'Show confirm password'}
-                      >
-                        {showConfirm ? <EyeOff size={15} /> : <Eye size={15} />}
-                      </button>
-                    </div>
-                    <FieldError message={state.fieldErrors?.confirmPassword} />
-                  </div>
+              <form action={action} className="space-y-3">
+                <div>
+                  <label className="block text-[12px] font-medium text-[#8a8a8a]
+                    uppercase tracking-[0.04em] mb-1.5">
+                    Company Name
+                  </label>
+                  <input
+                    name="companyName" type="text" required autoComplete="organization"
+                    placeholder="Acme Ltd"
+                    onChange={handleCompanyNameChange}
+                    className={INPUT_CLASS}
+                  />
+                  <FieldError message={state.fieldErrors?.companyName} />
                 </div>
 
-                <div className="mt-4 space-y-3.5">
-                  <div className="s5">
-                    {/* Hidden native checkbox for form submission */}
-                    <input type="hidden" name="terms" value={termsChecked ? 'on' : ''} />
-                    <button
-                      type="button"
-                      onClick={() => setTermsChecked(v => !v)}
-                      className="flex cursor-pointer items-start gap-3 select-none text-left w-full"
-                    >
-                      {/* Visual checkbox */}
-                      <div
-                        className="mt-0.5 flex-shrink-0 flex items-center justify-center rounded-[5px] transition-[background-color,border-color,box-shadow] duration-150"
-                        style={{
-                          width: 16,
-                          height: 16,
-                          border: termsChecked ? 'none' : `1.5px solid ${inputBdr}`,
-                          background: termsChecked
-                            ? 'linear-gradient(135deg, #7c3aed, #5b21b6)'
-                            : inputBg,
-                          boxShadow: termsChecked ? '0 0 0 2px rgba(124,58,237,0.3)' : 'none',
-                        }}
-                      >
-                        {termsChecked && (
-                          <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
-                            <path d="M1 4L3.5 6.5L9 1" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                          </svg>
-                        )}
-                      </div>
-                      <span className="text-[13px] leading-relaxed" style={{ color: textSub }}>
-                        I agree to the{' '}
-                        <span className="transition-opacity duration-150 hover:opacity-70" style={{ color: isDark ? 'rgba(167,139,250,0.9)' : '#7c3aed' }}>
-                          Terms of Service
-                        </span>
-                        {' '}and{' '}
-                        <span className="transition-opacity duration-150 hover:opacity-70" style={{ color: isDark ? 'rgba(167,139,250,0.9)' : '#7c3aed' }}>
-                          Privacy Policy
-                        </span>
-                      </span>
-                    </button>
-                    <FieldError message={state.fieldErrors?.terms} />
-                  </div>
+                <div>
+                  <label className="block text-[12px] font-medium text-[#8a8a8a]
+                    uppercase tracking-[0.04em] mb-1.5">
+                    Workspace URL
+                  </label>
+                  <input
+                    ref={slugRef}
+                    name="slug" type="text" required
+                    placeholder="acme-ltd"
+                    value={slug}
+                    onChange={handleSlugChange}
+                    className={INPUT_CLASS}
+                  />
+                  {slug && !state.fieldErrors?.slug && (
+                    <p className="mt-1 text-[12px] text-[#555]">
+                      app.nexus.com/<span className="text-[#5e6ad2]">{slug}</span>
+                    </p>
+                  )}
+                  <FieldError message={state.fieldErrors?.slug} />
+                </div>
 
-                  <div className="s6">
-                    <SubmitButton />
+                <div>
+                  <label className="block text-[12px] font-medium text-[#8a8a8a]
+                    uppercase tracking-[0.04em] mb-1.5">
+                    Full Name
+                  </label>
+                  <input
+                    name="fullName" type="text" required autoComplete="name"
+                    placeholder="Alex Johnson"
+                    className={INPUT_CLASS}
+                  />
+                  <FieldError message={state.fieldErrors?.fullName} />
+                </div>
+
+                <div>
+                  <label className="block text-[12px] font-medium text-[#8a8a8a]
+                    uppercase tracking-[0.04em] mb-1.5">
+                    Email
+                  </label>
+                  <input
+                    name="email" type="email" required autoComplete="email"
+                    placeholder="alex@acme.com"
+                    className={INPUT_CLASS}
+                  />
+                  <FieldError message={state.fieldErrors?.email} />
+                </div>
+
+                <div>
+                  <label className="block text-[12px] font-medium text-[#8a8a8a]
+                    uppercase tracking-[0.04em] mb-1.5">
+                    Password
+                  </label>
+                  <div className="relative">
+                    <input
+                      name="password"
+                      type={showPassword ? 'text' : 'password'}
+                      required autoComplete="new-password"
+                      placeholder="Min. 8 characters"
+                      className={`${INPUT_CLASS} pr-10`}
+                    />
+                    <button type="button" onClick={() => setShowPassword(v => !v)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-[#555]
+                        hover:text-[#8a8a8a] transition-colors"
+                      aria-label={showPassword ? 'Hide' : 'Show'}>
+                      {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
+                    </button>
                   </div>
+                  <FieldError message={state.fieldErrors?.password} />
+                </div>
+
+                <div>
+                  <label className="block text-[12px] font-medium text-[#8a8a8a]
+                    uppercase tracking-[0.04em] mb-1.5">
+                    Confirm Password
+                  </label>
+                  <div className="relative">
+                    <input
+                      name="confirmPassword"
+                      type={showConfirm ? 'text' : 'password'}
+                      required autoComplete="new-password"
+                      placeholder="Repeat password"
+                      className={`${INPUT_CLASS} pr-10`}
+                    />
+                    <button type="button" onClick={() => setShowConfirm(v => !v)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-[#555]
+                        hover:text-[#8a8a8a] transition-colors"
+                      aria-label={showConfirm ? 'Hide' : 'Show'}>
+                      {showConfirm ? <EyeOff size={15} /> : <Eye size={15} />}
+                    </button>
+                  </div>
+                  <FieldError message={state.fieldErrors?.confirmPassword} />
+                </div>
+
+                <div className="pt-1">
+                  <input type="hidden" name="terms" value={termsChecked ? 'on' : ''} />
+                  <button type="button" onClick={() => setTermsChecked(v => !v)}
+                    className="flex items-start gap-2.5 w-full text-left">
+                    <div className={`mt-0.5 w-4 h-4 rounded flex-shrink-0 border transition-colors duration-150
+                      flex items-center justify-center
+                      ${termsChecked
+                        ? 'bg-[#5e6ad2] border-[#5e6ad2]'
+                        : 'bg-[#1a1a1a] border-[rgba(255,255,255,0.10)]'}`}>
+                      {termsChecked && (
+                        <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
+                          <path d="M1 4L3.5 6.5L9 1" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
+                      )}
+                    </div>
+                    <span className="text-[13px] text-[#8a8a8a] leading-relaxed">
+                      I agree to the{' '}
+                      <span className="text-[#5e6ad2] hover:text-[#6872e5]">Terms of Service</span>
+                      {' '}and{' '}
+                      <span className="text-[#5e6ad2] hover:text-[#6872e5]">Privacy Policy</span>
+                    </span>
+                  </button>
+                  <FieldError message={state.fieldErrors?.terms} />
+                </div>
+
+                <div className="pt-2">
+                  <SubmitButton />
                 </div>
               </form>
 
-              {/* Sign in link */}
-              <div className="s7 mt-5 flex items-center gap-3">
-                <div className="divider-line" style={{ background: isDark ? 'rgba(255,255,255,0.07)' : 'rgba(124,58,237,0.1)' }} />
-                <span className="text-[11px] font-mono tracking-widest uppercase" style={{ color: textSub }}>Nexus</span>
-                <div className="divider-line" style={{ background: isDark ? 'rgba(255,255,255,0.07)' : 'rgba(124,58,237,0.1)' }} />
+              <div className="mt-4 text-center">
+                <span className="text-[13px] text-[#8a8a8a]">
+                  Already have an account?{' '}
+                  <Link href="/login" className="text-[#8a8a8a] hover:text-[#f0f0f0]
+                    transition-colors duration-150">
+                    Sign in
+                  </Link>
+                </span>
               </div>
-
-              <p className="s7 mt-4 text-center text-[13px]" style={{ color: textSub }}>
-                Already have an account?{' '}
-                <Link
-                  href="/login"
-                  className="font-medium transition-opacity duration-150 hover:opacity-70 focus-visible:outline-none focus-visible:underline"
-                  style={{ color: isDark ? 'rgba(167,139,250,0.9)' : '#7c3aed' }}
-                >
-                  Sign in
-                </Link>
-              </p>
             </>
           )}
 
-          {/* ================================================================ */}
-          {/* STEP: Success — check your email                                 */}
-          {/* ================================================================ */}
           {step === 'success' && (
-            <div className="s1">
-              <div className="mb-5 flex flex-col items-center gap-3 text-center">
-                <div
-                  className="flex size-10 items-center justify-center rounded-2xl"
-                  style={{ background: 'linear-gradient(135deg, #10b981, #059669)', boxShadow: '0 8px 32px rgba(16,185,129,0.4)' }}
-                >
-                  <Mail size={18} className="text-white" />
-                </div>
-                <div>
-                  <h1 className="text-[22px] font-semibold leading-tight tracking-[-0.03em]"
-                    style={{ color: textH, fontFamily: 'var(--font-display)' }}>
-                    Check your email
-                  </h1>
-                  <p className="mt-2 text-[13px] leading-relaxed" style={{ color: textSub }}>
-                    We sent a confirmation link to <strong style={{ color: textH }}>{state.email}</strong>. Click the link to activate your workspace.
-                  </p>
-                </div>
+            <div className="text-center">
+              <div className="mx-auto mb-4 w-10 h-10 rounded-full bg-[rgba(38,201,127,0.15)]
+                flex items-center justify-center">
+                <Mail size={18} className="text-[#26c97f]" />
               </div>
-
-              <div className="rounded-xl px-4 py-3 text-[13px] text-center" style={{ background: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)', color: textSub }}>
+              <h1 className="text-[18px] font-medium text-[#f0f0f0] tracking-[-0.02em] mb-2">
+                Check your email
+              </h1>
+              <p className="text-[13px] text-[#8a8a8a] mb-4">
+                We sent a confirmation link to{' '}
+                <strong className="text-[#f0f0f0]">{state.email}</strong>.
+                Click the link to activate your workspace.
+              </p>
+              <p className="text-[13px] text-[#555] mb-6">
                 Didn&apos;t receive the email? Check your spam folder.
-              </div>
-
-              <Link
-                href="/login"
-                className="group relative mt-5 flex w-full items-center justify-center gap-2 overflow-hidden rounded-xl py-3 text-[13px] font-semibold text-white transition-[transform,box-shadow] duration-200 hover:scale-[1.015] active:scale-[0.985]"
-                style={{
-                  background: 'linear-gradient(135deg, #7c3aed 0%, #5b21b6 100%)',
-                  boxShadow: '0 4px 24px rgba(124,58,237,0.4), 0 1px 0 rgba(255,255,255,0.1) inset',
-                }}
-              >
+              </p>
+              <Link href="/login"
+                className="inline-flex w-full justify-center py-2 rounded-md text-[13px] font-medium
+                  text-white bg-[#5e6ad2] hover:bg-[#6872e5]
+                  transition-colors duration-150">
                 Go to Login
               </Link>
             </div>
           )}
         </div>
       </div>
-    </>
+    </div>
   );
 }

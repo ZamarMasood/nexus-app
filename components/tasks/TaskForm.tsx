@@ -7,12 +7,11 @@ import { createTaskAction } from "@/app/dashboard/tasks/actions";
 import { getProjects } from "@/lib/db/projects";
 import { getTeamMembers } from "@/lib/db/team-members";
 import { revalidateDashboard } from "@/app/dashboard/actions";
+import { getTaskStatuses, type TaskStatusRow } from "@/lib/db/task-statuses";
 import type { Task, TaskPriority, TaskStatus, Project, TeamMember } from "@/lib/types";
 import {
   Dialog,
   DialogContent,
-  DialogHeader,
-  DialogTitle,
 } from "@/components/ui/dialog";
 import {
   Select,
@@ -27,6 +26,7 @@ interface TaskFormDialogProps {
   onOpenChange:      (open: boolean) => void;
   task?:             Task;
   defaultProjectId?: string;
+  defaultStatus?:    string;
   defaultAssigneeId?: string;
   isAdmin?:          boolean;
   onSuccess?:        () => void;
@@ -37,23 +37,30 @@ interface FormErrors {
   project_id?: string;
 }
 
-const LABEL = "block text-[11px] font-semibold uppercase tracking-widest text-faint-app mb-1";
-const FIELD = "w-full rounded-lg border border-surface bg-surface-inset px-3 py-2.5 text-[13px] text-primary-app placeholder:text-dim-app focus:outline-none focus:ring-1 focus:ring-violet-500/40 focus:border-violet-500/50 transition-[border-color,box-shadow] duration-150";
-const SELECT_TRIGGER = "w-full rounded-lg border border-surface bg-surface-inset h-[42px] text-[13px] text-primary-app focus:ring-1 focus:ring-violet-500/40 focus:border-violet-500/50 data-[placeholder]:text-dim-app";
-const SELECT_CONTENT = "bg-surface-card border-surface text-primary-app";
-const SELECT_ITEM    = "text-[13px] text-primary-app focus:bg-violet-500/10 focus:text-violet-300 cursor-pointer";
+const LABEL = "block text-[12px] font-medium text-[#8a8a8a] uppercase tracking-[0.04em] mb-1.5";
+const FIELD = `w-full px-3 py-2 rounded-md bg-[#1a1a1a] border border-[rgba(255,255,255,0.10)]
+  text-[#f0f0f0] text-[13px] placeholder:text-[#555]
+  focus:outline-none focus:border-[rgba(255,255,255,0.16)]
+  focus:ring-1 focus:ring-[rgba(94,106,210,0.35)]
+  transition-colors duration-150`;
+const SELECT_TRIGGER = `w-full rounded-md border border-[rgba(255,255,255,0.10)] bg-[#1a1a1a]
+  h-[38px] text-[13px] text-[#f0f0f0]
+  focus:ring-1 focus:ring-[rgba(94,106,210,0.35)] focus:border-[rgba(255,255,255,0.16)]
+  data-[placeholder]:text-[#555]`;
+const SELECT_CONTENT = "bg-[#1c1c1c] border-[rgba(255,255,255,0.10)] text-[#f0f0f0]";
+const SELECT_ITEM = "text-[13px] text-[#8a8a8a] focus:bg-white/5 focus:text-[#f0f0f0] cursor-pointer";
 
 const PRIORITY_COLORS: Record<string, string> = {
-  urgent: "text-rose-400",
-  high:   "text-orange-400",
-  normal: "text-sky-400",
-  low:    "text-faint-app",
+  urgent: "text-[#e5484d]",
+  high:   "text-[#e79d13]",
+  normal: "text-[#5e6ad2]",
+  low:    "text-[#888]",
 };
 
 const STATUS_COLORS: Record<string, string> = {
-  todo:        "text-muted-app",
-  in_progress: "text-amber-400",
-  done:        "text-emerald-400",
+  todo:        "text-[#888]",
+  in_progress: "text-[#5e6ad2]",
+  done:        "text-[#26c97f]",
 };
 
 export function TaskFormDialog({
@@ -61,6 +68,7 @@ export function TaskFormDialog({
   onOpenChange,
   task,
   defaultProjectId,
+  defaultStatus,
   defaultAssigneeId,
   isAdmin = false,
   onSuccess,
@@ -80,6 +88,7 @@ export function TaskFormDialog({
 
   const [projects, setProjects]       = useState<Project[]>([]);
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
+  const [taskStatuses, setTaskStatuses] = useState<TaskStatusRow[]>([]);
   const [loadError, setLoadError]     = useState<string | null>(null);
 
   useEffect(() => {
@@ -89,18 +98,18 @@ export function TaskFormDialog({
     setDescription(task?.description ?? "");
     setProjectId(task?.project_id ?? defaultProjectId ?? "");
     setAssigneeId(task?.assignee_id ?? defaultAssigneeId ?? "");
-    setStatus((task?.status as TaskStatus) ?? "todo");
+    setStatus((task?.status as TaskStatus) ?? defaultStatus ?? "todo");
     setPriority((task?.priority as TaskPriority) ?? "normal");
     setDueDate(task?.due_date ?? "");
     setErrors({});
     setSubmitError(null);
 
-    Promise.all([getProjects(), getTeamMembers()])
-      .then(([p, t]) => { setProjects(p); setTeamMembers(t); })
+    Promise.all([getProjects(), getTeamMembers(), getTaskStatuses()])
+      .then(([p, t, s]) => { setProjects(p); setTeamMembers(t); setTaskStatuses(s); })
       .catch((err: unknown) => {
         setLoadError(err instanceof Error ? err.message : "Failed to load form data");
       });
-  }, [open, task, defaultProjectId, defaultAssigneeId]);
+  }, [open, task, defaultProjectId, defaultStatus, defaultAssigneeId]);
 
   function validate(): boolean {
     const next: FormErrors = {};
@@ -146,29 +155,33 @@ export function TaskFormDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="bg-surface-card border-surface text-primary-app sm:max-w-lg p-0 gap-0">
-        {/* Dialog header */}
-        <DialogHeader className="px-6 pt-6 pb-4 border-b border-surface">
-          <DialogTitle className="text-[15px] font-semibold tracking-[-0.02em] text-bright">
+      <DialogContent className="
+        bg-[#161616] border border-[rgba(255,255,255,0.10)] rounded-lg
+        shadow-[0_24px_64px_rgba(0,0,0,0.7)] p-0 gap-0
+        max-w-[560px] w-full">
+
+        <div className="flex items-center justify-between px-5 pt-5 pb-4
+          border-b border-[rgba(255,255,255,0.06)]">
+          <span className="text-[15px] font-medium text-[#f0f0f0]">
             {isEdit ? "Edit Task" : "New Task"}
-          </DialogTitle>
-        </DialogHeader>
+          </span>
+        </div>
 
         {loadError && (
-          <div className="mx-6 mt-4 rounded-lg bg-rose-500/10 border border-rose-500/20 px-3 py-2 text-sm text-rose-400 flex items-center gap-2">
+          <div className="mx-5 mt-4 rounded-md px-3 py-2 text-[13px] text-[#e5484d]
+            bg-[rgba(229,72,77,0.1)] border border-[rgba(229,72,77,0.2)]">
             {loadError}
           </div>
         )}
 
         <form onSubmit={handleSubmit} noValidate>
-          <div className="px-6 py-5 space-y-4">
+          <div className="px-5 py-4 space-y-3">
 
-            {/* Title */}
             <div>
               <label className={LABEL}>
                 <span className="flex items-center gap-1.5">
                   <Hash className="h-3 w-3" />
-                  Title <span className="text-rose-400 normal-case tracking-normal font-normal">*</span>
+                  Title <span className="text-[#e5484d] normal-case tracking-normal font-normal">*</span>
                 </span>
               </label>
               <input
@@ -178,10 +191,9 @@ export function TaskFormDialog({
                 className={FIELD}
                 autoFocus
               />
-              {errors.title && <p className="mt-1 text-xs text-rose-400" role="alert">{errors.title}</p>}
+              {errors.title && <p className="mt-1 text-[12px] text-[#e5484d]">{errors.title}</p>}
             </div>
 
-            {/* Description */}
             <div>
               <label className={LABEL}>
                 <span className="flex items-center gap-1.5">
@@ -198,13 +210,12 @@ export function TaskFormDialog({
               />
             </div>
 
-            {/* Project + Assignee */}
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className={LABEL}>
                   <span className="flex items-center gap-1.5">
                     <FolderKanban className="h-3 w-3" />
-                    Project <span className="text-rose-400 normal-case tracking-normal font-normal">*</span>
+                    Project <span className="text-[#e5484d] normal-case tracking-normal font-normal">*</span>
                   </span>
                 </label>
                 <Select value={projectId} onValueChange={setProjectId}>
@@ -219,7 +230,7 @@ export function TaskFormDialog({
                     ))}
                   </SelectContent>
                 </Select>
-                {errors.project_id && <p className="mt-1 text-xs text-rose-400" role="alert">{errors.project_id}</p>}
+                {errors.project_id && <p className="mt-1 text-[12px] text-[#e5484d]">{errors.project_id}</p>}
               </div>
 
               <div>
@@ -251,7 +262,6 @@ export function TaskFormDialog({
               </div>
             </div>
 
-            {/* Priority + Status */}
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className={LABEL}>
@@ -274,27 +284,28 @@ export function TaskFormDialog({
                 </Select>
               </div>
 
-              {isEdit && (
-                <div>
-                  <label className={LABEL}>Status</label>
-                  <Select value={status} onValueChange={(v) => setStatus(v as TaskStatus)}>
-                    <SelectTrigger className={SELECT_TRIGGER}>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent className={SELECT_CONTENT}>
-                      {([
-                        { value: "todo",        label: "To Do"       },
-                        { value: "in_progress", label: "In Progress" },
-                        { value: "done",        label: "Done"        },
-                      ] as { value: TaskStatus; label: string }[]).map(({ value, label }) => (
-                        <SelectItem key={value} value={value} className={`${SELECT_ITEM} ${STATUS_COLORS[value]}`}>
-                          {label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
+              <div>
+                <label className={LABEL}>Board</label>
+                <Select value={status} onValueChange={(v) => setStatus(v as TaskStatus)}>
+                  <SelectTrigger className={SELECT_TRIGGER}>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className={SELECT_CONTENT}>
+                    {(taskStatuses.length > 0
+                      ? taskStatuses.map((s) => ({ value: s.slug, label: s.label, color: s.color }))
+                      : [
+                          { value: "todo",        label: "To Do",        color: "#888" },
+                          { value: "in_progress", label: "In Progress",  color: "#5e6ad2" },
+                          { value: "done",        label: "Done",         color: "#26c97f" },
+                        ]
+                    ).map(({ value, label, color }) => (
+                      <SelectItem key={value} value={value} className={SELECT_ITEM} style={{ color }}>
+                        {label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
 
               {!isEdit && (
                 <div>
@@ -314,7 +325,6 @@ export function TaskFormDialog({
               )}
             </div>
 
-            {/* Due date (edit mode — show separately since status took the slot) */}
             {isEdit && (
               <div>
                 <label className={LABEL}>
@@ -334,26 +344,32 @@ export function TaskFormDialog({
           </div>
 
           {submitError && (
-            <div className="mx-6 mb-4 rounded-lg bg-rose-500/10 border border-rose-500/20 px-3 py-2.5 text-sm text-rose-400">
+            <div className="mx-5 mb-3 rounded-md px-3 py-2 text-[13px] text-[#e5484d]
+              bg-[rgba(229,72,77,0.1)] border border-[rgba(229,72,77,0.2)]">
               {submitError}
             </div>
           )}
 
-          <div className="px-6 pb-6 flex justify-end gap-2 border-t border-surface pt-4">
+          <div className="flex items-center justify-end gap-2 px-5 py-4
+            border-t border-[rgba(255,255,255,0.06)]">
             <button
               type="button"
               onClick={() => onOpenChange(false)}
-              className="rounded-lg px-4 py-2 text-sm font-medium text-secondary-app hover:text-primary-app hover:bg-surface-subtle transition-[background-color,color] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500"
+              className="px-3 py-1.5 rounded-md text-[13px] font-medium text-[#8a8a8a]
+                hover:bg-white/5 hover:text-[#f0f0f0] transition-colors duration-150"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={submitting}
-              className="flex items-center gap-2 rounded-lg bg-violet-600 px-4 py-2 text-sm font-semibold text-white shadow-[0_4px_16px_rgba(139,92,246,0.3)] hover:bg-violet-500 hover:shadow-[0_4px_20px_rgba(139,92,246,0.4)] active:scale-[0.97] transition-[background-color,box-shadow,transform] disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400"
+              className="flex items-center gap-2 px-3 py-1.5 rounded-md text-[13px] font-medium
+                bg-[#5e6ad2] hover:bg-[#6872e5] text-white
+                active:scale-[0.98] transition-colors duration-150
+                disabled:opacity-50"
             >
               {submitting && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-              {submitting ? "Saving…" : isEdit ? "Save Changes" : "Create Task"}
+              {submitting ? "Saving..." : isEdit ? "Save changes" : "Create task"}
             </button>
           </div>
         </form>

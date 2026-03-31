@@ -1,55 +1,112 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, Receipt, ChevronRight, DollarSign, Clock, AlertTriangle, TrendingUp } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import {
+  ChevronRight,
+  ChevronLeft,
+  Layers,
+  Plus,
+  Search,
+  Receipt,
+  DollarSign,
+  Calendar,
+  AlertCircle,
+  CheckCircle,
+  Clock,
+  TrendingUp
+} from "lucide-react";
 import {
   Dialog,
   DialogContent,
-  DialogHeader,
-  DialogTitle,
 } from "@/components/ui/dialog";
 import { InvoiceForm } from "@/components/invoices/InvoiceForm";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { useWorkspaceSlug } from "@/app/dashboard/workspace-context";
+import { fetchInvoicesPageAction } from "@/app/dashboard/invoices/actions";
+import { EmptyState } from "@/components/layout/EmptyState";
 import type { ClientListItem } from "@/lib/db/clients";
 import type { Invoice, InvoiceStatus } from "@/lib/types";
 
-const STATUS_FILTERS: { value: InvoiceStatus | "all"; label: string }[] = [
-  { value: "all",     label: "All"     },
-  { value: "pending", label: "Pending" },
-  { value: "paid",    label: "Paid"    },
-  { value: "overdue", label: "Overdue" },
-];
+const PAGE_SIZE = 5;
 
-const STATUS_BADGE: Record<InvoiceStatus, string> = {
-  paid:    "bg-emerald-400/10 text-emerald-400 ring-1 ring-emerald-400/20",
-  pending: "bg-amber-400/10 text-amber-400 ring-1 ring-amber-400/20",
-  overdue: "bg-rose-400/10 text-rose-400 ring-1 ring-rose-400/20",
+const STATUS_CONFIG: Record<string, { label: string; bg: string; text: string; dot: string; icon: any }> = {
+  paid: {
+    label: "Paid",
+    bg: 'rgba(38,201,127,0.12)',
+    text: '#26c97f',
+    dot: '#26c97f',
+    icon: CheckCircle
+  },
+  pending: {
+    label: "Pending",
+    bg: 'rgba(231,157,19,0.12)',
+    text: '#e79d13',
+    dot: '#e79d13',
+    icon: Clock
+  },
+  overdue: {
+    label: "Overdue",
+    bg: 'rgba(229,72,77,0.12)',
+    text: '#e5484d',
+    dot: '#e5484d',
+    icon: AlertCircle
+  },
 };
 
-const STATUS_DOT: Record<InvoiceStatus, string> = {
-  paid:    "bg-emerald-400",
-  pending: "bg-amber-400",
-  overdue: "bg-rose-400",
-};
+function StatusBadge({ status }: { status: InvoiceStatus }) {
+  const config = STATUS_CONFIG[status] ?? STATUS_CONFIG.pending;
+  const Icon = config.icon;
+
+  return (
+    <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-xs font-medium capitalize"
+      style={{ background: config.bg, color: config.text }}>
+      <Icon size={10} />
+      {config.label}
+    </span>
+  );
+}
 
 interface InvoicesClientProps {
   initialInvoices: Invoice[];
+  totalInvoices: number;
   clients: ClientListItem[];
   isAdmin: boolean;
 }
 
-export default function InvoicesClient({ initialInvoices, clients, isAdmin }: InvoicesClientProps) {
+export default function InvoicesClient({ initialInvoices, totalInvoices, clients: initialClients, isAdmin }: InvoicesClientProps) {
   const router = useRouter();
   const slug = useWorkspaceSlug();
   const [invoices, setInvoices] = useState<Invoice[]>(initialInvoices);
-  const [filter, setFilter]     = useState<InvoiceStatus | "all">("all");
+  const [total, setTotal] = useState(totalInvoices);
+  const [clients, setClients] = useState<ClientListItem[]>(initialClients);
+  const [currentPage, setCurrentPage] = useState(0);
+  const [loading, setLoading] = useState(false);
+  const [filter, setFilter] = useState<InvoiceStatus | "all">("all");
+  const [searchQuery, setSearchQuery] = useState("");
   const [createOpen, setCreateOpen] = useState(false);
 
-  // Sync local state when server re-renders with fresh data (after router.refresh)
-  useEffect(() => { setInvoices(initialInvoices); }, [initialInvoices]);
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+
+  useEffect(() => {
+    setInvoices(initialInvoices);
+    setTotal(totalInvoices);
+    setClients(initialClients);
+    setCurrentPage(0);
+  }, [initialInvoices, totalInvoices, initialClients]);
+
+  const fetchPage = useCallback(async (page: number) => {
+    setLoading(true);
+    try {
+      const result = await fetchInvoicesPageAction(page, PAGE_SIZE);
+      setInvoices(result.invoices);
+      setTotal(result.total);
+      setClients(result.clients);
+      setCurrentPage(page);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   const clientMap = useMemo(() => {
     const m: Record<string, string> = {};
@@ -57,211 +114,332 @@ export default function InvoicesClient({ initialInvoices, clients, isAdmin }: In
     return m;
   }, [clients]);
 
-  const filtered = useMemo(
-    () => filter === "all" ? invoices : invoices.filter((inv) => inv.status === filter),
-    [invoices, filter]
-  );
+  // Calculate stats from current page
+  const totalAmount = invoices.reduce((sum, inv) => sum + (inv.amount || 0), 0);
+  const paidAmount = invoices
+    .filter(inv => inv.status === "paid")
+    .reduce((sum, inv) => sum + (inv.amount || 0), 0);
+  const pendingAmount = invoices
+    .filter(inv => inv.status === "pending")
+    .reduce((sum, inv) => sum + (inv.amount || 0), 0);
+  const overdueCount = invoices.filter(inv => inv.status === "overdue").length;
+  const paidCount = invoices.filter(inv => inv.status === "paid").length;
+  const collectionRate = totalAmount > 0 ? Math.round((paidAmount / totalAmount) * 100) : 0;
 
-  const totals = useMemo(() => {
-    const paid        = invoices.filter((i) => i.status === "paid").reduce((s, i) => s + (i.amount ?? 0), 0);
-    const pending     = invoices.filter((i) => i.status === "pending").reduce((s, i) => s + (i.amount ?? 0), 0);
-    const overdue     = invoices.filter((i) => i.status === "overdue").reduce((s, i) => s + (i.amount ?? 0), 0);
-    const overdueCount = invoices.filter((i) => i.status === "overdue").length;
-    return { paid, pending, overdue, overdueCount };
-  }, [invoices]);
+  // Filter invoices (client-side on current page)
+  const filteredInvoices = useMemo(() => {
+    let filtered = filter === "all" ? invoices : invoices.filter((inv) => inv.status === filter);
 
-  function handleInvoiceCreated(invoice: Invoice) {
+    if (searchQuery) {
+      filtered = filtered.filter(inv => {
+        const invoiceNumber = inv.invoice_number?.toLowerCase() || "";
+        const clientName = inv.client_id ? (clientMap[inv.client_id]?.toLowerCase() || "") : "";
+        return invoiceNumber.includes(searchQuery.toLowerCase()) ||
+               clientName.includes(searchQuery.toLowerCase());
+      });
+    }
+
+    return filtered;
+  }, [invoices, filter, searchQuery, clientMap]);
+
+  async function handleInvoiceCreated() {
     setCreateOpen(false);
+    await fetchPage(0);
     router.refresh();
   }
 
-  const summaryCards = [
-    {
-      label:     "Total Invoices",
-      value:     String(invoices.length),
-      icon:      Receipt,
-      accent:    "from-surface-inset/60 to-transparent",
-      iconBg:    "bg-surface-inset",
-      iconColor: "text-muted-app",
-    },
-    {
-      label:     "Collected",
-      value:     formatCurrency(totals.paid),
-      icon:      TrendingUp,
-      accent:    "from-emerald-500/20 to-emerald-600/5",
-      iconBg:    "bg-emerald-500/10",
-      iconColor: "text-emerald-400",
-    },
-    {
-      label:     "Pending",
-      value:     formatCurrency(totals.pending),
-      icon:      Clock,
-      accent:    "from-amber-500/20 to-amber-600/5",
-      iconBg:    "bg-amber-500/10",
-      iconColor: "text-amber-400",
-    },
-    {
-      label:     totals.overdueCount > 0 ? `${totals.overdueCount} Overdue` : "Overdue",
-      value:     totals.overdue > 0 ? formatCurrency(totals.overdue) : "None",
-      icon:      totals.overdueCount > 0 ? AlertTriangle : DollarSign,
-      accent:    totals.overdueCount > 0 ? "from-rose-500/20 to-rose-600/5" : "",
-      iconBg:    totals.overdueCount > 0 ? "bg-rose-500/10" : "bg-surface-inset",
-      iconColor: totals.overdueCount > 0 ? "text-rose-400" : "text-faint-app",
-      valueColor: totals.overdueCount > 0 ? "text-rose-400" : undefined,
-    },
-  ];
-
   return (
-    <div className="p-6 sm:p-8 lg:p-10">
+    <div className="flex flex-col h-full bg-[#0d0d0d]">
 
-      {/* Header */}
-      <div className="mb-6 flex flex-wrap items-start justify-between gap-3 animate-in" style={{ animationDelay: "0ms" }}>
-        <div>
-          <h1 className="text-xl sm:text-2xl font-bold tracking-[-0.03em] text-bright">Invoices</h1>
-          <p className="mt-0.5 text-sm text-faint-app">
-            {invoices.length} invoice{invoices.length !== 1 ? "s" : ""} total
-          </p>
+      {/* Header toolbar */}
+      <div className="flex items-center justify-between px-6 h-[60px] border-b border-[rgba(255,255,255,0.06)] shrink-0">
+        <div className="flex items-center gap-3">
+          <Layers size={16} className="text-[#555]" />
+          <h1 className="text-[15px] font-medium text-[#e8e8e8]">Invoices</h1>
+          <span className="text-[12px] text-[#555]">{total} total</span>
         </div>
         {isAdmin && (
-          <Button
+          <button
             onClick={() => setCreateOpen(true)}
-            className="gap-1.5 bg-violet-600 hover:bg-violet-500 text-white shadow-[0_4px_24px_rgba(139,92,246,0.35),0_1px_4px_rgba(0,0,0,0.4)] hover:shadow-[0_4px_28px_rgba(139,92,246,0.5)] transition-[background-color,box-shadow] focus-visible:ring-violet-500"
+            className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium
+              bg-[#5e6ad2] hover:bg-[#6872e5] text-white transition-colors duration-150"
           >
-            <Plus className="h-4 w-4" />
+            <Plus size={14} />
             Create Invoice
-          </Button>
+          </button>
         )}
       </div>
 
-      {/* Summary cards */}
-      <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
-        {summaryCards.map(({ label, value, icon: Icon, accent, iconBg, iconColor, valueColor }, i) => (
-          <div
-            key={label}
-            className="relative overflow-hidden rounded-2xl border border-surface bg-surface-card p-5 animate-in"
-            style={{ animationDelay: `${80 + i * 60}ms` }}
-          >
-            {accent && (
-              <>
-                <div className={`absolute inset-x-0 top-0 h-px bg-gradient-to-r ${accent}`} />
-                <div className={`absolute inset-x-0 top-0 h-16 bg-gradient-to-b ${accent} opacity-40`} />
-              </>
-            )}
-            <div className="relative">
-              <div className={`mb-3 flex h-9 w-9 items-center justify-center rounded-xl ${iconBg}`}>
-                <Icon className={`h-4 w-4 ${iconColor}`} />
+      {/* Main content */}
+      <div className="flex-1 overflow-y-auto">
+        <div className="p-6">
+
+          {/* Stats cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            <div className="rounded-xl border border-[rgba(255,255,255,0.06)] bg-[#111111] p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <Receipt size={14} className="text-[#5e6ad2]" />
+                <span className="text-[11px] text-[#555]">Total Invoices</span>
               </div>
-              <p className={`text-[18px] sm:text-[22px] font-bold tracking-[-0.03em] leading-none ${valueColor ?? "text-bright"}`}>
-                {value}
-              </p>
-              <p className="mt-2 text-[11px] font-medium text-dim-app">{label}</p>
+              <p className="text-[24px] font-medium text-[#e8e8e8]">{total}</p>
+              <p className="text-[11px] text-[#555] mt-1">{formatCurrency(totalAmount)} total</p>
+            </div>
+
+            <div className="rounded-xl border border-[rgba(255,255,255,0.06)] bg-[#111111] p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <CheckCircle size={14} className="text-[#26c97f]" />
+                <span className="text-[11px] text-[#555]">Paid</span>
+              </div>
+              <p className="text-[24px] font-medium text-[#26c97f]">{paidCount}</p>
+              <p className="text-[11px] text-[#555] mt-1">{formatCurrency(paidAmount)} collected</p>
+            </div>
+
+            <div className="rounded-xl border border-[rgba(255,255,255,0.06)] bg-[#111111] p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <Clock size={14} className="text-[#e79d13]" />
+                <span className="text-[11px] text-[#555]">Pending</span>
+              </div>
+              <p className="text-[24px] font-medium text-[#e79d13]">{invoices.filter(i => i.status === "pending").length}</p>
+              <p className="text-[11px] text-[#555] mt-1">{formatCurrency(pendingAmount)} outstanding</p>
+            </div>
+
+            <div className="rounded-xl border border-[rgba(255,255,255,0.06)] bg-[#111111] p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <TrendingUp size={14} className="text-[#5e6ad2]" />
+                <span className="text-[11px] text-[#555]">Collection Rate</span>
+              </div>
+              <p className="text-[24px] font-medium text-[#e8e8e8]">{collectionRate}%</p>
+              <div className="mt-2 h-1 rounded-full bg-[rgba(255,255,255,0.06)] overflow-hidden">
+                <div
+                  className="h-full rounded-full"
+                  style={{ width: `${collectionRate}%`, background: '#5e6ad2', transition: 'width 300ms ease-out' }}
+                />
+              </div>
             </div>
           </div>
-        ))}
-      </div>
 
-      {/* Filters */}
-      <div className="mb-4 flex gap-1.5 animate-in" style={{ animationDelay: "340ms" }}>
-        {STATUS_FILTERS.map(({ value, label }) => (
-          <button
-            key={value}
-            onClick={() => setFilter(value)}
-            className={[
-              "rounded-lg px-3 py-1.5 text-xs font-medium transition-[background-color,color,box-shadow]",
-              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500",
-              filter === value
-                ? "bg-violet-600 text-white shadow-[0_1px_6px_rgba(124,58,237,0.35)]"
-                : "bg-surface-subtle text-secondary-app hover:bg-surface-inset border border-surface",
-            ].join(" ")}
-          >
-            {label}
-          </button>
-        ))}
-      </div>
-
-      {/* Table */}
-      <div
-        className="rounded-xl border border-surface animate-in"
-        style={{ animationDelay: "400ms" }}
-      >
-        <div className="overflow-x-auto rounded-xl bg-surface-card">
-          {filtered.length === 0 ? (
-            <div className="flex flex-col items-center justify-center gap-3 py-16 text-center">
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-surface-inset border border-surface">
-                <Receipt className="h-5 w-5 text-faint-app" />
+          {/* Warning for overdue invoices */}
+          {overdueCount > 0 && (
+            <div className="mb-6 rounded-lg bg-[rgba(229,72,77,0.1)] border border-[rgba(229,72,77,0.2)] p-3">
+              <div className="flex items-center gap-2">
+                <AlertCircle size={14} className="text-[#e5484d]" />
+                <span className="text-[12px] text-[#e5484d]">
+                  {overdueCount} {overdueCount === 1 ? 'invoice is' : 'invoices are'} overdue. Please follow up with clients.
+                </span>
               </div>
-              <p className="text-sm font-medium text-muted-app">No invoices found</p>
-              <p className="text-xs text-dim-app">
-                {filter !== "all" ? `No ${filter} invoices` : "Create your first invoice to get started"}
+            </div>
+          )}
+
+          {/* Search and Filter */}
+          <div className="flex flex-col sm:flex-row gap-3 mb-6">
+            <div className="flex-1 relative">
+              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#555]" />
+              <input
+                type="text"
+                placeholder="Search by invoice number or client..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-9 pr-3 py-2 rounded-lg
+                  bg-[#111111] border border-[rgba(255,255,255,0.08)]
+                  text-[13px] text-[#f0f0f0] placeholder:text-[#555]
+                  focus:outline-none focus:border-[rgba(94,106,210,0.5)]
+                  transition-colors duration-150"
+              />
+            </div>
+            <div className="flex gap-2">
+              {["all", "pending", "paid", "overdue"].map((filterValue) => (
+                <button
+                  key={filterValue}
+                  onClick={() => setFilter(filterValue as InvoiceStatus | "all")}
+                  className={`px-3 py-1.5 rounded-lg text-[12px] font-medium transition-colors duration-150
+                    ${filter === filterValue
+                      ? 'bg-[#5e6ad2] text-white'
+                      : 'bg-[#111111] text-[#888] hover:text-[#e8e8e8] border border-[rgba(255,255,255,0.08)]'}`}
+                >
+                  {filterValue === "all" ? "All" : filterValue.charAt(0).toUpperCase() + filterValue.slice(1)}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Invoices Table */}
+          {filteredInvoices.length === 0 && !loading ? (
+            <div className="text-center py-12">
+              <p className="text-[13px] text-[#888] mb-2">
+                {searchQuery || filter !== "all" ? "No invoices found" : "No invoices yet"}
               </p>
+              {isAdmin && !searchQuery && filter === "all" && (
+                <button
+                  onClick={() => setCreateOpen(true)}
+                  className="text-[12px] text-[#5e6ad2] hover:text-[#7e8ae6] transition-colors duration-150"
+                >
+                  Create your first invoice →
+                </button>
+              )}
             </div>
           ) : (
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-surface bg-overlay-xs">
-                  {[
-                    { label: "Invoice #", hide: false },
-                    { label: "Client",    hide: true  },
-                    { label: "Amount",    hide: false },
-                    { label: "Status",    hide: false },
-                    { label: "Due Date",  hide: true  },
-                  ].map(({ label, hide }) => (
-                    <th key={label} className={`px-3 sm:px-5 py-3 text-left text-[10px] font-semibold uppercase tracking-widest text-dim-app ${hide ? "hidden sm:table-cell" : ""}`}>
-                      {label}
-                    </th>
-                  ))}
-                  <th className="px-5 py-3" />
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.map((inv, i) => {
-                  const status = (inv.status ?? "pending") as InvoiceStatus;
-                  return (
-                    <tr
-                      key={inv.id}
-                      onClick={() => router.push(`/${slug}/invoices/${inv.id}`)}
-                      className="group cursor-pointer border-b border-surface last:border-0 transition-[background-color] duration-100 hover:bg-overlay-sm animate-in"
-                      style={{ animationDelay: `${460 + i * 35}ms` }}
+            <div className="rounded-lg border border-[rgba(255,255,255,0.06)] overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b border-[rgba(255,255,255,0.06)] bg-[#111111]">
+                      <th className="px-5 py-3 text-left text-[11px] font-medium text-[#555] uppercase tracking-[0.06em]">
+                        Invoice #
+                      </th>
+                      <th className="px-5 py-3 text-left text-[11px] font-medium text-[#555] uppercase tracking-[0.06em] hidden sm:table-cell">
+                        Client
+                      </th>
+                      <th className="px-5 py-3 text-left text-[11px] font-medium text-[#555] uppercase tracking-[0.06em]">
+                        Amount
+                      </th>
+                      <th className="px-5 py-3 text-left text-[11px] font-medium text-[#555] uppercase tracking-[0.06em]">
+                        Status
+                      </th>
+                      <th className="px-5 py-3 text-left text-[11px] font-medium text-[#555] uppercase tracking-[0.06em] hidden md:table-cell">
+                        Due Date
+                      </th>
+                      <th className="px-5 py-3 w-8" />
+                     </tr>
+                  </thead>
+                  <tbody className={loading ? 'opacity-50 pointer-events-none' : ''}>
+                    {filteredInvoices.map((inv) => {
+                      const status = (inv.status ?? "pending") as InvoiceStatus;
+                      const isOverdue = status === "overdue";
+                      const dueDate = inv.due_date ? new Date(inv.due_date) : null;
+                      const today = new Date();
+                      const isDueSoon = dueDate && !isOverdue &&
+                        (dueDate.getTime() - today.getTime()) / (1000 * 3600 * 24) <= 7;
+
+                      return (
+                        <tr
+                          key={inv.id}
+                          onClick={() => router.push(`/${slug}/invoices/${inv.id}`)}
+                          className="group border-b border-[rgba(255,255,255,0.06)] last:border-0
+                            hover:bg-[#1c1c1c] cursor-pointer transition-colors duration-[120ms]"
+                        >
+                          <td className="px-5 py-3.5">
+                            <div>
+                              <span className="text-[13px] font-medium text-[#f0f0f0] font-mono">
+                                {inv.invoice_number ?? "—"}
+                              </span>
+                              {inv.client_id && (
+                                <span className="text-[11px] text-[#555] block truncate sm:hidden mt-0.5">
+                                  {clientMap[inv.client_id] ?? "—"}
+                                </span>
+                              )}
+                            </div>
+                          </td>
+
+                          <td className="px-5 py-3.5 hidden sm:table-cell">
+                            <span className="text-[13px] text-[#888]">
+                              {inv.client_id ? (clientMap[inv.client_id] ?? "—") : "—"}
+                            </span>
+                          </td>
+
+                          <td className="px-5 py-3.5">
+                            <span className="text-[13px] font-medium text-[#f0f0f0] tabular-nums">
+                              {inv.amount != null ? formatCurrency(inv.amount) : "—"}
+                            </span>
+                          </td>
+
+                          <td className="px-5 py-3.5">
+                            <StatusBadge status={status} />
+                          </td>
+
+                          <td className="px-5 py-3.5 hidden md:table-cell">
+                            {inv.due_date ? (
+                              <div className="flex items-center gap-1.5">
+                                <Calendar size={12} className={`flex-shrink-0 ${isOverdue ? 'text-[#e5484d]' : isDueSoon ? 'text-[#e79d13]' : 'text-[#555]'}`} />
+                                <span className={`text-[12px] tabular-nums ${isOverdue ? 'text-[#e5484d]' : isDueSoon ? 'text-[#e79d13]' : 'text-[#555]'}`}>
+                                  {formatDate(inv.due_date)}
+                                  {isDueSoon && !isOverdue && " (Soon)"}
+                                </span>
+                              </div>
+                            ) : (
+                              <span className="text-[12px] text-[#3a3a3a]">—</span>
+                            )}
+                          </td>
+
+                          <td className="px-5 py-3.5 text-right">
+                            <ChevronRight size={14} className="text-[#3a3a3a] group-hover:text-[#555]
+                              transition-colors duration-150 ml-auto" />
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Pagination controls */}
+              {totalPages > 1 && (
+                <div className="flex items-center justify-between px-5 py-3
+                  border-t border-[rgba(255,255,255,0.06)] bg-[#111111]">
+                  <span className="text-[12px] text-[#555]">
+                    Page {currentPage + 1} of {totalPages}
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => fetchPage(currentPage - 1)}
+                      disabled={currentPage === 0 || loading}
+                      className="flex items-center gap-1 px-3 py-1.5 rounded-md text-[12px] font-medium
+                        text-[#888] hover:text-[#e8e8e8] hover:bg-white/5
+                        disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-[#888]
+                        transition-colors duration-150"
                     >
-                      <td className="px-3 sm:px-5 py-3.5 font-mono text-sm font-semibold text-primary-app transition-colors group-hover:text-violet-400">
-                        {inv.invoice_number ?? "—"}
-                      </td>
-                      <td className="hidden sm:table-cell px-5 py-3.5 text-sm text-secondary-app group-hover:text-primary-app transition-colors">
-                        {inv.client_id ? (clientMap[inv.client_id] ?? "—") : "—"}
-                      </td>
-                      <td className="px-3 sm:px-5 py-3.5 text-sm font-bold text-bright tabular-nums">
-                        {inv.amount != null ? formatCurrency(inv.amount) : "—"}
-                      </td>
-                      <td className="px-3 sm:px-5 py-3.5">
-                        <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium capitalize ${STATUS_BADGE[status]}`}>
-                          <span className={`h-1.5 w-1.5 rounded-full ${STATUS_DOT[status]}`} />
-                          {status}
-                        </span>
-                      </td>
-                      <td className="hidden sm:table-cell px-5 py-3.5 text-sm text-muted-app tabular-nums">
-                        {inv.due_date ? formatDate(inv.due_date) : "—"}
-                      </td>
-                      <td className="px-3 sm:px-5 py-3.5 text-right">
-                        <ChevronRight className="ml-auto h-4 w-4 text-dim-app transition-[color,transform] duration-150 group-hover:text-violet-400 group-hover:translate-x-0.5" />
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+                      <ChevronLeft size={14} />
+                      Previous
+                    </button>
+                    <div className="flex items-center gap-1">
+                      {Array.from({ length: totalPages }, (_, i) => (
+                        <button
+                          key={i}
+                          onClick={() => fetchPage(i)}
+                          disabled={loading}
+                          className={`w-8 h-8 rounded-md text-[12px] font-medium transition-colors duration-150
+                            ${i === currentPage
+                              ? 'bg-[#5e6ad2] text-white'
+                              : 'text-[#888] hover:text-[#e8e8e8] hover:bg-white/5'
+                            }
+                            disabled:cursor-not-allowed`}
+                        >
+                          {i + 1}
+                        </button>
+                      ))}
+                    </div>
+                    <button
+                      onClick={() => fetchPage(currentPage + 1)}
+                      disabled={currentPage >= totalPages - 1 || loading}
+                      className="flex items-center gap-1 px-3 py-1.5 rounded-md text-[12px] font-medium
+                        text-[#888] hover:text-[#e8e8e8] hover:bg-white/5
+                        disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-[#888]
+                        transition-colors duration-150"
+                    >
+                      Next
+                      <ChevronRight size={14} />
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
           )}
         </div>
       </div>
 
-      {/* Create invoice dialog */}
       <Dialog open={createOpen} onOpenChange={setCreateOpen}>
-        <DialogContent className="max-w-lg bg-surface-card border-surface text-primary-app">
-          <DialogHeader>
-            <DialogTitle className="text-lg font-semibold tracking-[-0.02em] text-bright">
-              Create Invoice
-            </DialogTitle>
-          </DialogHeader>
-          <InvoiceForm onSuccess={handleInvoiceCreated} onCancel={() => setCreateOpen(false)} />
+        <DialogContent className="
+          bg-[#111111] border border-[rgba(255,255,255,0.08)] rounded-xl
+          shadow-2xl p-0 gap-0 max-w-[560px] w-full">
+          <div className="flex items-center justify-between px-6 pt-5 pb-4
+            border-b border-[rgba(255,255,255,0.06)]">
+            <div>
+              <h3 className="text-[15px] font-medium text-[#f0f0f0]">Create Invoice</h3>
+              <p className="text-[11px] text-[#555] mt-1">Generate a new invoice for a client</p>
+            </div>
+          </div>
+          <div className="p-6">
+            <InvoiceForm onSuccess={handleInvoiceCreated} onCancel={() => setCreateOpen(false)} />
+          </div>
         </DialogContent>
       </Dialog>
     </div>

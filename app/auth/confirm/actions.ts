@@ -66,6 +66,12 @@ export async function provisionSignupAction(): Promise<ProvisionResult> {
 
     const orgId = (org as unknown as { id: string }).id;
 
+    // Seed default task statuses for the new org
+    try {
+      const { seedDefaultStatuses } = await import('@/lib/db/task-statuses');
+      await seedDefaultStatuses(orgId);
+    } catch { /* non-blocking — statuses can be seeded later */ }
+
     // Create team_members row
     const { error: memberError } = await supabaseAdmin
       .from('team_members')

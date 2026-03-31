@@ -99,6 +99,12 @@ export async function setupOrgAction(
 
   const orgId = (org as unknown as { id: string }).id;
 
+  // Seed default task statuses for the new org
+  try {
+    const { seedDefaultStatuses } = await import('@/lib/db/task-statuses');
+    await seedDefaultStatuses(orgId);
+  } catch { /* non-blocking */ }
+
   // Link team_member to org (upsert to handle missing rows too)
   const { error: updateError } = await supabaseAdmin
     .from('team_members')

@@ -1,4 +1,4 @@
-import { getProjectsForList, getProjectById } from "@/lib/db/projects";
+import { getProjectsForSidebar, getProjectById } from "@/lib/db/projects";
 import { getClientsForList } from "@/lib/db/clients";
 import { getTasksWithAssignees } from "@/lib/db/tasks";
 import { getIsAdminByEmail } from "@/lib/db/team-members";
@@ -18,8 +18,8 @@ export default async function ProjectDetailPage({ params }: ProjectDetailPagePro
   const { data: { user } } = await supabase.auth.getUser();
   const isAdmin = user?.email ? await getIsAdminByEmail(user.email) : false;
 
-  const [allProjects, clients, project, tasks] = await Promise.all([
-    getProjectsForList(),
+  const [sidebarProjects, clients, project, tasks] = await Promise.all([
+    getProjectsForSidebar(5),
     getClientsForList(),
     getProjectById(id),
     getTasksWithAssignees(id),
@@ -28,7 +28,7 @@ export default async function ProjectDetailPage({ params }: ProjectDetailPagePro
   return (
     <ProjectDetailClient
       projectId={id}
-      allProjects={allProjects}
+      initialSidebarProjects={sidebarProjects}
       clients={clients}
       initialProject={project}
       initialTasks={tasks}

@@ -3,12 +3,13 @@ import { redirect } from 'next/navigation';
 
 export const metadata: Metadata = { title: 'Team Members' };
 import { createSupabaseServerClient } from '@/lib/supabase-server';
-import { getIsAdminByEmail, getIsOwnerById } from '@/lib/db/team-members';
-import { getTeamMembersWithProjects } from '@/lib/db/team-members';
+import { getIsAdminByEmail, getIsOwnerById, getTeamMembersWithProjectsPaginated, getTeamMemberByEmail } from '@/lib/db/team-members';
 import { getProjects } from '@/lib/db/projects';
 import TeamMembersClient from './TeamMembersClient';
 
 export const dynamic = 'force-dynamic';
+
+const PAGE_SIZE = 5;
 
 export default async function TeamMembersPage() {
   const supabase = createSupabaseServerClient();
@@ -19,15 +20,19 @@ export default async function TeamMembersPage() {
   const isAdmin = await getIsAdminByEmail(user.email);
   if (!isAdmin) redirect('/dashboard');
 
-  const [members, projects, isOwner] = await Promise.all([
-    getTeamMembersWithProjects(),
+  const member = await getTeamMemberByEmail(user.email);
+  const orgId = member?.org_id;
+
+  const [membersResult, projects, isOwner] = await Promise.all([
+    orgId ? getTeamMembersWithProjectsPaginated(0, PAGE_SIZE, orgId) : { data: [], total: 0 },
     getProjects(),
     getIsOwnerById(user.id),
   ]);
 
   return (
     <TeamMembersClient
-      initialMembers={members}
+      initialMembers={membersResult.data}
+      totalMembers={membersResult.total}
       projects={projects}
       currentUserId={user.id}
       isOwner={isOwner}

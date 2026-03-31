@@ -96,6 +96,12 @@ export async function POST() {
 
   const orgId = (org as unknown as { id: string }).id;
 
+  // Seed default task statuses for the new org
+  try {
+    const { seedDefaultStatuses } = await import('@/lib/db/task-statuses');
+    await seedDefaultStatuses(orgId);
+  } catch { /* non-blocking */ }
+
   // Create team_members row
   const { error: memberError } = await supabaseAdmin
     .from('team_members')

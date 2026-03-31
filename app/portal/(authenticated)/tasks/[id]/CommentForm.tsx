@@ -33,18 +33,21 @@ export function CommentForm({ taskId, clientId, csrfToken }: CommentFormProps) {
 
   return (
     <div className="mt-2 flex gap-3">
-      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-violet-500/15 ring-2 ring-surface self-start mt-0.5">
-        <User className="h-4 w-4 text-violet-400" />
+      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[rgba(94,106,210,0.15)] self-start mt-0.5">
+        <User className="h-3.5 w-3.5 text-[#5e6ad2]" />
       </div>
       <div className="flex-1">
         {error && (
-          <p className="mb-2 rounded-lg bg-rose-500/10 px-3 py-2 text-sm text-rose-400 ring-1 ring-rose-500/20">
+          <div className="mb-2 flex items-center gap-2 rounded-lg px-3 py-2 text-[12px] font-medium
+            bg-[rgba(229,72,77,0.12)] border border-[rgba(229,72,77,0.2)] text-[#e5484d]">
             {error}
-          </p>
+          </div>
         )}
         <form
           onSubmit={handleSubmit}
-          className="rounded-xl border border-surface bg-surface-card overflow-hidden focus-within:border-violet-500/40 focus-within:shadow-[0_0_0_3px_rgba(139,92,246,0.1)] transition-[border-color,box-shadow]"
+          className="rounded-lg border border-[rgba(255,255,255,0.06)] bg-[#161616] overflow-hidden
+            focus-within:border-[rgba(94,106,210,0.4)]
+            transition-colors duration-150"
         >
           <textarea
             value={content}
@@ -55,13 +58,20 @@ export function CommentForm({ taskId, clientId, csrfToken }: CommentFormProps) {
             placeholder="Add a comment… (⌘↵ to send)"
             rows={2}
             disabled={isPending}
-            className="w-full resize-none bg-transparent px-4 py-3 text-sm text-secondary-app placeholder:text-dim-app focus:outline-none"
+            className="w-full resize-none bg-transparent px-4 py-3 text-[13px] text-[#8a8a8a]
+              placeholder:text-[#555] focus:outline-none"
           />
-          <div className="flex items-center justify-end border-t border-surface px-3 py-2">
+          <div className="flex items-center justify-end border-t border-[rgba(255,255,255,0.06)] px-3 py-2">
             <button
               type="submit"
               disabled={isPending || !content.trim()}
-              className="flex items-center gap-1.5 rounded-lg bg-violet-600 px-3 py-1.5 text-xs font-semibold text-white shadow-[0_2px_6px_rgba(139,92,246,0.3)] hover:bg-violet-700 disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400 transition-[background-color,opacity,transform,box-shadow]"
+              className="flex items-center gap-1.5 rounded-md bg-[#5e6ad2] px-3 py-1.5
+                text-[12px] font-medium text-white
+                hover:bg-[#6872e5]
+                disabled:opacity-40 disabled:cursor-not-allowed
+                active:scale-[0.98]
+                focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(94,106,210,0.35)]
+                transition-colors duration-150"
             >
               <Send className="h-3 w-3" />
               {isPending ? "Posting…" : "Comment"}

@@ -19,16 +19,23 @@ interface ClientFormProps {
 }
 
 const STATUS_OPTIONS: { value: ClientStatus; label: string; color: string }[] = [
-  { value: "active",   label: "Active",   color: "text-emerald-400" },
-  { value: "inactive", label: "Inactive", color: "text-muted-app"   },
-  { value: "paused",   label: "Paused",   color: "text-amber-400"   },
+  { value: "active",   label: "Active",   color: "text-[#26c97f]" },
+  { value: "inactive", label: "Inactive", color: "text-[#888]"    },
+  { value: "paused",   label: "Paused",   color: "text-[#e79d13]" },
 ];
 
-const LABEL = "block text-[11px] font-semibold uppercase tracking-widest text-faint-app mb-1";
-const FIELD = "w-full rounded-lg border border-surface bg-surface-inset px-3 py-2.5 text-[13px] text-primary-app placeholder:text-dim-app outline-none focus:border-violet-500/50 focus:ring-1 focus:ring-violet-500/30 transition-[border-color,box-shadow] duration-150";
-const SELECT_TRIGGER = "w-full rounded-lg border border-surface bg-surface-inset h-[42px] text-[13px] text-primary-app focus:ring-1 focus:ring-violet-500/40 focus:border-violet-500/50 data-[placeholder]:text-dim-app";
-const SELECT_CONTENT = "bg-surface-card border-surface text-primary-app";
-const SELECT_ITEM    = "text-[13px] text-primary-app focus:bg-violet-500/10 focus:text-violet-300 cursor-pointer";
+const LABEL = "block text-[12px] font-medium text-[#8a8a8a] uppercase tracking-[0.04em] mb-1.5";
+const FIELD = `w-full px-3 py-2 rounded-md bg-[#1a1a1a] border border-[rgba(255,255,255,0.10)]
+  text-[#f0f0f0] text-[13px] placeholder:text-[#555]
+  focus:outline-none focus:border-[rgba(255,255,255,0.16)]
+  focus:ring-1 focus:ring-[rgba(94,106,210,0.35)]
+  transition-colors duration-150`;
+const SELECT_TRIGGER = `w-full rounded-md border border-[rgba(255,255,255,0.10)] bg-[#1a1a1a]
+  h-[38px] text-[13px] text-[#f0f0f0]
+  focus:ring-1 focus:ring-[rgba(94,106,210,0.35)] focus:border-[rgba(255,255,255,0.16)]
+  data-[placeholder]:text-[#555]`;
+const SELECT_CONTENT = "bg-[#1c1c1c] border-[rgba(255,255,255,0.10)] text-[#f0f0f0]";
+const SELECT_ITEM = "text-[13px] text-[#8a8a8a] focus:bg-white/5 focus:text-[#f0f0f0] cursor-pointer";
 
 export function ClientForm({ client, onSuccess, onCancel }: ClientFormProps) {
   const isEdit = !!client;
@@ -76,169 +83,101 @@ export function ClientForm({ client, onSuccess, onCancel }: ClientFormProps) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={handleSubmit} className="space-y-3">
       {error && (
-        <div className="flex items-center gap-2 rounded-lg bg-rose-500/10 border border-rose-500/20 px-3 py-2.5 text-sm text-rose-400">
+        <div className="rounded-md px-3 py-2 text-[13px] text-[#e5484d]
+          bg-[rgba(229,72,77,0.1)] border border-[rgba(229,72,77,0.2)]">
           {error}
         </div>
       )}
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-4">
-        {/* Name */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-3 gap-y-3">
         <div>
           <label className={LABEL}>
             <span className="flex items-center gap-1.5">
               <Building2 className="h-3 w-3" />
-              Name <span className="text-rose-400 normal-case tracking-normal font-normal">*</span>
+              Name <span className="text-[#e5484d] normal-case tracking-normal font-normal">*</span>
             </span>
           </label>
-          <input
-            id="cf-name"
-            value={form.name}
-            onChange={field("name")}
-            placeholder="Acme Corp"
-            className={FIELD}
-          />
+          <input value={form.name} onChange={field("name")} placeholder="Acme Corp" className={FIELD} />
         </div>
 
-        {/* Email */}
         <div>
           <label className={LABEL}>
-            <span className="flex items-center gap-1.5">
-              <Mail className="h-3 w-3" />
-              Email
-            </span>
+            <span className="flex items-center gap-1.5"><Mail className="h-3 w-3" /> Email</span>
           </label>
-          <input
-            id="cf-email"
-            type="email"
-            value={form.email}
-            onChange={field("email")}
-            placeholder="hello@acme.com"
-            className={FIELD}
-          />
+          <input type="email" value={form.email} onChange={field("email")} placeholder="hello@acme.com" className={FIELD} />
         </div>
 
-        {/* Status */}
         <div>
           <label className={LABEL}>
-            <span className="flex items-center gap-1.5">
-              <Shield className="h-3 w-3" />
-              Status
-            </span>
+            <span className="flex items-center gap-1.5"><Shield className="h-3 w-3" /> Status</span>
           </label>
-          <Select
-            value={form.status}
-            onValueChange={(v) => setForm((prev) => ({ ...prev, status: v as ClientStatus }))}
-          >
-            <SelectTrigger id="cf-status" className={SELECT_TRIGGER}>
-              <SelectValue />
-            </SelectTrigger>
+          <Select value={form.status} onValueChange={(v) => setForm((prev) => ({ ...prev, status: v as ClientStatus }))}>
+            <SelectTrigger className={SELECT_TRIGGER}><SelectValue /></SelectTrigger>
             <SelectContent className={SELECT_CONTENT}>
               {STATUS_OPTIONS.map((o) => (
-                <SelectItem key={o.value} value={o.value} className={`${SELECT_ITEM} ${o.color}`}>
-                  {o.label}
-                </SelectItem>
+                <SelectItem key={o.value} value={o.value} className={`${SELECT_ITEM} ${o.color}`}>{o.label}</SelectItem>
               ))}
             </SelectContent>
           </Select>
         </div>
 
-        {/* Project type */}
         <div>
           <label className={LABEL}>
-            <span className="flex items-center gap-1.5">
-              <Briefcase className="h-3 w-3" />
-              Project Type
-            </span>
+            <span className="flex items-center gap-1.5"><Briefcase className="h-3 w-3" /> Project Type</span>
           </label>
-          <input
-            id="cf-project-type"
-            value={form.project_type}
-            onChange={field("project_type")}
-            placeholder="Retainer, One-time…"
-            className={FIELD}
-          />
+          <input value={form.project_type} onChange={field("project_type")} placeholder="Retainer, One-time..." className={FIELD} />
         </div>
 
-        {/* Monthly rate */}
         <div>
           <label className={LABEL}>
-            <span className="flex items-center gap-1.5">
-              <DollarSign className="h-3 w-3" />
-              Monthly Rate ($)
-            </span>
+            <span className="flex items-center gap-1.5"><DollarSign className="h-3 w-3" /> Monthly Rate ($)</span>
           </label>
-          <input
-            id="cf-monthly-rate"
-            type="number"
-            min="0"
-            step="0.01"
-            value={form.monthly_rate}
-            onChange={field("monthly_rate")}
-            placeholder="0.00"
-            className={FIELD}
-          />
+          <input type="number" min="0" step="0.01" value={form.monthly_rate} onChange={field("monthly_rate")} placeholder="0.00" className={FIELD} />
         </div>
 
-        {/* Start date */}
         <div>
           <label className={LABEL}>
-            <span className="flex items-center gap-1.5">
-              <CalendarDays className="h-3 w-3" />
-              Start Date
-            </span>
+            <span className="flex items-center gap-1.5"><CalendarDays className="h-3 w-3" /> Start Date</span>
           </label>
-          <input
-            id="cf-start-date"
-            type="date"
-            value={form.start_date}
-            onChange={field("start_date")}
-            className={FIELD}
-          />
+          <input type="date" value={form.start_date} onChange={field("start_date")} className={FIELD} />
         </div>
 
-        {/* Portal password */}
         <div className="col-span-2">
           <label className={LABEL}>
             <span className="flex items-center gap-1.5">
               <KeyRound className="h-3 w-3" />
               Portal Password
               {isEdit && (
-                <span className="ml-1 text-[10px] font-normal text-dim-app normal-case tracking-normal">
+                <span className="ml-1 text-[10px] font-normal text-[#3a3a3a] normal-case tracking-normal">
                   — leave blank to keep current
                 </span>
               )}
             </span>
           </label>
           <input
-            id="cf-portal-pw"
-            type="password"
-            value={form.portal_password}
-            onChange={field("portal_password")}
+            type="password" value={form.portal_password} onChange={field("portal_password")}
             placeholder={isEdit ? "Enter new password to change" : "Client portal access password"}
-            autoComplete="new-password"
-            className={FIELD}
+            autoComplete="new-password" className={FIELD}
           />
         </div>
       </div>
 
-      <div className="flex justify-end gap-2 pt-2 border-t border-surface">
-        <button
-          type="button"
-          onClick={onCancel}
-          disabled={loading}
-          className="rounded-lg px-4 py-2 text-sm font-medium text-secondary-app hover:text-primary-app hover:bg-surface-subtle transition-[background-color,color] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 disabled:opacity-50"
-        >
+      <div className="flex justify-end gap-2 pt-3 border-t border-[rgba(255,255,255,0.06)]">
+        <button type="button" onClick={onCancel} disabled={loading}
+          className="px-3 py-1.5 rounded-md text-[13px] font-medium text-[#8a8a8a]
+            hover:bg-white/5 hover:text-[#f0f0f0] transition-colors duration-150
+            disabled:opacity-50">
           Cancel
         </button>
-        <button
-          type="submit"
-          disabled={loading}
-          className="flex items-center gap-2 rounded-lg bg-violet-600 px-4 py-2 text-sm font-semibold text-white shadow-[0_4px_16px_rgba(139,92,246,0.3)] hover:bg-violet-500 hover:shadow-[0_4px_20px_rgba(139,92,246,0.4)] active:scale-[0.97] transition-[background-color,box-shadow,transform] disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400"
-        >
+        <button type="submit" disabled={loading}
+          className="flex items-center gap-2 px-3 py-1.5 rounded-md text-[13px] font-medium
+            bg-[#5e6ad2] hover:bg-[#6872e5] text-white
+            active:scale-[0.98] transition-colors duration-150
+            disabled:opacity-50">
           {loading && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-          {loading ? "Saving…" : isEdit ? "Save Changes" : "Add Client"}
+          {loading ? "Saving..." : isEdit ? "Save changes" : "Add client"}
         </button>
       </div>
     </form>

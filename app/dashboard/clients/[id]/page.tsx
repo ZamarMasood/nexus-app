@@ -1,4 +1,4 @@
-import { getClientsForList, getClientById } from "@/lib/db/clients";
+import { getClientsForSidebar, getClientById } from "@/lib/db/clients";
 import { getProjectsForList } from "@/lib/db/projects";
 import { getInvoicesForList } from "@/lib/db/invoices";
 import { getTeamMemberByEmail } from "@/lib/db/team-members";
@@ -19,9 +19,9 @@ export default async function ClientDetailPage({ params }: ClientDetailPageProps
   const member = user?.email ? await getTeamMemberByEmail(user.email) : null;
   const isAdmin = member?.user_role === 'admin';
 
-  // Fetch lightweight sidebar list + specific client + related data in parallel
-  const [allClients, client, projects, invoices] = await Promise.all([
-    getClientsForList(),
+  // Fetch limited sidebar list (20 recent) + specific client + related data in parallel
+  const [sidebarClients, client, projects, invoices] = await Promise.all([
+    getClientsForSidebar(5),
     getClientById(id),
     getProjectsForList(id),
     getInvoicesForList(id),
@@ -30,7 +30,7 @@ export default async function ClientDetailPage({ params }: ClientDetailPageProps
   return (
     <ClientDetailClient
       clientId={id}
-      allClients={allClients}
+      initialSidebarClients={sidebarClients}
       initialClient={client}
       initialProjects={projects}
       initialInvoices={invoices}

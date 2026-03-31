@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { TaskFormDialog } from "@/components/tasks/TaskForm";
 
 interface TaskFormContextValue {
-  openTaskForm: (defaultProjectId?: string) => void;
+  openTaskForm: (defaultProjectId?: string, defaultStatus?: string) => void;
   currentMemberId?: string;
   isAdmin?: boolean;
 }
@@ -32,9 +32,11 @@ export function TaskFormProvider({
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [defaultProjectId, setDefaultProjectId] = useState<string | undefined>();
+  const [defaultStatus, setDefaultStatus] = useState<string | undefined>();
 
-  function openTaskForm(projectId?: string) {
+  function openTaskForm(projectId?: string, status?: string) {
     setDefaultProjectId(projectId);
+    setDefaultStatus(status);
     setOpen(true);
   }
 
@@ -61,6 +63,7 @@ export function TaskFormProvider({
         open={open}
         onOpenChange={setOpen}
         defaultProjectId={defaultProjectId}
+        defaultStatus={defaultStatus}
         defaultAssigneeId={currentMemberId}
         isAdmin={isAdmin}
         onSuccess={() => router.refresh()}

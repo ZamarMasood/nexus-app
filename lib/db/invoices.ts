@@ -21,6 +21,48 @@ export async function getInvoices(clientId?: string): Promise<Invoice[]> {
   return data;
 }
 
+export interface PaginatedInvoices {
+  data: Invoice[];
+  total: number;
+}
+
+/** Fetch a page of invoices (0-indexed). Pass orgId to skip re-auth. */
+export async function getInvoicesPaginated(page: number, pageSize: number, orgIdOverride?: string): Promise<PaginatedInvoices> {
+  const orgId = orgIdOverride ?? await getCallerOrgId();
+  const from = page * pageSize;
+  const to = from + pageSize - 1;
+
+  const { data, error, count } = await supabaseAdmin
+    .from('invoices')
+    .select('*', { count: 'exact' })
+    .eq('org_id', orgId)
+    .order('created_at', { ascending: false })
+    .range(from, to);
+
+  if (error) throw new Error(`Failed to fetch invoices: ${error.message}`);
+  return { data: data ?? [], total: count ?? 0 };
+}
+
+/** Fetch a page of invoices for a specific member. */
+export async function getInvoicesByMemberPaginated(memberId: string, page: number, pageSize: number): Promise<PaginatedInvoices> {
+  const clientIds = await getMemberClientIds(memberId);
+  if (clientIds.length === 0) return { data: [], total: 0 };
+
+  const from = page * pageSize;
+  const to = from + pageSize - 1;
+
+  const supabase = createSupabaseServerClient();
+  const { data, error, count } = await supabase
+    .from('invoices')
+    .select('*', { count: 'exact' })
+    .in('client_id', clientIds)
+    .order('created_at', { ascending: false })
+    .range(from, to);
+
+  if (error) throw new Error(`Failed to fetch invoices for member: ${error.message}`);
+  return { data: data ?? [], total: count ?? 0 };
+}
+
 /** Fetch only the columns needed for list/sidebar display (no pdf_url). */
 export async function getInvoicesForList(clientId?: string): Promise<InvoiceListItem[]> {
   const orgId = await getCallerOrgId();
@@ -37,6 +79,28 @@ export async function getInvoicesForList(clientId?: string): Promise<InvoiceList
   const { data, error } = await query;
 
   if (error) throw new Error(`Failed to fetch invoices: ${error.message}`);
+  return data;
+}
+
+/** Fetch a limited set of invoices for sidebar display, with optional search. */
+export async function getInvoicesForSidebar(pageSize: number = 5, search?: string, page: number = 0): Promise<InvoiceListItem[]> {
+  const orgId = await getCallerOrgId();
+  const from = page * pageSize;
+  const to = from + pageSize - 1;
+
+  let query = supabaseAdmin
+    .from('invoices')
+    .select('id, invoice_number, client_id, amount, status, due_date')
+    .eq('org_id', orgId)
+    .order('created_at', { ascending: false })
+    .range(from, to);
+
+  if (search && search.trim()) {
+    query = query.ilike('invoice_number', `%${search.trim()}%`);
+  }
+
+  const { data, error } = await query;
+  if (error) throw new Error(`Failed to fetch invoices for sidebar: ${error.message}`);
   return data;
 }
 

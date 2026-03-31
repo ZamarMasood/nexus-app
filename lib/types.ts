@@ -430,6 +430,8 @@ export interface TeamMemberWithProjects extends TeamMember {
 // DB stores these as plain TEXT — use these when you need narrower types.
 
 export type ClientStatus = 'active' | 'inactive' | 'paused'
-export type TaskStatus = 'todo' | 'in_progress' | 'done'
+// TaskStatus is now a string to support custom board columns per org.
+// Default values: 'todo' | 'in_progress' | 'done'
+export type TaskStatus = string
 export type TaskPriority = 'urgent' | 'high' | 'normal' | 'low'
 export type InvoiceStatus = 'pending' | 'paid' | 'overdue'

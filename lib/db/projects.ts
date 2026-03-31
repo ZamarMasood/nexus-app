@@ -21,6 +21,76 @@ export async function getProjects(clientId?: string): Promise<Project[]> {
   return data;
 }
 
+/** Fetch a limited set of projects for sidebar display, with optional search. */
+export async function getProjectsForSidebar(pageSize: number = 5, search?: string, page: number = 0): Promise<ProjectListItem[]> {
+  const orgId = await getCallerOrgId();
+  const from = page * pageSize;
+  const to = from + pageSize - 1;
+
+  let query = supabaseAdmin
+    .from('projects')
+    .select('id, name, client_id, status, total_value, deadline')
+    .eq('org_id', orgId)
+    .order('created_at', { ascending: false })
+    .range(from, to);
+
+  if (search && search.trim()) {
+    query = query.ilike('name', `%${search.trim()}%`);
+  }
+
+  const { data, error } = await query;
+  if (error) throw new Error(`Failed to fetch projects for sidebar: ${error.message}`);
+  return data;
+}
+
+export interface PaginatedProjects {
+  data: Project[];
+  total: number;
+}
+
+/** Fetch a page of projects (0-indexed). Returns data + total count. Pass orgId to skip re-auth. */
+export async function getProjectsPaginated(page: number, pageSize: number, clientId?: string, orgIdOverride?: string): Promise<PaginatedProjects> {
+  const orgId = orgIdOverride ?? await getCallerOrgId();
+  const from = page * pageSize;
+  const to = from + pageSize - 1;
+
+  let query = supabaseAdmin
+    .from('projects')
+    .select('*', { count: 'exact' })
+    .eq('org_id', orgId)
+    .order('created_at', { ascending: false })
+    .range(from, to);
+
+  if (clientId) {
+    query = query.eq('client_id', clientId);
+  }
+
+  const { data, error, count } = await query;
+
+  if (error) throw new Error(`Failed to fetch projects: ${error.message}`);
+  return { data: data ?? [], total: count ?? 0 };
+}
+
+/** Fetch a page of projects for a specific member. */
+export async function getProjectsByMemberPaginated(memberId: string, page: number, pageSize: number): Promise<PaginatedProjects> {
+  const ids = await getMemberProjectIds(memberId);
+  if (ids.length === 0) return { data: [], total: 0 };
+
+  const from = page * pageSize;
+  const to = from + pageSize - 1;
+
+  const supabase = createSupabaseServerClient();
+  const { data, error, count } = await supabase
+    .from('projects')
+    .select('*', { count: 'exact' })
+    .in('id', ids)
+    .order('created_at', { ascending: false })
+    .range(from, to);
+
+  if (error) throw new Error(`Failed to fetch projects for member: ${error.message}`);
+  return { data: data ?? [], total: count ?? 0 };
+}
+
 /** Fetch only the columns needed for list/sidebar display. */
 export async function getProjectsForList(clientId?: string): Promise<ProjectListItem[]> {
   const orgId = await getCallerOrgId();

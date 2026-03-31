@@ -1,4 +1,4 @@
-import { getInvoicesForList, getInvoiceById } from "@/lib/db/invoices";
+import { getInvoicesForSidebar, getInvoiceById } from "@/lib/db/invoices";
 import { getClientsForList } from "@/lib/db/clients";
 import { getTeamMemberByEmail } from "@/lib/db/team-members";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
@@ -18,9 +18,9 @@ export default async function InvoiceDetailPage({ params }: InvoiceDetailPagePro
   const member = user?.email ? await getTeamMemberByEmail(user.email) : null;
   const isAdmin = member?.user_role === 'admin';
 
-  // Fetch lightweight lists for sidebar + the specific invoice in parallel
-  const [allInvoices, clients, invoice] = await Promise.all([
-    getInvoicesForList(),
+  // Fetch limited sidebar list (20 recent) + specific invoice in parallel
+  const [sidebarInvoices, clients, invoice] = await Promise.all([
+    getInvoicesForSidebar(5),
     getClientsForList(),
     getInvoiceById(id),
   ]);
@@ -28,7 +28,7 @@ export default async function InvoiceDetailPage({ params }: InvoiceDetailPagePro
   return (
     <InvoiceDetailClient
       invoiceId={id}
-      allInvoices={allInvoices}
+      initialSidebarInvoices={sidebarInvoices}
       clients={clients}
       initialInvoice={invoice}
       isAdmin={isAdmin}

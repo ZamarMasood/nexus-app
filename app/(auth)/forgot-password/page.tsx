@@ -2,12 +2,8 @@
 
 import { useFormState, useFormStatus } from 'react-dom';
 import { forgotPasswordAction, type ForgotPasswordState } from './actions';
-import { ArrowLeft, Mail, Sun, Moon, CheckCircle } from 'lucide-react';
+import { Mail } from 'lucide-react';
 import Link from 'next/link';
-import { useState, useEffect } from 'react';
-import { useTheme } from 'next-themes';
-
-// ── Submit button ────────────────────────────────────────────────────────────
 
 function SubmitButton() {
   const { pending } = useFormStatus();
@@ -15,222 +11,91 @@ function SubmitButton() {
     <button
       type="submit"
       disabled={pending}
-      className="group relative w-full overflow-hidden rounded-xl py-3.5 text-[14px] font-semibold text-white transition-[transform,box-shadow] duration-200 disabled:opacity-60 hover:scale-[1.015] hover:shadow-[0_8px_40px_rgba(124,58,237,0.5)] active:scale-[0.985] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/60"
-      style={{
-        background: 'linear-gradient(135deg, #7c3aed 0%, #5b21b6 100%)',
-        boxShadow: '0 4px 24px rgba(124,58,237,0.4), 0 1px 0 rgba(255,255,255,0.1) inset',
-      }}
+      className="mt-4 w-full py-2 rounded-md text-[13px] font-medium text-white
+        bg-[#5e6ad2] hover:bg-[#6872e5] active:scale-[0.99]
+        transition-colors duration-150
+        focus-visible:outline-none focus-visible:ring-2
+        focus-visible:ring-[rgba(94,106,210,0.35)]
+        disabled:opacity-50 disabled:cursor-not-allowed"
     >
-      <span
-        className="pointer-events-none absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-in-out"
-        style={{ background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent)' }}
-      />
-      {pending ? (
-        <span className="flex items-center justify-center gap-2.5">
-          <span className="size-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-          Sending link…
-        </span>
-      ) : (
-        <span className="flex items-center justify-center gap-2">
-          <Mail size={16} />
-          Send Reset Link
-        </span>
-      )}
+      {pending ? 'Sending...' : 'Send reset link'}
     </button>
   );
 }
 
-// ── Main page ────────────────────────────────────────────────────────────────
-
 const INITIAL: ForgotPasswordState = { error: null, success: false };
 
 export default function ForgotPasswordPage() {
-  const { setTheme, resolvedTheme } = useTheme();
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
-
   const [state, formAction] = useFormState(forgotPasswordAction, INITIAL);
 
-  const isDark = mounted ? resolvedTheme === 'dark' : true;
-
-  const bg         = mounted ? (isDark ? '#120828' : '#f5f3ff') : '#120828';
-  const cardBg     = mounted ? (isDark ? 'rgba(255,255,255,0.07)' : 'rgba(255,255,255,0.72)') : 'rgba(255,255,255,0.07)';
-  const cardBdr    = mounted ? (isDark ? 'rgba(255,255,255,0.12)' : 'rgba(124,58,237,0.18)') : 'rgba(255,255,255,0.12)';
-  const cardShadow = mounted
-    ? (isDark
-        ? '0 8px 64px rgba(0,0,0,0.4), 0 1px 0 rgba(255,255,255,0.1) inset'
-        : '0 8px 64px rgba(124,58,237,0.15), 0 1px 0 rgba(255,255,255,0.95) inset')
-    : '0 8px 64px rgba(0,0,0,0.4), 0 1px 0 rgba(255,255,255,0.1) inset';
-  const textH      = mounted ? (isDark ? '#ffffff' : '#180a2e') : '#ffffff';
-  const textSub    = mounted ? (isDark ? 'rgba(255,255,255,0.45)' : 'rgba(24,10,46,0.45)') : 'rgba(255,255,255,0.45)';
-  const inputBg    = mounted ? (isDark ? 'rgba(255,255,255,0.07)' : 'rgba(255,255,255,0.7)') : 'rgba(255,255,255,0.07)';
-  const inputBdr   = mounted ? (isDark ? 'rgba(255,255,255,0.12)' : 'rgba(124,58,237,0.18)') : 'rgba(255,255,255,0.12)';
-  const orbHigh    = mounted ? (isDark ? 'rgba(109,40,217,0.7)' : 'rgba(124,58,237,0.22)') : 'rgba(109,40,217,0.7)';
-  const orbMid     = mounted ? (isDark ? 'rgba(124,58,237,0.6)' : 'rgba(99,45,220,0.14)') : 'rgba(124,58,237,0.6)';
-
   return (
-    <>
-      <style>{`
-        @keyframes orb-a { 0%,100%{transform:translate(0,0) scale(1)}40%{transform:translate(50px,-70px) scale(1.07)}70%{transform:translate(-30px,35px) scale(0.95)} }
-        @keyframes orb-b { 0%,100%{transform:translate(0,0) scale(1)}35%{transform:translate(-55px,45px) scale(1.05)}70%{transform:translate(38px,-22px) scale(0.97)} }
-        @keyframes card-in { from{opacity:0;transform:translateY(24px) scale(0.97)} to{opacity:1;transform:translateY(0) scale(1)} }
-        @keyframes s-up { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
-        .orb-a { animation: orb-a 20s ease-in-out infinite; }
-        .orb-b { animation: orb-b 26s ease-in-out infinite; }
-        .card-in { animation: card-in 0.65s cubic-bezier(0.16,1,0.3,1) 0.05s both; }
-        .s1 { animation: s-up 0.5s cubic-bezier(0.16,1,0.3,1) 0.18s both; }
-        .s2 { animation: s-up 0.5s cubic-bezier(0.16,1,0.3,1) 0.27s both; }
-        .s3 { animation: s-up 0.5s cubic-bezier(0.16,1,0.3,1) 0.35s both; }
-        .login-input {
-          width: 100%; border-radius: 12px; padding: 13px 16px; font-size: 14px;
-          outline: none; transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
-        }
-        .login-input:focus {
-          border-color: rgba(124,58,237,0.65) !important;
-          box-shadow: 0 0 0 3px rgba(124,58,237,0.15);
-        }
-      `}</style>
+    <div className="min-h-screen bg-[#0d0d0d] flex items-center justify-center p-4">
+      <div className="w-full max-w-[400px]">
 
-      <div
-        className="relative flex min-h-screen items-center justify-center overflow-hidden px-4"
-        style={{
-          background: isDark
-            ? 'radial-gradient(ellipse 140% 120% at 50% 0%, #2d1060 0%, #1a0845 35%, #120828 65%, #0e0620 100%)'
-            : bg,
-        }}
-      >
-        {/* Dot grid */}
-        <div className="pointer-events-none absolute inset-0"
-          style={{
-            backgroundImage: `radial-gradient(${isDark ? 'rgba(255,255,255,0.06)' : 'rgba(124,58,237,0.12)'} 1px, transparent 1px)`,
-            backgroundSize: '28px 28px',
-          }}
-        />
+        <div className="flex justify-center mb-8">
+          <span className="text-[18px] font-medium text-[#f0f0f0] tracking-[-0.02em]">
+            Nexus
+          </span>
+        </div>
 
-        {/* Orbs */}
-        <div className="orb-a pointer-events-none absolute -top-32 -left-32 size-[750px] rounded-full"
-          style={{ background: `radial-gradient(circle at 40% 40%, ${orbHigh} 0%, transparent 62%)`, filter: 'blur(28px)' }} />
-        <div className="orb-b pointer-events-none absolute -bottom-32 -right-32 size-[700px] rounded-full"
-          style={{ background: `radial-gradient(circle at 55% 55%, ${orbMid} 0%, transparent 62%)`, filter: 'blur(30px)' }} />
+        <div className="bg-[#161616] border border-[rgba(255,255,255,0.10)]
+          rounded-lg p-8 shadow-[0_8px_32px_rgba(0,0,0,0.6)]">
 
-        {/* Back to login */}
-        <Link
-          href="/login"
-          className="s1 group absolute top-5 left-5 z-20 flex items-center gap-1.5 rounded-xl px-3 py-2 text-[13px] font-medium transition-[background-color,transform,box-shadow] duration-200 hover:bg-violet-500/10 hover:shadow-[0_0_16px_rgba(124,58,237,0.18)] active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/40"
-          style={{ color: textSub, border: `1px solid ${cardBdr}`, backdropFilter: 'blur(8px)', background: cardBg }}
-        >
-          <ArrowLeft size={14} className="transition-transform duration-200 group-hover:-translate-x-0.5" />
-          Back to login
-        </Link>
-
-        {/* Theme toggle */}
-        <button
-          onClick={() => setTheme(isDark ? 'light' : 'dark')}
-          className="s1 group absolute top-5 right-5 z-20 flex size-9 items-center justify-center rounded-xl transition-[background-color,transform,box-shadow] duration-200 hover:bg-violet-500/10 hover:shadow-[0_0_16px_rgba(124,58,237,0.18)] active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/40"
-          style={{ color: textSub, border: `1px solid ${cardBdr}`, backdropFilter: 'blur(8px)', background: cardBg }}
-          aria-label="Toggle theme"
-        >
-          {isDark ? <Sun size={15} /> : <Moon size={15} />}
-        </button>
-
-        {/* Card */}
-        <div
-          className="card-in relative z-10 w-full max-w-[420px] rounded-3xl p-8"
-          style={{ background: cardBg, border: `1px solid ${cardBdr}`, backdropFilter: 'blur(28px)', WebkitBackdropFilter: 'blur(28px)', boxShadow: cardShadow }}
-        >
-          <div className="pointer-events-none absolute inset-x-10 top-0 h-px rounded-full"
-            style={{ background: `linear-gradient(90deg, transparent, ${isDark ? 'rgba(255,255,255,0.18)' : 'rgba(255,255,255,0.9)'}, transparent)` }} />
-
-          {/* ── Success state ───────────────────────────────────────── */}
           {state.success ? (
-            <div className="s1">
-              <div className="mb-7 flex flex-col items-center gap-4 text-center">
-                <div
-                  className="flex size-12 items-center justify-center rounded-2xl"
-                  style={{ background: 'linear-gradient(135deg, #10b981, #059669)', boxShadow: '0 8px 32px rgba(16,185,129,0.4)' }}
-                >
-                  <CheckCircle size={20} className="text-white" />
-                </div>
-                <div>
-                  <h1 className="text-[26px] font-semibold leading-tight tracking-[-0.03em]"
-                    style={{ color: textH, fontFamily: 'var(--font-display)' }}>
-                    Check your email
-                  </h1>
-                  <p className="mt-2 text-[13px] leading-relaxed" style={{ color: textSub }}>
-                    We sent a password reset link to your email. Click the link to set a new password.
-                  </p>
-                </div>
+            <div className="text-center">
+              <div className="mx-auto mb-4 w-10 h-10 rounded-full bg-[rgba(38,201,127,0.15)]
+                flex items-center justify-center">
+                <Mail size={18} className="text-[#26c97f]" />
               </div>
-
-              <div className="rounded-xl px-4 py-3 text-[13px] text-center" style={{ background: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)', color: textSub }}>
-                Didn&apos;t receive the email? Check your spam folder or try again.
-              </div>
-
-              <Link
-                href="/login"
-                className="group relative mt-5 flex w-full items-center justify-center gap-2 overflow-hidden rounded-xl py-3.5 text-[14px] font-semibold text-white transition-[transform,box-shadow] duration-200 hover:scale-[1.015] active:scale-[0.985]"
-                style={{
-                  background: 'linear-gradient(135deg, #7c3aed 0%, #5b21b6 100%)',
-                  boxShadow: '0 4px 24px rgba(124,58,237,0.4), 0 1px 0 rgba(255,255,255,0.1) inset',
-                }}
-              >
+              <h1 className="text-[18px] font-medium text-[#f0f0f0] tracking-[-0.02em] mb-2">
+                Check your email
+              </h1>
+              <p className="text-[13px] text-[#8a8a8a] mb-6">
+                We sent a password reset link to your email. Click the link to set a new password.
+              </p>
+              <Link href="/login"
+                className="inline-flex w-full justify-center py-2 rounded-md text-[13px] font-medium
+                  text-white bg-[#5e6ad2] hover:bg-[#6872e5]
+                  transition-colors duration-150">
                 Back to Login
               </Link>
             </div>
           ) : (
             <>
-              {/* ── Email form ─────────────────────────────────────── */}
-              <div className="s1 mb-7 flex flex-col items-center gap-4 text-center">
-                <div
-                  className="flex size-12 items-center justify-center rounded-2xl"
-                  style={{
-                    background: 'linear-gradient(135deg, #7c3aed 0%, #5b21b6 100%)',
-                    boxShadow: '0 0 0 1px rgba(124,58,237,0.5), 0 8px 32px rgba(124,58,237,0.4)',
-                  }}
-                >
-                  <Mail size={20} className="text-white" />
-                </div>
-                <div>
-                  <h1 className="text-[26px] font-semibold leading-tight tracking-[-0.03em]"
-                    style={{ color: textH, fontFamily: 'var(--font-display)' }}>
-                    Reset password
-                  </h1>
-                  <p className="mt-1 text-[13px]" style={{ color: textSub }}>
-                    Enter your email and we&apos;ll send you a reset link
-                  </p>
-                </div>
-              </div>
+              <h1 className="text-[18px] font-medium text-[#f0f0f0] tracking-[-0.02em] mb-1">
+                Reset password
+              </h1>
+              <p className="text-[13px] text-[#8a8a8a] mb-6">
+                Enter your email and we&apos;ll send you a reset link
+              </p>
 
-              {/* Error */}
               {state.error && (
-                <div className="s1 mb-5 rounded-xl px-4 py-3 text-[13px]"
-                  style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', color: '#fca5a5' }}>
-                  {state.error}
-                </div>
+                <p className="mb-4 text-[13px] text-[#e5484d]">{state.error}</p>
               )}
 
-              <form action={formAction} className="space-y-4">
-                <div className="s2">
-                  <label className="mb-1.5 block text-[12px] font-medium" style={{ color: textSub }}>Email Address</label>
+              <form action={formAction}>
+                <div>
+                  <label className="block text-[12px] font-medium text-[#8a8a8a]
+                    uppercase tracking-[0.04em] mb-1.5">
+                    Email
+                  </label>
                   <input
                     name="email" type="email" required autoComplete="email"
                     placeholder="alex@acme.com"
-                    className="login-input"
-                    style={{ background: inputBg, border: `1px solid ${inputBdr}`, color: textH }}
+                    className="w-full px-3 py-2 rounded-md
+                      bg-[#1a1a1a] border border-[rgba(255,255,255,0.10)]
+                      text-[#f0f0f0] text-[13px] placeholder:text-[#555]
+                      focus:outline-none focus:border-[rgba(255,255,255,0.16)]
+                      focus:ring-1 focus:ring-[rgba(94,106,210,0.35)]
+                      transition-colors duration-150"
                   />
                 </div>
-                <div className="s3 pt-1">
-                  <SubmitButton />
-                </div>
+                <SubmitButton />
               </form>
 
-              <p className="s3 mt-6 text-center text-[13px]" style={{ color: textSub }}>
+              <p className="mt-4 text-center text-[13px] text-[#8a8a8a]">
                 Remember your password?{' '}
-                <Link
-                  href="/login"
-                  className="font-medium transition-opacity duration-150 hover:opacity-70 focus-visible:outline-none focus-visible:underline"
-                  style={{ color: isDark ? 'rgba(167,139,250,0.9)' : '#7c3aed' }}
-                >
+                <Link href="/login" className="hover:text-[#f0f0f0] transition-colors duration-150">
                   Sign in
                 </Link>
               </p>
@@ -238,6 +103,6 @@ export default function ForgotPasswordPage() {
           )}
         </div>
       </div>
-    </>
+    </div>
   );
 }

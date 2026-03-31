@@ -13,13 +13,14 @@ import DashboardClient from "./DashboardClient";
 export const metadata: Metadata = { title: "Dashboard" };
 export const dynamic = "force-dynamic";
 
-function greeting() {
-  const h = new Date().getHours();
-  if (h < 12) return "Good morning";
-  if (h < 17) return "Good afternoon";
-  if (h < 21) return "Good evening";
-  return "Good night";
-}
+// ❌ DELETE this function entirely
+// function greeting() {
+//   const h = new Date().getHours();
+//   if (h < 12) return "Good morning";
+//   if (h < 17) return "Good afternoon";
+//   if (h < 21) return "Good evening";
+//   return "Good night";
+// }
 
 export default async function DashboardPage() {
   const supabase = createSupabaseServerClient();
@@ -52,7 +53,8 @@ export default async function DashboardPage() {
 
   const now = new Date();
   const dateLabel = now.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" });
-  const greetingText = greeting();
+  // ❌ DELETE this line
+  // const greetingText = greeting();
 
   return (
     <DashboardClient
@@ -61,7 +63,8 @@ export default async function DashboardPage() {
       projects={projects}
       userName={member?.name ?? null}
       dateLabel={dateLabel}
-      greetingText={greetingText}
+      // ❌ REMOVE this prop
+      // greetingText={greetingText}
     />
   );
 }

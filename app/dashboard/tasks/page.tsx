@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { getTasksWithAssignees, getTasksWithAssigneesByMember } from "@/lib/db/tasks";
+import { getProjectsForList } from "@/lib/db/projects";
+import { getTaskStatuses } from "@/lib/db/task-statuses";
 
 export const metadata: Metadata = { title: "Tasks" };
 import { getTeamMemberByEmail } from "@/lib/db/team-members";
@@ -16,11 +18,29 @@ export default async function TasksPage() {
   const memberId = member?.id ?? '';
   const hasMember = Boolean(member);
 
-  const tasks = !hasMember
-    ? []
-    : isAdmin
-      ? await getTasksWithAssignees()
-      : await getTasksWithAssigneesByMember(memberId);
+  const [tasks, projects, statuses] = await Promise.all([
+    !hasMember
+      ? Promise.resolve([])
+      : isAdmin
+        ? getTasksWithAssignees()
+        : getTasksWithAssigneesByMember(memberId),
+    hasMember ? getProjectsForList() : Promise.resolve([]),
+    hasMember ? getTaskStatuses(member!.org_id!) : Promise.resolve([]),
+  ]);
 
-  return <TasksClient initialTasks={tasks} isAdmin={isAdmin} currentMemberId={memberId} />;
+  // Build a project name map for the client
+  const projectMap: Record<string, string> = {};
+  for (const p of projects) {
+    projectMap[p.id] = p.name;
+  }
+
+  return (
+    <TasksClient
+      initialTasks={tasks}
+      statuses={statuses}
+      isAdmin={isAdmin}
+      currentMemberId={memberId}
+      projectMap={projectMap}
+    />
+  );
 }
