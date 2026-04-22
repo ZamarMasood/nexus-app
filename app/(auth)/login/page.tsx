@@ -2,25 +2,41 @@
 
 import { useFormState, useFormStatus } from 'react-dom';
 import { signInAction, type LoginState } from './actions';
-import { Eye, EyeOff } from 'lucide-react';
+import { Eye, EyeOff, Mail, Lock, Sparkles, ArrowRight, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
+import { ThemeToggle } from '@/components/ThemeToggle';
 
-function SubmitButton() {
+function SubmitButton({ disabled }: { disabled?: boolean }) {
   const { pending } = useFormStatus();
+  const isDisabled = pending || disabled;
   return (
     <button
       type="submit"
-      disabled={pending}
-      className="mt-6 w-full py-2 rounded-md text-[13px] font-medium text-white
-        bg-[#5e6ad2] hover:bg-[#6872e5] active:scale-[0.99]
+      disabled={isDisabled}
+      className="mt-2 w-full inline-flex items-center justify-center gap-2
+        rounded-md bg-[var(--accent)] hover:bg-[var(--accent-hover)] active:scale-[0.99]
+        px-4 py-2.5 text-[13px] font-medium text-white
         transition-colors duration-150
         focus-visible:outline-none focus-visible:ring-2
-        focus-visible:ring-[rgba(94,106,210,0.35)]
-        disabled:opacity-50 disabled:cursor-not-allowed"
+        focus-visible:ring-[var(--accent-ring)]
+        disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-[var(--accent)]"
     >
-      {pending ? 'Signing in...' : 'Continue'}
+      {pending ? (
+        <>
+          <svg className="animate-spin h-3.5 w-3.5" viewBox="0 0 24 24">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+          </svg>
+          Signing in...
+        </>
+      ) : (
+        <>
+          Sign in
+          <ArrowRight size={14} />
+        </>
+      )}
     </button>
   );
 }
@@ -29,7 +45,7 @@ const initialState: LoginState = { error: null };
 
 export default function LoginPage() {
   return (
-    <Suspense fallback={null}>
+    <Suspense fallback={<div className="min-h-screen bg-[var(--bg-page)]" />}>
       <LoginContent />
     </Suspense>
   );
@@ -38,6 +54,8 @@ export default function LoginPage() {
 function LoginContent() {
   const [state, action] = useFormState<LoginState, FormData>(signInAction, initialState);
   const [showPassword, setShowPassword] = useState(false);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const searchParams = useSearchParams();
   const verifyEmail = searchParams.get('verify') === 'email';
   const errorParam = searchParams.get('error');
@@ -58,120 +76,168 @@ function LoginContent() {
   const authError = errorParam === 'auth_callback_failed' && !isLinkExpired;
 
   return (
-    <div className="min-h-screen bg-[#0d0d0d] flex items-center justify-center p-4">
-      <div className="w-full max-w-[400px]">
+    <div className="relative min-h-screen bg-[var(--bg-page)] flex items-center justify-center px-4 py-10 overflow-hidden">
 
-        {/* Logo */}
-        <div className="flex justify-center mb-8">
-          <span className="text-[18px] font-medium text-[#f0f0f0] tracking-[-0.02em]">
-            Nexus
-          </span>
+      <Link href="/"
+        className="group absolute top-3 left-3 sm:top-6 sm:left-6 z-10
+          inline-flex items-center gap-1.5 rounded-md
+          px-2.5 py-1.5 text-[12px] font-medium text-[var(--text-muted)]
+          hover:text-[var(--text-primary)] hover:bg-[var(--hover-default)]
+          transition-colors duration-150">
+        <ArrowLeft size={13} className="transition-transform duration-150 group-hover:-translate-x-0.5" />
+        Back
+      </Link>
+
+      <div className="absolute top-3 right-3 sm:top-6 sm:right-6 z-10">
+        <ThemeToggle />
+      </div>
+
+      {/* Faint dot pattern */}
+      <div className="pointer-events-none absolute inset-0 opacity-[0.03]"
+        style={{
+          backgroundImage: 'radial-gradient(var(--dot-color) 1px, transparent 1px)',
+          backgroundSize: '28px 28px',
+        }}
+      />
+
+      <div className="relative w-full max-w-[420px]">
+
+        {/* Logo + wordmark */}
+        <div className="flex items-center justify-center gap-2.5 mb-10">
+          <div className="inline-flex h-9 w-9 items-center justify-center rounded-md
+            bg-[var(--tint-accent)] border border-[var(--accent-border)]">
+            <Sparkles size={17} className="text-[var(--accent)]" />
+          </div>
+          <span className="text-[17px] font-medium text-[var(--text-primary)] tracking-[-0.02em]">Nexus App</span>
         </div>
 
         {/* Card */}
-        <div className="bg-[#161616] border border-[rgba(255,255,255,0.10)]
-          rounded-lg p-8 shadow-[0_8px_32px_rgba(0,0,0,0.6)]">
+        <div className="bg-[var(--bg-sidebar)] border border-[var(--border-default)]
+          rounded-xl p-6 sm:p-8 shadow-[var(--shadow-lg)]">
 
-          <h1 className="text-[18px] font-medium text-[#f0f0f0] tracking-[-0.02em] mb-1">
+          <h1 className="text-[20px] font-medium text-[var(--text-primary)] tracking-[-0.02em]">
             Welcome back
           </h1>
-          <p className="text-[13px] text-[#8a8a8a] mb-6">
-            Sign in to your workspace
+          <p className="mt-1.5 text-[13px] text-[var(--text-muted)]">
+            Sign in to continue to your workspace
           </p>
 
-          {/* Verify email banner */}
-          {verifyEmail && (
-            <div className="mb-4 rounded-md px-3 py-2.5 text-[13px] text-[#26c97f]
-              bg-[rgba(38,201,127,0.1)] border border-[rgba(38,201,127,0.2)]">
-              Account created! Check your email to verify, then sign in.
-            </div>
-          )}
+          {/* Banners */}
+          <div className="mt-6 space-y-2.5">
+            {verifyEmail && (
+              <div className="rounded-md px-3 py-2.5 text-[13px] text-[var(--status-done)]
+                bg-[var(--tint-green)] border border-[var(--tint-green-border)]
+                flex items-start gap-2">
+                <Mail size={14} className="mt-0.5 flex-shrink-0" />
+                <span>Account created. Check your email to verify, then sign in.</span>
+              </div>
+            )}
+            {authError && (
+              <div className="rounded-md px-3 py-2.5 text-[13px] text-[var(--priority-urgent)]
+                bg-[var(--tint-red)] border border-[var(--tint-red-border)]">
+                Email verification failed. Please try again.
+              </div>
+            )}
+            {isLinkExpired && (
+              <div className="rounded-md px-3 py-2.5 text-[13px] text-[var(--priority-urgent)]
+                bg-[var(--tint-red)] border border-[var(--tint-red-border)]">
+                Your password reset link has expired.{' '}
+                <Link href="/forgot-password" className="underline underline-offset-2 hover:text-[var(--text-primary)] transition-colors duration-150">
+                  Request a new one
+                </Link>.
+              </div>
+            )}
+            {state?.error && (
+              <div className="rounded-md px-3 py-2.5 text-[13px] text-[var(--priority-urgent)]
+                bg-[var(--tint-red)] border border-[var(--tint-red-border)]">
+                {state.error}
+              </div>
+            )}
+          </div>
 
-          {authError && (
-            <div className="mb-4 rounded-md px-3 py-2.5 text-[13px] text-[#e5484d]
-              bg-[rgba(229,72,77,0.1)] border border-[rgba(229,72,77,0.2)]">
-              Email verification failed. Please try again.
-            </div>
-          )}
-
-          {isLinkExpired && (
-            <div className="mb-4 rounded-md px-3 py-2.5 text-[13px] text-[#e5484d]
-              bg-[rgba(229,72,77,0.1)] border border-[rgba(229,72,77,0.2)]">
-              Your password reset link has expired.{' '}
-              <Link href="/forgot-password" className="underline underline-offset-2 hover:opacity-80">
-                Request a new one
-              </Link>.
-            </div>
-          )}
-
-          {state?.error && (
-            <p className="mb-4 text-[13px] text-[#e5484d]">{state.error}</p>
-          )}
-
-          <form action={action} className="space-y-3">
+          <form action={action} className="mt-6 space-y-4">
             <div>
-              <label className="block text-[12px] font-medium text-[#8a8a8a]
-                uppercase tracking-[0.04em] mb-1.5">
+              <label className="block text-[11px] font-medium text-[var(--text-subtle)]
+                uppercase tracking-[0.06em] mb-1.5">
                 Email
               </label>
-              <input
-                name="email" type="email" required autoComplete="email"
-                placeholder="alex@acme.com"
-                className="w-full px-3 py-2 rounded-md
-                  bg-[#1a1a1a] border border-[rgba(255,255,255,0.10)]
-                  text-[#f0f0f0] text-[13px] placeholder:text-[#555]
-                  focus:outline-none focus:border-[rgba(255,255,255,0.16)]
-                  focus:ring-1 focus:ring-[rgba(94,106,210,0.35)]
-                  transition-colors duration-150"
-              />
+              <div className="relative">
+                <Mail size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-faint)] pointer-events-none" />
+                <input
+                  name="email"
+                  type="email"
+                  required
+                  autoComplete="email"
+                  placeholder="alex@acme.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full pl-9 pr-3 py-2.5 rounded-md
+                    bg-[var(--bg-card)] border border-[var(--border-default)]
+                    text-[var(--text-primary)] text-[13px] placeholder:text-[var(--text-fainter)]
+                    focus:outline-none focus:border-[var(--border-hover)]
+                    focus:ring-1 focus:ring-[var(--accent-ring)]
+                    transition-colors duration-150"
+                />
+              </div>
             </div>
 
             <div>
-              <label className="block text-[12px] font-medium text-[#8a8a8a]
-                uppercase tracking-[0.04em] mb-1.5">
-                Password
-              </label>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="block text-[11px] font-medium text-[var(--text-subtle)]
+                  uppercase tracking-[0.06em]">
+                  Password
+                </label>
+                <Link href="/forgot-password"
+                  className="text-[11px] text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors duration-150">
+                  Forgot password?
+                </Link>
+              </div>
               <div className="relative">
+                <Lock size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-faint)] pointer-events-none" />
                 <input
                   name="password"
                   type={showPassword ? 'text' : 'password'}
-                  required autoComplete="current-password"
-                  placeholder="Your password"
-                  className="w-full px-3 py-2 rounded-md
-                    bg-[#1a1a1a] border border-[rgba(255,255,255,0.10)]
-                    text-[#f0f0f0] text-[13px] placeholder:text-[#555]
-                    focus:outline-none focus:border-[rgba(255,255,255,0.16)]
-                    focus:ring-1 focus:ring-[rgba(94,106,210,0.35)]
-                    transition-colors duration-150 pr-10"
+                  required
+                  autoComplete="current-password"
+                  placeholder="Enter your password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full pl-9 pr-10 py-2.5 rounded-md
+                    bg-[var(--bg-card)] border border-[var(--border-default)]
+                    text-[var(--text-primary)] text-[13px] placeholder:text-[var(--text-fainter)]
+                    focus:outline-none focus:border-[var(--border-hover)]
+                    focus:ring-1 focus:ring-[var(--accent-ring)]
+                    transition-colors duration-150"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(v => !v)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[#555]
-                    hover:text-[#8a8a8a] transition-colors"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--text-faint)]
+                    hover:text-[var(--text-primary)] transition-colors duration-150"
                   aria-label={showPassword ? 'Hide password' : 'Show password'}
                 >
-                  {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
+                  {showPassword ? <EyeOff size={14} /> : <Eye size={14} />}
                 </button>
               </div>
             </div>
 
-            <SubmitButton />
+            <SubmitButton disabled={!email.trim() || !password} />
           </form>
-
-          <div className="mt-4 flex items-center justify-between">
-            <Link href="/forgot-password"
-              className="text-[13px] text-[#8a8a8a] hover:text-[#f0f0f0]
-                transition-colors duration-150">
-              Forgot password?
-            </Link>
-            <Link href="/signup"
-              className="text-[13px] text-[#8a8a8a] hover:text-[#f0f0f0]
-                transition-colors duration-150">
-              Create account
-            </Link>
-          </div>
         </div>
+
+        <p className="mt-6 text-center text-[13px] text-[var(--text-subtle)]">
+          Don&apos;t have an account?{' '}
+          <Link href="/signup"
+            className="group inline-flex items-center gap-1 font-medium text-[var(--accent)]
+              hover:text-[var(--accent-hover)] transition-colors duration-150">
+            Create workspace
+            <ArrowRight size={12} className="transition-transform duration-150 group-hover:translate-x-0.5" />
+          </Link>
+        </p>
+
+        <p className="mt-4 text-center text-[11px] text-[var(--text-fainter)]">
+          By signing in you agree to our Terms and Privacy Policy.
+        </p>
       </div>
     </div>
   );

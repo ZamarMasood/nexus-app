@@ -44,10 +44,10 @@ function StatusBanner({ state }: { state: SettingsState }) {
 }
 
 const inputClass =
-  'w-full px-3 py-2 rounded-lg bg-[#1a1a1a] border border-[rgba(255,255,255,0.08)] text-[#f0f0f0] text-[13px] placeholder:text-[#555] focus:outline-none focus:border-[rgba(94,106,210,0.5)] focus:ring-1 focus:ring-[rgba(94,106,210,0.3)] transition-colors duration-150';
+  'w-full px-3 py-2 rounded-lg bg-[var(--bg-input)] border border-[var(--border-default)] text-[var(--text-primary)] text-[13px] placeholder:text-[var(--text-faint)] focus:outline-none focus:border-[var(--accent-border)] focus:ring-1 focus:ring-[var(--accent-ring)] transition-colors duration-150';
 
 const labelClass =
-  'block text-[11px] font-medium text-[#8a8a8a] uppercase tracking-[0.06em] mb-1.5';
+  'block text-[11px] font-medium text-[var(--text-muted)] uppercase tracking-[0.06em] mb-1.5';
 
 export default function PortalSettingsClient({
   initialName,
@@ -107,31 +107,31 @@ export default function PortalSettingsClient({
   const strength = getPasswordStrength();
 
   return (
-    <div className="flex flex-col h-full bg-[#0d0d0d]">
+    <div className="flex flex-col h-full bg-[var(--bg-page)]">
 
       {/* Header toolbar */}
-      <div className="flex items-center justify-between px-6 h-[60px] border-b border-[rgba(255,255,255,0.06)] shrink-0">
+      <div className="flex items-center justify-between px-4 sm:px-6 h-[60px] border-b border-[var(--border-subtle)] shrink-0 gap-3">
         <div className="flex items-center gap-3">
-          <SettingsIcon size={16} className="text-[#555]" />
-          <h1 className="text-[15px] font-medium text-[#e8e8e8]">Settings</h1>
+          <SettingsIcon size={16} className="text-[var(--text-faint)]" />
+          <h1 className="text-[15px] font-medium text-[var(--text-primary)]">Settings</h1>
         </div>
       </div>
 
       {/* Main content */}
       <div className="flex-1 overflow-y-auto">
-        <div className="p-6">
+        <div className="p-4 sm:p-6">
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
             {/* Profile Section */}
-            <div className="rounded-xl border border-[rgba(255,255,255,0.06)] bg-[#111111] overflow-hidden">
-              <div className="flex items-center gap-3 px-6 py-4 border-b border-[rgba(255,255,255,0.06)]">
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[rgba(94,106,210,0.12)]">
-                  <User className="h-4 w-4 text-[#5e6ad2]" />
+            <div className="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-sidebar)] overflow-hidden">
+              <div className="flex items-center gap-3 px-6 py-4 border-b border-[var(--border-subtle)]">
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--tint-accent)]">
+                  <User className="h-4 w-4 text-[var(--accent)]" />
                 </div>
                 <div>
-                  <h3 className="text-[13px] font-medium text-[#e8e8e8]">Profile</h3>
-                  <p className="text-[11px] text-[#555]">Your display name</p>
+                  <h3 className="text-[13px] font-medium text-[var(--text-primary)]">Profile</h3>
+                  <p className="text-[11px] text-[var(--text-faint)]">Your display name</p>
                 </div>
               </div>
 
@@ -140,22 +140,22 @@ export default function PortalSettingsClient({
 
                 {/* Avatar preview */}
                 <div className="flex items-center gap-4">
-                  <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-[rgba(94,106,210,0.12)] border-2 border-[rgba(94,106,210,0.2)]">
-                    <span className="text-base font-medium text-[#5e6ad2]">
+                  <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-[var(--tint-accent)] border-2 border-[var(--accent-border)]">
+                    <span className="text-base font-medium text-[var(--accent)]">
                       {initials || '?'}
                     </span>
                   </div>
                   <div>
-                    <p className="text-[13px] font-medium text-[#f0f0f0]">
+                    <p className="text-[13px] font-medium text-[var(--text-primary)]">
                       {name || 'Your Name'}
                     </p>
-                    <p className="text-[12px] text-[#555]">{email}</p>
+                    <p className="text-[12px] text-[var(--text-faint)]">{email}</p>
                   </div>
                 </div>
 
                 <div>
                   <label htmlFor="name" className={labelClass}>
-                    Display Name <span className="text-[#e5484d]">*</span>
+                    Display Name <span className="text-[var(--priority-urgent)]">*</span>
                   </label>
                   <input
                     id="name"
@@ -171,11 +171,11 @@ export default function PortalSettingsClient({
 
                 <div>
                   <label className={labelClass}>Email</label>
-                  <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-[rgba(255,255,255,0.03)] border border-[rgba(255,255,255,0.06)]">
-                    <Mail size={14} className="text-[#555]" />
-                    <span className="text-[13px] text-[#f0f0f0]">{email}</span>
+                  <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-[var(--hover-subtle)] border border-[var(--border-subtle)]">
+                    <Mail size={14} className="text-[var(--text-faint)]" />
+                    <span className="text-[13px] text-[var(--text-primary)]">{email}</span>
                   </div>
-                  <p className="text-[11px] text-[#555] mt-1.5">
+                  <p className="text-[11px] text-[var(--text-faint)] mt-1.5">
                     Contact your account manager to change your email.
                   </p>
                 </div>
@@ -187,7 +187,7 @@ export default function PortalSettingsClient({
                     type="submit"
                     disabled={profileLoading}
                     className="flex items-center gap-2 px-4 py-1.5 rounded-lg text-[13px] font-medium
-                      bg-[#5e6ad2] hover:bg-[#6872e5] text-white
+                      bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white
                       active:scale-[0.98] transition-colors duration-150
                       disabled:opacity-60 disabled:cursor-not-allowed"
                   >
@@ -200,14 +200,14 @@ export default function PortalSettingsClient({
             </div>
 
             {/* Security Section */}
-            <div className="rounded-xl border border-[rgba(255,255,255,0.06)] bg-[#111111] overflow-hidden">
-              <div className="flex items-center gap-3 px-6 py-4 border-b border-[rgba(255,255,255,0.06)]">
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[rgba(229,72,77,0.12)]">
-                  <Lock className="h-4 w-4 text-[#e5484d]" />
+            <div className="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-sidebar)] overflow-hidden">
+              <div className="flex items-center gap-3 px-6 py-4 border-b border-[var(--border-subtle)]">
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--tint-red)]">
+                  <Lock className="h-4 w-4 text-[var(--priority-urgent)]" />
                 </div>
                 <div>
-                  <h3 className="text-[13px] font-medium text-[#e8e8e8]">Security</h3>
-                  <p className="text-[11px] text-[#555]">Change your portal password</p>
+                  <h3 className="text-[13px] font-medium text-[var(--text-primary)]">Security</h3>
+                  <p className="text-[11px] text-[var(--text-faint)]">Change your portal password</p>
                 </div>
               </div>
 
@@ -216,10 +216,10 @@ export default function PortalSettingsClient({
 
                 <div>
                   <label htmlFor="current_password" className={labelClass}>
-                    Current Password <span className="text-[#e5484d]">*</span>
+                    Current Password <span className="text-[var(--priority-urgent)]">*</span>
                   </label>
                   <div className="relative">
-                    <Key className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-[#555]" />
+                    <Key className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-[var(--text-faint)]" />
                     <input
                       id="current_password"
                       name="current_password"
@@ -235,10 +235,10 @@ export default function PortalSettingsClient({
 
                 <div>
                   <label htmlFor="password" className={labelClass}>
-                    New Password <span className="text-[#e5484d]">*</span>
+                    New Password <span className="text-[var(--priority-urgent)]">*</span>
                   </label>
                   <div className="relative">
-                    <Key className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-[#555]" />
+                    <Key className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-[var(--text-faint)]" />
                     <input
                       id="password"
                       name="password"
@@ -269,7 +269,7 @@ export default function PortalSettingsClient({
                       ))}
                     </div>
                     <div className="flex justify-between text-[11px]">
-                      <span className="text-[#555]">Password strength:</span>
+                      <span className="text-[var(--text-faint)]">Password strength:</span>
                       <span style={{ color: strength.color }} className="font-medium">
                         {strength.label}
                       </span>
@@ -279,10 +279,10 @@ export default function PortalSettingsClient({
 
                 <div>
                   <label htmlFor="confirm" className={labelClass}>
-                    Confirm Password <span className="text-[#e5484d]">*</span>
+                    Confirm Password <span className="text-[var(--priority-urgent)]">*</span>
                   </label>
                   <div className="relative">
-                    <Key className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-[#555]" />
+                    <Key className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-[var(--text-faint)]" />
                     <input
                       id="confirm"
                       name="confirm"
@@ -303,7 +303,7 @@ export default function PortalSettingsClient({
                     type="submit"
                     disabled={passwordLoading || !password || password !== confirm}
                     className="flex items-center gap-2 px-4 py-1.5 rounded-lg text-[13px] font-medium
-                      bg-[#e5484d] hover:bg-[#e5484d]/90 text-white
+                      bg-[var(--priority-urgent)] hover:bg-[var(--priority-urgent)]/90 text-white
                       active:scale-[0.98] transition-colors duration-150
                       disabled:opacity-60 disabled:cursor-not-allowed"
                   >

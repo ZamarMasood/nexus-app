@@ -12,12 +12,14 @@ import {
   Plus,
   Search,
   ChevronRight,
-  ChevronLeft
+  ChevronLeft,
+  FolderKanban,
+  DollarSign
 } from "lucide-react";
 import Link from "next/link";
 import { useWorkspaceSlug } from "@/app/dashboard/workspace-context";
 import { createProjectAction, fetchProjectsPageAction } from "@/app/dashboard/projects/actions";
-import { formatDate } from "@/lib/utils";
+import { formatDate, formatCurrency } from "@/lib/utils";
 import {
   Dialog,
   DialogContent,
@@ -116,31 +118,37 @@ function NewProjectDialog({ open, onOpenChange, clients, onSuccess }: NewProject
   }
 
   const inputClass = `w-full px-3 py-2 rounded-lg
-    bg-[#1a1a1a] border border-[rgba(255,255,255,0.08)]
-    text-[#f0f0f0] text-[13px] placeholder:text-[#555]
-    focus:outline-none focus:border-[rgba(94,106,210,0.5)]
-    focus:ring-1 focus:ring-[rgba(94,106,210,0.3)]
-    transition-colors duration-150`;
+    bg-[var(--bg-input)] border border-[var(--border-default)]
+    text-[var(--text-primary)] text-[13px] placeholder:text-[var(--text-faint)]
+    focus:outline-none focus:border-[var(--accent-border)]
+    focus:ring-1 focus:ring-[var(--accent-ring)]
+    transition-all duration-150`;
+
+  const labelClass = "block text-[11px] font-medium text-[var(--text-muted)] mb-1.5";
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="
-        bg-[#111111] border border-[rgba(255,255,255,0.08)] rounded-xl
-        shadow-2xl p-0 gap-0 max-w-[520px] w-full">
+        bg-[var(--bg-sidebar)] border border-[var(--border-default)] rounded-xl
+        shadow-[var(--shadow-modal)] p-0 gap-0 w-[calc(100vw-24px)] max-w-[560px]
+        max-h-[92vh] sm:max-h-[90vh] overflow-y-auto">
 
-        <div className="flex items-center justify-between px-6 pt-5 pb-4
-          border-b border-[rgba(255,255,255,0.06)]">
+        <div className="flex items-center justify-between px-4 sm:px-6 pt-5 sm:pt-6 pb-4
+          border-b border-[var(--border-subtle)]">
           <div>
-            <h3 className="text-[15px] font-semibold text-[#f0f0f0]">New Project</h3>
-            <p className="text-[11px] text-[#555] mt-1">Create a new project to track work</p>
+            <h3 className="text-[15px] font-semibold text-[var(--text-primary)] flex items-center gap-2">
+              <FolderKanban size={16} className="text-[var(--accent)]" />
+              New Project
+            </h3>
+            <p className="text-[11px] text-[var(--text-faint)] mt-1">Create a new project to track work</p>
           </div>
         </div>
 
         <form onSubmit={handleSubmit} noValidate>
-          <div className="px-6 py-4 space-y-4">
+          <div className="px-6 py-5 space-y-4">
             <div>
-              <label className="block text-[11px] font-medium text-[#8a8a8a] mb-1.5">
-                Project Name <span className="text-[#e5484d]">*</span>
+              <label className={labelClass}>
+                Project Name <span className="text-[var(--priority-urgent)]">*</span>
               </label>
               <input
                 value={name}
@@ -149,23 +157,19 @@ function NewProjectDialog({ open, onOpenChange, clients, onSuccess }: NewProject
                 className={inputClass}
                 autoFocus
               />
-              {nameError && <p className="mt-1 text-[11px] text-[#e5484d]">{nameError}</p>}
+              {nameError && <p className="mt-1 text-[11px] text-[var(--priority-urgent)]">{nameError}</p>}
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-[11px] font-medium text-[#8a8a8a] mb-1.5">
-                  Client
-                </label>
+                <label className={labelClass}>Client</label>
                 <select value={clientId} onChange={(e) => setClientId(e.target.value)} className={inputClass}>
                   <option value="">Select a client</option>
                   {clients.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
                 </select>
               </div>
               <div>
-                <label className="block text-[11px] font-medium text-[#8a8a8a] mb-1.5">
-                  Status
-                </label>
+                <label className={labelClass}>Status</label>
                 <select value={status} onChange={(e) => setStatus(e.target.value)} className={inputClass}>
                   <option value="active">Active</option>
                   <option value="in_progress">In Progress</option>
@@ -175,10 +179,13 @@ function NewProjectDialog({ open, onOpenChange, clients, onSuccess }: NewProject
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-[11px] font-medium text-[#8a8a8a] mb-1.5">
-                  Deadline
+                <label className={labelClass}>
+                  <span className="flex items-center gap-1">
+                    <Calendar size={12} className="text-[var(--accent)]" />
+                    Deadline
+                  </span>
                 </label>
                 <input
                   type="date"
@@ -188,8 +195,11 @@ function NewProjectDialog({ open, onOpenChange, clients, onSuccess }: NewProject
                 />
               </div>
               <div>
-                <label className="block text-[11px] font-medium text-[#8a8a8a] mb-1.5">
-                  Total Value ($)
+                <label className={labelClass}>
+                  <span className="flex items-center gap-1">
+                    <DollarSign size={12} className="text-[var(--accent)]" />
+                    Total Value
+                  </span>
                 </label>
                 <input
                   type="number"
@@ -205,32 +215,42 @@ function NewProjectDialog({ open, onOpenChange, clients, onSuccess }: NewProject
           </div>
 
           {submitError && (
-            <div className="mx-6 mb-3 rounded-lg px-3 py-2 text-[12px] text-[#e5484d]
-              bg-[rgba(229,72,77,0.1)] border border-[rgba(229,72,77,0.2)]">
+            <div className="mx-6 mb-4 rounded-lg px-4 py-2.5 text-[12px] text-[var(--priority-urgent)]
+              bg-[var(--tint-red)] border border-[var(--tint-red-border)]">
               {submitError}
             </div>
           )}
 
-          <div className="flex items-center justify-end gap-2 px-6 py-4
-            border-t border-[rgba(255,255,255,0.06)]">
+          <div className="flex items-center justify-end gap-3 px-6 py-4
+            border-t border-[var(--border-subtle)]">
             <button
               type="button"
               onClick={() => onOpenChange(false)}
-              className="px-3 py-1.5 rounded-lg text-[12px] font-medium text-[#8a8a8a]
-                hover:bg-white/5 hover:text-[#f0f0f0] transition-colors duration-150"
+              className="px-4 py-2 rounded-lg text-[13px] font-medium text-[var(--text-muted)]
+                hover:bg-[var(--hover-default)] hover:text-[var(--text-primary)] transition-all duration-150"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={submitting}
-              className="px-3 py-1.5 rounded-lg text-[12px] font-medium
-                bg-[#5e6ad2] hover:bg-[#6872e5] text-white
-                active:scale-[0.98] transition-colors duration-150
-                disabled:opacity-50 flex items-center gap-1.5"
+              className="px-4 py-2 rounded-lg text-[13px] font-medium
+                bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white
+                active:scale-[0.98] transition-all duration-150
+                disabled:opacity-50 disabled:cursor-not-allowed
+                flex items-center gap-2"
             >
-              {submitting ? "Creating..." : "Create Project"}
-              <Plus size={12} />
+              {submitting ? (
+                <>
+                  <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white/20 border-t-white" />
+                  Creating...
+                </>
+              ) : (
+                <>
+                  <Plus size={14} />
+                  Create Project
+                </>
+              )}
             </button>
           </div>
         </form>
@@ -247,7 +267,13 @@ interface ProjectsClientProps {
   isAdmin: boolean;
 }
 
-export default function ProjectsClient({ initialProjects, totalProjects, clients, taskCounts: initialTaskCounts, isAdmin }: ProjectsClientProps) {
+export default function ProjectsClient({ 
+  initialProjects, 
+  totalProjects, 
+  clients, 
+  taskCounts: initialTaskCounts, 
+  isAdmin 
+}: ProjectsClientProps) {
   const router = useRouter();
   const slug = useWorkspaceSlug();
   const [projects, setProjects] = useState<Project[]>(initialProjects);
@@ -299,26 +325,27 @@ export default function ProjectsClient({ initialProjects, totalProjects, clients
   const overallProgress = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
 
   async function handleProjectCreated() {
-    // After creating, go back to first page to see the new project
     await fetchPage(0);
     router.refresh();
   }
 
   return (
-    <div className="flex flex-col h-full bg-[#0d0d0d]">
+    <div className="flex flex-col h-full bg-[var(--bg-page)]">
 
       {/* Header toolbar */}
-      <div className="flex items-center justify-between px-6 h-[60px] border-b border-[rgba(255,255,255,0.06)] shrink-0">
+      <div className="flex items-center justify-between px-4 sm:px-6 h-[60px] border-b border-[var(--border-subtle)] shrink-0 gap-3">
         <div className="flex items-center gap-3">
-          <Layers size={16} className="text-[#555]" />
-          <h1 className="text-[15px] font-medium text-[#e8e8e8]">Projects</h1>
-          <span className="text-[12px] text-[#555]">{total} total</span>
+          <FolderKanban size={16} className="text-[var(--accent)]" />
+          <h1 className="text-[15px] font-medium text-[var(--text-primary)]">Projects</h1>
+          <div className="h-4 w-px bg-[var(--border-subtle)]" />
+          <span className="text-[12px] text-[var(--text-faint)]">{total} total</span>
         </div>
         {isAdmin && (
           <button
             onClick={() => setNewProjectOpen(true)}
-            className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium
-              bg-[#5e6ad2] hover:bg-[#6872e5] text-white transition-colors duration-150"
+            className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-[13px] font-medium
+              bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white transition-all duration-150
+              active:scale-[0.98]"
           >
             <Plus size={14} />
             New Project
@@ -328,48 +355,54 @@ export default function ProjectsClient({ initialProjects, totalProjects, clients
 
       {/* Main content */}
       <div className="flex-1 overflow-y-auto">
-        <div className="p-6">
+        <div className="p-4 sm:p-6">
 
           {/* Stats cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
-            <div className="rounded-xl border border-[rgba(255,255,255,0.06)] bg-[#111111] p-4">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+            <div className="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-sidebar)] p-4 hover:border-[var(--border-medium)] transition-all duration-200">
               <div className="flex items-center gap-2 mb-2">
-                <CheckCircle size={14} className="text-[#26c97f]" />
-                <span className="text-[11px] text-[#555]">Active Projects</span>
+                <div className="p-1.5 rounded-lg bg-[var(--tint-green)]">
+                  <CheckCircle size={14} className="text-[var(--status-done)]" />
+                </div>
+                <span className="text-[11px] font-medium text-[var(--text-faint)] uppercase tracking-wide">Active Projects</span>
               </div>
-              <p className="text-[24px] font-medium text-[#e8e8e8]">{activeProjects}</p>
-              <p className="text-[11px] text-[#555] mt-1">Out of {total} total</p>
+              <p className="text-[28px] font-semibold text-[var(--text-primary)]">{activeProjects}</p>
+              <p className="text-[11px] text-[var(--text-faint)] mt-1">Out of {total} total</p>
             </div>
 
-            <div className="rounded-xl border border-[rgba(255,255,255,0.06)] bg-[#111111] p-4">
+            <div className="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-sidebar)] p-4 hover:border-[var(--border-medium)] transition-all duration-200">
               <div className="flex items-center gap-2 mb-2">
-                <Layers size={14} className="text-[#5e6ad2]" />
-                <span className="text-[11px] text-[#555]">Task Progress</span>
+                <div className="p-1.5 rounded-lg bg-[var(--tint-accent)]">
+                  <Layers size={14} className="text-[var(--accent)]" />
+                </div>
+                <span className="text-[11px] font-medium text-[var(--text-faint)] uppercase tracking-wide">Task Progress</span>
               </div>
-              <p className="text-[24px] font-medium text-[#e8e8e8]">{overallProgress}%</p>
-              <div className="mt-2 h-1 rounded-full bg-[rgba(255,255,255,0.06)] overflow-hidden">
+              <p className="text-[28px] font-semibold text-[var(--text-primary)]">{overallProgress}%</p>
+              <div className="mt-2 h-1.5 rounded-full bg-[var(--border-subtle)] overflow-hidden">
                 <div
-                  className="h-full rounded-full"
-                  style={{ width: `${overallProgress}%`, background: '#5e6ad2', transition: 'width 300ms ease-out' }}
+                  className="h-full rounded-full transition-all duration-500 ease-out"
+                  style={{ width: `${overallProgress}%`, background: '#5e6ad2' }}
                 />
               </div>
+              <p className="text-[11px] text-[var(--text-faint)] mt-2">{completedTasks} of {totalTasks} tasks completed</p>
             </div>
           </div>
 
           {/* Search and Filter */}
           <div className="flex flex-col sm:flex-row gap-3 mb-6">
             <div className="flex-1 relative">
-              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#555]" />
+              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-faint)]" />
               <input
                 type="text"
-                placeholder="Search projects..."
+                placeholder="Search projects by name or client..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full pl-9 pr-3 py-2 rounded-lg
-                  bg-[#111111] border border-[rgba(255,255,255,0.08)]
-                  text-[13px] text-[#f0f0f0] placeholder:text-[#555]
-                  focus:outline-none focus:border-[rgba(94,106,210,0.5)]
-                  transition-colors duration-150"
+                  bg-[var(--bg-sidebar)] border border-[var(--border-default)]
+                  text-[13px] text-[var(--text-primary)] placeholder:text-[var(--text-faint)]
+                  focus:outline-none focus:border-[var(--accent-border)]
+                  focus:ring-1 focus:ring-[var(--accent-ring)]
+                  transition-all duration-150"
               />
             </div>
             <div className="flex gap-2">
@@ -377,10 +410,10 @@ export default function ProjectsClient({ initialProjects, totalProjects, clients
                 <button
                   key={filter}
                   onClick={() => setStatusFilter(filter)}
-                  className={`px-3 py-1.5 rounded-lg text-[12px] font-medium transition-colors duration-150
+                  className={`px-3 py-1.5 rounded-lg text-[12px] font-medium transition-all duration-150
                     ${statusFilter === filter
-                      ? 'bg-[#5e6ad2] text-white'
-                      : 'bg-[#111111] text-[#888] hover:text-[#e8e8e8] border border-[rgba(255,255,255,0.08)]'}`}
+                      ? 'bg-[var(--accent)] text-white shadow-sm'
+                      : 'bg-[var(--bg-sidebar)] text-[var(--text-muted)] hover:text-[var(--text-primary)] border border-[var(--border-default)] hover:border-[var(--border-hover)]'}`}
                 >
                   {filter === "all" ? "All" : filter === "in_progress" ? "In Progress" : filter.charAt(0).toUpperCase() + filter.slice(1)}
                 </button>
@@ -390,44 +423,53 @@ export default function ProjectsClient({ initialProjects, totalProjects, clients
 
           {/* Projects Table */}
           {filteredProjects.length === 0 && !loading ? (
-            <div className="text-center py-12">
-              <p className="text-[13px] text-[#888] mb-2">
+            <div className="text-center py-16">
+              <div className="inline-flex items-center justify-center w-16 h-16 rounded-xl bg-[var(--bg-sidebar)] border border-[var(--border-subtle)] mb-4">
+                <FolderKanban size={32} className="text-[var(--text-disabled)]" />
+              </div>
+              <p className="text-[13px] text-[var(--text-muted)] mb-2">
                 {searchQuery || statusFilter !== "all" ? "No projects found" : "No projects yet"}
+              </p>
+              <p className="text-[11px] text-[var(--text-faint)]">
+                {searchQuery || statusFilter !== "all" 
+                  ? "Try adjusting your search or filter criteria" 
+                  : "Get started by creating your first project"}
               </p>
               {isAdmin && !searchQuery && statusFilter === "all" && (
                 <button
                   onClick={() => setNewProjectOpen(true)}
-                  className="text-[12px] text-[#5e6ad2] hover:text-[#7e8ae6] transition-colors duration-150"
+                  className="inline-flex items-center gap-1.5 mt-4 text-[12px] text-[var(--accent)] hover:text-[var(--accent-hover)] transition-colors duration-150"
                 >
+                  <Plus size={12} />
                   Create your first project →
                 </button>
               )}
             </div>
           ) : (
-            <div className="rounded-lg border border-[rgba(255,255,255,0.06)] overflow-hidden">
+            <div className="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-sidebar)] overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead>
-                    <tr className="border-b border-[rgba(255,255,255,0.06)] bg-[#111111]">
-                      <th className="px-5 py-3 text-left text-[11px] font-medium text-[#555] uppercase tracking-[0.06em]">
+                    <tr className="border-b border-[var(--border-subtle)] bg-[var(--bg-input)]">
+                      <th className="px-5 py-3.5 text-left text-[11px] font-medium text-[var(--text-faint)] uppercase tracking-[0.06em]">
                         Project
                       </th>
-                      <th className="px-5 py-3 text-left text-[11px] font-medium text-[#555] uppercase tracking-[0.06em] hidden sm:table-cell">
+                      <th className="px-5 py-3.5 text-left text-[11px] font-medium text-[var(--text-faint)] uppercase tracking-[0.06em] hidden sm:table-cell">
                         Client
                       </th>
-                      <th className="px-5 py-3 text-left text-[11px] font-medium text-[#555] uppercase tracking-[0.06em] hidden sm:table-cell">
+                      <th className="px-5 py-3.5 text-left text-[11px] font-medium text-[var(--text-faint)] uppercase tracking-[0.06em] hidden sm:table-cell">
                         Status
                       </th>
-                      <th className="px-5 py-3 text-left text-[11px] font-medium text-[#555] uppercase tracking-[0.06em] hidden md:table-cell">
+                      <th className="px-5 py-3.5 text-left text-[11px] font-medium text-[var(--text-faint)] uppercase tracking-[0.06em] hidden md:table-cell">
                         Deadline
                       </th>
-                      <th className="px-5 py-3 text-left text-[11px] font-medium text-[#555] uppercase tracking-[0.06em] hidden lg:table-cell">
+                      <th className="px-5 py-3.5 text-left text-[11px] font-medium text-[var(--text-faint)] uppercase tracking-[0.06em] hidden lg:table-cell">
                         Progress
                       </th>
-                      <th className="px-5 py-3 w-8" />
+                      <th className="px-5 py-3.5 w-8" />
                     </tr>
                   </thead>
-                  <tbody className={loading ? 'opacity-50 pointer-events-none' : ''}>
+                  <tbody className={loading ? 'opacity-50 pointer-events-none transition-opacity duration-200' : ''}>
                     {filteredProjects.map((project) => {
                       const client = project.client_id ? clientMap.get(project.client_id) : null;
                       const counts = taskCounts[project.id];
@@ -440,58 +482,65 @@ export default function ProjectsClient({ initialProjects, totalProjects, clients
                         <tr
                           key={project.id}
                           onClick={() => router.push(`/${slug}/projects/${project.id}`)}
-                          className="group border-b border-[rgba(255,255,255,0.06)] last:border-0
-                            hover:bg-[#1c1c1c] cursor-pointer transition-colors duration-[120ms]"
+                          className="group border-b border-[var(--border-subtle)] last:border-0
+                            hover:bg-[var(--bg-elevated)] cursor-pointer transition-all duration-150"
                         >
-                          <td className="px-5 py-3.5">
-                            <span className="text-[13px] text-[#f0f0f0] block truncate">
-                              {project.name}
+                          <td className="px-5 py-4">
+                            <div className="min-w-0">
+                              <span className="text-[13px] font-medium text-[var(--text-primary)] block truncate group-hover:text-[var(--accent)] transition-colors">
+                                {project.name}
+                              </span>
+                              {project.total_value != null && (
+                                <span className="text-[11px] text-[var(--text-faint)] block mt-0.5">
+                                  {formatCurrency(project.total_value)}
+                                </span>
+                              )}
+                            </div>
+                          </td>
+
+                          <td className="px-5 py-4 hidden sm:table-cell">
+                            <span className="text-[12px] text-[var(--text-muted)]">
+                              {client?.name || <span className="text-[var(--text-disabled)]">—</span>}
                             </span>
                           </td>
 
-                          <td className="px-5 py-3.5 hidden sm:table-cell">
-                            <span className="text-[12px] text-[#888]">
-                              {client?.name || <span className="text-[#3a3a3a]">—</span>}
-                            </span>
-                          </td>
-
-                          <td className="px-5 py-3.5 hidden sm:table-cell">
+                          <td className="px-5 py-4 hidden sm:table-cell">
                             <StatusBadge status={project.status} />
                           </td>
 
-                          <td className="px-5 py-3.5 hidden md:table-cell">
+                          <td className="px-5 py-4 hidden md:table-cell">
                             {project.deadline ? (
-                              <span className={`flex items-center gap-1 text-[12px] ${isOverdue ? 'text-[#e5484d]' : 'text-[#555]'}`}>
+                              <span className={`flex items-center gap-1.5 text-[12px] ${isOverdue ? 'text-[var(--priority-urgent)]' : 'text-[var(--text-faint)]'}`}>
                                 <Calendar size={12} className="flex-shrink-0" />
                                 {formatDate(project.deadline)}
                               </span>
                             ) : (
-                              <span className="text-[12px] text-[#3a3a3a]">—</span>
+                              <span className="text-[12px] text-[var(--text-disabled)]">—</span>
                             )}
                           </td>
 
-                          <td className="px-5 py-3.5 hidden lg:table-cell">
+                          <td className="px-5 py-4 hidden lg:table-cell">
                             {total > 0 ? (
-                              <div className="space-y-1 w-24">
+                              <div className="space-y-1.5 w-28">
                                 <div className="flex justify-between text-[11px]">
-                                  <span className="text-[#555]">{pct}%</span>
-                                  <span className="text-[#555]">{done}/{total}</span>
+                                  <span className="text-[var(--text-faint)]">{pct}%</span>
+                                  <span className="text-[var(--text-faint)]">{done}/{total}</span>
                                 </div>
-                                <div className="h-1 w-full rounded-full bg-[rgba(255,255,255,0.06)] overflow-hidden">
+                                <div className="h-1 w-full rounded-full bg-[var(--border-subtle)] overflow-hidden">
                                   <div
-                                    className="h-full rounded-full"
-                                    style={{ width: `${pct}%`, background: '#5e6ad2', transition: 'width 500ms ease-out' }}
+                                    className="h-full rounded-full transition-all duration-500 ease-out"
+                                    style={{ width: `${pct}%`, background: '#5e6ad2' }}
                                   />
                                 </div>
                               </div>
                             ) : (
-                              <span className="text-[11px] text-[#3a3a3a]">No tasks</span>
+                              <span className="text-[11px] text-[var(--text-disabled)]">No tasks</span>
                             )}
                           </td>
 
-                          <td className="px-5 py-3.5 text-right">
-                            <ChevronRight size={14} className="text-[#3a3a3a] group-hover:text-[#555]
-                              transition-colors duration-150 ml-auto" />
+                          <td className="px-5 py-4 text-right">
+                            <ChevronRight size={14} className="text-[var(--text-disabled)] group-hover:text-[var(--accent)]
+                              transition-all duration-150 ml-auto" />
                           </td>
                         </tr>
                       );
@@ -502,47 +551,63 @@ export default function ProjectsClient({ initialProjects, totalProjects, clients
 
               {/* Pagination controls */}
               {totalPages > 1 && (
-                <div className="flex items-center justify-between px-5 py-3
-                  border-t border-[rgba(255,255,255,0.06)] bg-[#111111]">
-                  <span className="text-[12px] text-[#555]">
+                <div className="flex items-center justify-between px-5 py-3.5
+                  border-t border-[var(--border-subtle)] bg-[var(--bg-input)]">
+                  <span className="text-[12px] text-[var(--text-faint)]">
                     Page {currentPage + 1} of {totalPages}
                   </span>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-3">
                     <button
                       onClick={() => fetchPage(currentPage - 1)}
                       disabled={currentPage === 0 || loading}
-                      className="flex items-center gap-1 px-3 py-1.5 rounded-md text-[12px] font-medium
-                        text-[#888] hover:text-[#e8e8e8] hover:bg-white/5
-                        disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-[#888]
-                        transition-colors duration-150"
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-medium
+                        text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--hover-default)]
+                        disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent
+                        transition-all duration-150"
                     >
                       <ChevronLeft size={14} />
                       Previous
                     </button>
                     <div className="flex items-center gap-1">
-                      {Array.from({ length: totalPages }, (_, i) => (
-                        <button
-                          key={i}
-                          onClick={() => fetchPage(i)}
-                          disabled={loading}
-                          className={`w-8 h-8 rounded-md text-[12px] font-medium transition-colors duration-150
-                            ${i === currentPage
-                              ? 'bg-[#5e6ad2] text-white'
-                              : 'text-[#888] hover:text-[#e8e8e8] hover:bg-white/5'
-                            }
-                            disabled:cursor-not-allowed`}
-                        >
-                          {i + 1}
-                        </button>
-                      ))}
+                      {Array.from({ length: Math.min(totalPages, 7) }, (_, i) => {
+                        let pageNum = i;
+                        // Show pages around current page
+                        if (totalPages > 7) {
+                          if (currentPage < 3) {
+                            pageNum = i;
+                          } else if (currentPage > totalPages - 4) {
+                            pageNum = totalPages - 7 + i;
+                          } else {
+                            pageNum = currentPage - 3 + i;
+                          }
+                        }
+                        if (pageNum >= 0 && pageNum < totalPages) {
+                          return (
+                            <button
+                              key={pageNum}
+                              onClick={() => fetchPage(pageNum)}
+                              disabled={loading}
+                              className={`w-8 h-8 rounded-lg text-[12px] font-medium transition-all duration-150
+                                ${pageNum === currentPage
+                                  ? 'bg-[var(--accent)] text-white shadow-sm'
+                                  : 'text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--hover-default)]'
+                                }
+                                disabled:cursor-not-allowed`}
+                            >
+                              {pageNum + 1}
+                            </button>
+                          );
+                        }
+                        return null;
+                      })}
                     </div>
                     <button
                       onClick={() => fetchPage(currentPage + 1)}
                       disabled={currentPage >= totalPages - 1 || loading}
-                      className="flex items-center gap-1 px-3 py-1.5 rounded-md text-[12px] font-medium
-                        text-[#888] hover:text-[#e8e8e8] hover:bg-white/5
-                        disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-[#888]
-                        transition-colors duration-150"
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-medium
+                        text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--hover-default)]
+                        disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent
+                        transition-all duration-150"
                     >
                       Next
                       <ChevronRight size={14} />

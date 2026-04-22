@@ -135,23 +135,23 @@ export default function SearchCommandPalette({ slug, isAdmin, memberId, onClose 
 
       {/* Palette */}
       <div
-        className="relative w-full max-w-[560px] mx-4 bg-[#161616] border border-[rgba(255,255,255,0.07)] rounded-lg shadow-[0_24px_64px_rgba(0,0,0,0.7),0_4px_16px_rgba(0,0,0,0.5)] animate-scale-in overflow-hidden"
+        className="relative w-full max-w-[560px] mx-4 bg-[var(--bg-card)] border border-[var(--border-default)] rounded-lg shadow-[var(--shadow-modal)] animate-scale-in overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Search input */}
-        <div className="flex items-center gap-3 px-4 border-b border-[rgba(255,255,255,0.06)]">
-          <Search size={16} className="text-[#555] shrink-0" />
+        <div className="flex items-center gap-3 px-4 border-b border-[var(--border-subtle)]">
+          <Search size={16} className="text-[var(--text-faint)] shrink-0" />
           <input
             ref={inputRef}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={onKeyDown}
             placeholder="Search projects, tasks, clients, invoices..."
-            className="flex-1 py-3.5 bg-transparent text-[14px] text-[#e8e8e8] placeholder:text-[#555] focus:outline-none"
+            className="flex-1 py-3.5 bg-transparent text-[14px] text-[var(--text-primary)] placeholder:text-[var(--text-faint)] focus:outline-none"
           />
           <button
             onClick={onClose}
-            className="p-1 rounded-md text-[#555] hover:text-[#e8e8e8] hover:bg-white/5 transition-colors duration-150"
+            className="p-1 rounded-md text-[var(--text-faint)] hover:text-[var(--text-primary)] hover:bg-[var(--hover-default)] transition-colors duration-150"
           >
             <X size={14} />
           </button>
@@ -161,11 +161,11 @@ export default function SearchCommandPalette({ slug, isAdmin, memberId, onClose 
         <div ref={listRef} className="max-h-[400px] overflow-y-auto py-2">
           {loading ? (
             <div className="flex items-center justify-center py-8">
-              <div className="w-5 h-5 border-2 border-[#5e6ad2] border-t-transparent rounded-full animate-spin" />
+              <div className="w-5 h-5 border-2 border-[var(--accent)] border-t-transparent rounded-full animate-spin" />
             </div>
           ) : flatList.length === 0 ? (
             <div className="py-8 text-center">
-              <p className="text-[13px] text-[#555]">
+              <p className="text-[13px] text-[var(--text-faint)]">
                 {query ? "No results found" : "No items to search"}
               </p>
             </div>
@@ -175,7 +175,7 @@ export default function SearchCommandPalette({ slug, isAdmin, memberId, onClose 
               return (
                 <div key={type}>
                   <div className="px-4 pt-3 pb-1">
-                    <span className="text-[11px] font-medium text-[#555] uppercase tracking-[0.06em]">
+                    <span className="text-[11px] font-medium text-[var(--text-faint)] uppercase tracking-[0.06em]">
                       {meta.label}s
                     </span>
                   </div>
@@ -192,23 +192,23 @@ export default function SearchCommandPalette({ slug, isAdmin, memberId, onClose 
                         onMouseEnter={() => setActiveIdx(idx)}
                         className={[
                           "w-full flex items-center gap-3 px-4 py-2 text-left transition-colors duration-100",
-                          isActive ? "bg-white/[0.06]" : "",
+                          isActive ? "bg-[var(--hover-default)]" : "",
                         ].join(" ")}
                       >
                         <Icon size={15} style={{ color: meta.color }} className="shrink-0" />
                         <div className="flex-1 min-w-0">
-                          <p className="text-[13px] font-medium text-[#e8e8e8] truncate">
+                          <p className="text-[13px] font-medium text-[var(--text-primary)] truncate">
                             {r.title}
                           </p>
                           {r.subtitle && (
-                            <p className="text-[11px] text-[#555] truncate">{r.subtitle}</p>
+                            <p className="text-[11px] text-[var(--text-faint)] truncate">{r.subtitle}</p>
                           )}
                         </div>
                         {r.status && (
-                          <span className="text-[10px] text-[#555] shrink-0">{r.status.replace("_", " ")}</span>
+                          <span className="text-[10px] text-[var(--text-faint)] shrink-0">{r.status.replace("_", " ")}</span>
                         )}
                         {isActive && (
-                          <ArrowRight size={12} className="text-[#555] shrink-0" />
+                          <ArrowRight size={12} className="text-[var(--text-faint)] shrink-0" />
                         )}
                       </button>
                     );
@@ -220,17 +220,17 @@ export default function SearchCommandPalette({ slug, isAdmin, memberId, onClose 
         </div>
 
         {/* Footer */}
-        <div className="flex items-center gap-4 px-4 py-2.5 border-t border-[rgba(255,255,255,0.06)] text-[11px] text-[#555]">
+        <div className="flex items-center gap-4 px-4 py-2.5 border-t border-[var(--border-subtle)] text-[11px] text-[var(--text-faint)]">
           <span className="flex items-center gap-1">
-            <kbd className="px-1 py-0.5 rounded bg-white/5 font-mono text-[10px]">↑↓</kbd>
+            <kbd className="px-1 py-0.5 rounded bg-[var(--hover-default)] font-mono text-[10px]">↑↓</kbd>
             Navigate
           </span>
           <span className="flex items-center gap-1">
-            <kbd className="px-1 py-0.5 rounded bg-white/5 font-mono text-[10px]">↵</kbd>
+            <kbd className="px-1 py-0.5 rounded bg-[var(--hover-default)] font-mono text-[10px]">↵</kbd>
             Open
           </span>
           <span className="flex items-center gap-1">
-            <kbd className="px-1 py-0.5 rounded bg-white/5 font-mono text-[10px]">Esc</kbd>
+            <kbd className="px-1 py-0.5 rounded bg-[var(--hover-default)] font-mono text-[10px]">Esc</kbd>
             Close
           </span>
         </div>

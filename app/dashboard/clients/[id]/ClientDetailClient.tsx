@@ -274,21 +274,21 @@ export default function ClientDetailClient({
   const totalInvoicesAmount = invoices.reduce((sum, inv) => sum + (inv.amount || 0), 0);
 
   return (
-    <div className="flex flex-col h-full bg-[#0d0d0d]">
+    <div className="flex flex-col h-full bg-[var(--bg-page)]">
       
       {/* Header toolbar */}
-      <div className="flex items-center justify-between px-6 h-[60px] border-b border-[rgba(255,255,255,0.06)] shrink-0">
+      <div className="flex items-center justify-between px-4 sm:px-6 h-[60px] border-b border-[var(--border-subtle)] shrink-0 gap-3">
         <div className="flex items-center gap-3">
           <button
             onClick={() => router.push(`/${slug}/clients`)}
-            className="flex items-center justify-center h-8 w-8 rounded-lg text-[#555] hover:text-[#e8e8e8] hover:bg-white/5 transition-all duration-150"
+            className="flex items-center justify-center h-8 w-8 rounded-lg text-[var(--text-faint)] hover:text-[var(--text-primary)] hover:bg-[var(--hover-default)] transition-all duration-150"
           >
             <ArrowLeft size={16} />
           </button>
-          <div className="w-px h-5 bg-[rgba(255,255,255,0.06)]" />
+          <div className="w-px h-5 bg-[var(--border-subtle)]" />
           <div className="flex items-center gap-2">
-            <Users size={16} className="text-[#5e6ad2]" />
-            <h1 className="text-[15px] font-medium text-[#e8e8e8]">Client Details</h1>
+            <Users size={16} className="text-[var(--accent)]" />
+            <h1 className="text-[15px] font-medium text-[var(--text-primary)]">Client Details</h1>
           </div>
         </div>
         
@@ -296,27 +296,27 @@ export default function ClientDetailClient({
 
       {/* Main content */}
       <div className="flex-1 overflow-y-auto">
-        <div className="p-6">
+        <div className="p-4 sm:p-6">
 
           {/* Client sidebar and content - 2 column layout */}
           <div className="flex gap-6 items-start">
 
             {/* Left sidebar - Client list */}
             <aside className="hidden lg:block w-[320px] shrink-0">
-              <div className="rounded-xl border border-[rgba(255,255,255,0.06)] bg-[#111111] overflow-hidden sticky top-6">
-                <div className="p-4 border-b border-[rgba(255,255,255,0.06)]">
+              <div className="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-sidebar)] overflow-hidden sticky top-6">
+                <div className="p-4 border-b border-[var(--border-subtle)]">
                   <div className="flex items-center gap-2 mb-3">
-                    <Layers size={14} className="text-[#5e6ad2]" />
-                    <h2 className="text-[13px] font-medium text-[#e8e8e8]">All Clients</h2>
+                    <Layers size={14} className="text-[var(--accent)]" />
+                    <h2 className="text-[13px] font-medium text-[var(--text-primary)]">All Clients</h2>
                   </div>
                   <div className="relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-[#555]" />
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-[var(--text-faint)]" />
                     <input
                       type="text"
                       value={search}
                       onChange={(e) => setSearch(e.target.value)}
                       placeholder="Search clients..."
-                      className="w-full pl-9 pr-3 py-2 rounded-lg bg-[#1a1a1a] border border-[rgba(255,255,255,0.08)] text-[#f0f0f0] text-[13px] placeholder:text-[#555] focus:outline-none focus:border-[rgba(94,106,210,0.5)] transition-all duration-150"
+                      className="w-full pl-9 pr-3 py-2 rounded-lg bg-[var(--bg-input)] border border-[var(--border-default)] text-[var(--text-primary)] text-[13px] placeholder:text-[var(--text-faint)] focus:outline-none focus:border-[var(--accent-border)] transition-all duration-150"
                     />
                   </div>
                 </div>
@@ -324,13 +324,13 @@ export default function ClientDetailClient({
                 <div className="max-h-[calc(100vh-200px)] overflow-y-auto">
                   {sidebarSearching ? (
                     <div className="flex flex-col items-center justify-center gap-2 py-12 text-center">
-                      <div className="w-5 h-5 border-2 border-[#5e6ad2] border-t-transparent rounded-full animate-spin" />
-                      <p className="text-[12px] text-[#555]">Searching...</p>
+                      <div className="w-5 h-5 border-2 border-[var(--accent)] border-t-transparent rounded-full animate-spin" />
+                      <p className="text-[12px] text-[var(--text-faint)]">Searching...</p>
                     </div>
                   ) : filteredClients.length === 0 ? (
                     <div className="flex flex-col items-center justify-center gap-2 py-12 text-center">
-                      <Users className="h-8 w-8 text-[#3a3a3a]" />
-                      <p className="text-[12px] text-[#555]">No clients found</p>
+                      <Users className="h-8 w-8 text-[var(--text-disabled)]" />
+                      <p className="text-[12px] text-[var(--text-faint)]">No clients found</p>
                     </div>
                   ) : (
                     filteredClients.map((c) => {
@@ -341,26 +341,26 @@ export default function ClientDetailClient({
                           key={c.id}
                           onClick={() => selectClient(c.id)}
                           className={[
-                            "w-full text-left px-4 py-3 border-b border-[rgba(255,255,255,0.06)] last:border-0 transition-all duration-150",
+                            "w-full text-left px-4 py-3 border-b border-[var(--border-subtle)] last:border-0 transition-all duration-150",
                             isActive
-                              ? "bg-[rgba(94,106,210,0.08)] border-l-2 border-l-[#5e6ad2]"
-                              : "hover:bg-white/5",
+                              ? "bg-[var(--tint-accent)] border-l-2 border-l-[#5e6ad2]"
+                              : "hover:bg-[var(--hover-default)]",
                           ].join(" ")}
                         >
                           <div className="flex items-center justify-between gap-2 mb-1.5">
                             <span className={[
                               "text-[13px] font-medium truncate",
-                              isActive ? "text-[#5e6ad2]" : "text-[#e8e8e8]"
+                              isActive ? "text-[var(--accent)]" : "text-[var(--text-primary)]"
                             ].join(" ")}>
                               {c.name}
                             </span>
                             <ClientStatusBadge status={cStatus} />
                           </div>
                           <div className="flex items-center justify-between gap-2 text-[11px]">
-                            <span className="text-[#555] truncate">
+                            <span className="text-[var(--text-faint)] truncate">
                               {c.email ?? "No email"}
                             </span>
-                            <span className="text-[#888] font-medium tabular-nums shrink-0">
+                            <span className="text-[var(--text-muted)] font-medium tabular-nums shrink-0">
                               {c.monthly_rate != null ? formatCurrency(c.monthly_rate) : "—"}
                             </span>
                           </div>
@@ -373,22 +373,22 @@ export default function ClientDetailClient({
                 {/* Sidebar pagination */}
                 {(sidebarPage > 0 || sidebarHasMore) && (
                   <div className="flex items-center justify-between px-4 py-2
-                    border-t border-[rgba(255,255,255,0.06)] bg-[#111111]">
+                    border-t border-[var(--border-subtle)] bg-[var(--bg-sidebar)]">
                     <button
                       onClick={() => fetchSidebar(sidebarPage - 1)}
                       disabled={sidebarPage === 0 || sidebarSearching}
-                      className="text-[11px] font-medium text-[#888] hover:text-[#e8e8e8]
-                        disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:text-[#888]
+                      className="text-[11px] font-medium text-[var(--text-muted)] hover:text-[var(--text-primary)]
+                        disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:text-[var(--text-muted)]
                         transition-colors duration-150"
                     >
                       ← Previous
                     </button>
-                    <span className="text-[10px] text-[#555]">{sidebarPage + 1}</span>
+                    <span className="text-[10px] text-[var(--text-faint)]">{sidebarPage + 1}</span>
                     <button
                       onClick={() => fetchSidebar(sidebarPage + 1)}
                       disabled={!sidebarHasMore || sidebarSearching}
-                      className="text-[11px] font-medium text-[#888] hover:text-[#e8e8e8]
-                        disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:text-[#888]
+                      className="text-[11px] font-medium text-[var(--text-muted)] hover:text-[var(--text-primary)]
+                        disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:text-[var(--text-muted)]
                         transition-colors duration-150"
                     >
                       Next →
@@ -403,49 +403,49 @@ export default function ClientDetailClient({
               
               {loading ? (
                 <div className="space-y-6 animate-pulse">
-                  <div className="rounded-xl border border-[rgba(255,255,255,0.06)] bg-[#111111] overflow-hidden">
-                    <div className="p-6">
-                      <div className="h-8 w-64 bg-white/5 rounded mb-3" />
-                      <div className="h-4 w-32 bg-white/5 rounded" />
+                  <div className="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-sidebar)] overflow-hidden">
+                    <div className="p-4 sm:p-6">
+                      <div className="h-8 w-64 bg-[var(--hover-default)] rounded mb-3" />
+                      <div className="h-4 w-32 bg-[var(--hover-default)] rounded" />
                     </div>
-                    <div className="grid grid-cols-3 gap-4 p-6 border-t border-[rgba(255,255,255,0.06)]">
+                    <div className="grid grid-cols-3 gap-4 p-6 border-t border-[var(--border-subtle)]">
                       {[1,2,3].map(i => (
                         <div key={i} className="space-y-2">
-                          <div className="h-3 w-16 bg-white/5 rounded" />
-                          <div className="h-5 w-20 bg-white/5 rounded" />
+                          <div className="h-3 w-16 bg-[var(--hover-default)] rounded" />
+                          <div className="h-5 w-20 bg-[var(--hover-default)] rounded" />
                         </div>
                       ))}
                     </div>
                   </div>
-                  <div className="rounded-xl border border-[rgba(255,255,255,0.06)] bg-[#111111] p-6">
-                    <div className="h-6 w-32 bg-white/5 rounded mb-4" />
+                  <div className="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-sidebar)] p-6">
+                    <div className="h-6 w-32 bg-[var(--hover-default)] rounded mb-4" />
                     <div className="space-y-3">
                       {[1,2,3].map(i => (
-                        <div key={i} className="h-12 bg-white/5 rounded" />
+                        <div key={i} className="h-12 bg-[var(--hover-default)] rounded" />
                       ))}
                     </div>
                   </div>
                 </div>
               ) : error || !client ? (
-                <div className="rounded-xl bg-[rgba(229,72,77,0.10)] border border-[rgba(229,72,77,0.2)] p-6">
-                  <p className="text-[13px] text-[#e5484d]">{error ?? "Client not found."}</p>
+                <div className="rounded-xl bg-[var(--tint-red)] border border-[var(--tint-red-border)] p-6">
+                  <p className="text-[13px] text-[var(--priority-urgent)]">{error ?? "Client not found."}</p>
                 </div>
               ) : (
                 <div className="space-y-6">
                   
                   {/* Client header card */}
-                  <div className="rounded-xl border border-[rgba(255,255,255,0.06)] bg-[#111111] overflow-hidden">
-                    <div className="p-6">
+                  <div className="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-sidebar)] overflow-hidden">
+                    <div className="p-4 sm:p-6">
                       <div className="flex items-start justify-between gap-4 mb-4">
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-2">
-                            <Building2 size={16} className="text-[#5e6ad2]" />
-                            <h1 className="text-xl font-semibold text-[#e8e8e8] truncate">
+                            <Building2 size={16} className="text-[var(--accent)]" />
+                            <h1 className="text-xl font-semibold text-[var(--text-primary)] truncate">
                               {client.name}
                             </h1>
                           </div>
                           {client.email && (
-                            <div className="flex items-center gap-1.5 text-[13px] text-[#555]">
+                            <div className="flex items-center gap-1.5 text-[13px] text-[var(--text-faint)]">
                               <Mail size={12} />
                               {client.email}
                             </div>
@@ -456,7 +456,7 @@ export default function ClientDetailClient({
                           {isAdmin && !isEditing && (
                             <button 
                               onClick={() => setIsEditing(true)} 
-                              className="px-3 py-1.5 rounded-lg text-[12px] font-medium text-[#8a8a8a] hover:text-[#e8e8e8] hover:bg-white/5 border border-[rgba(255,255,255,0.08)] transition-all duration-150 flex items-center gap-1.5"
+                              className="px-3 py-1.5 rounded-lg text-[12px] font-medium text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--hover-default)] border border-[var(--border-default)] transition-all duration-150 flex items-center gap-1.5"
                             >
                               <Pencil className="h-3.5 w-3.5" /> Edit
                             </button>
@@ -465,7 +465,7 @@ export default function ClientDetailClient({
                       </div>
 
                       {isEditing ? (
-                        <div className="pt-4 border-t border-[rgba(255,255,255,0.06)]">
+                        <div className="pt-4 border-t border-[var(--border-subtle)]">
                           <ClientForm 
                             client={client} 
                             onSuccess={async (updated) => { 
@@ -478,36 +478,36 @@ export default function ClientDetailClient({
                           />
                         </div>
                       ) : (
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-4 border-t border-[rgba(255,255,255,0.06)]">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-4 border-t border-[var(--border-subtle)]">
                           <div>
-                            <p className="text-[11px] font-medium text-[#555] uppercase tracking-[0.06em] mb-1.5">
+                            <p className="text-[11px] font-medium text-[var(--text-faint)] uppercase tracking-[0.06em] mb-1.5">
                               Monthly Rate
                             </p>
                             <div className="flex items-center gap-1.5">
-                              <DollarSign size={14} className="text-[#555]" />
-                              <span className="text-sm font-medium text-[#e8e8e8]">
+                              <DollarSign size={14} className="text-[var(--text-faint)]" />
+                              <span className="text-sm font-medium text-[var(--text-primary)]">
                                 {client.monthly_rate != null ? formatCurrency(client.monthly_rate) : "—"}
                               </span>
                             </div>
                           </div>
                           
                           <div>
-                            <p className="text-[11px] font-medium text-[#555] uppercase tracking-[0.06em] mb-1.5">
+                            <p className="text-[11px] font-medium text-[var(--text-faint)] uppercase tracking-[0.06em] mb-1.5">
                               Start Date
                             </p>
                             <div className="flex items-center gap-1.5">
-                              <Calendar size={14} className="text-[#555]" />
-                              <span className="text-sm text-[#e8e8e8]">
+                              <Calendar size={14} className="text-[var(--text-faint)]" />
+                              <span className="text-sm text-[var(--text-primary)]">
                                 {client.start_date ? formatDate(client.start_date) : "—"}
                               </span>
                             </div>
                           </div>
                           
                           <div>
-                            <p className="text-[11px] font-medium text-[#555] uppercase tracking-[0.06em] mb-1.5">
+                            <p className="text-[11px] font-medium text-[var(--text-faint)] uppercase tracking-[0.06em] mb-1.5">
                               Project Type
                             </p>
-                            <span className="text-sm text-[#e8e8e8]">
+                            <span className="text-sm text-[var(--text-primary)]">
                               {client.project_type ?? "—"}
                             </span>
                           </div>
@@ -518,41 +518,41 @@ export default function ClientDetailClient({
 
                   {/* Stats cards */}
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className="rounded-xl border border-[rgba(255,255,255,0.06)] bg-[#111111] p-4">
+                    <div className="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-sidebar)] p-4">
                       <div className="flex items-center gap-2 mb-2">
-                        <Briefcase size={14} className="text-[#5e6ad2]" />
-                        <span className="text-[11px] text-[#555]">Active Projects</span>
+                        <Briefcase size={14} className="text-[var(--accent)]" />
+                        <span className="text-[11px] text-[var(--text-faint)]">Active Projects</span>
                       </div>
-                      <p className="text-2xl font-semibold text-[#e8e8e8]">
+                      <p className="text-2xl font-semibold text-[var(--text-primary)]">
                         {projects.filter(p => p.status === "active" || p.status === "in_progress").length}
                       </p>
-                      <p className="text-[11px] text-[#555] mt-1">Out of {projects.length} total</p>
+                      <p className="text-[11px] text-[var(--text-faint)] mt-1">Out of {projects.length} total</p>
                     </div>
                     
-                    <div className="rounded-xl border border-[rgba(255,255,255,0.06)] bg-[#111111] p-4">
+                    <div className="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-sidebar)] p-4">
                       <div className="flex items-center gap-2 mb-2">
-                        <DollarSign size={14} className="text-[#26c97f]" />
-                        <span className="text-[11px] text-[#555]">Total Project Value</span>
+                        <DollarSign size={14} className="text-[var(--status-done)]" />
+                        <span className="text-[11px] text-[var(--text-faint)]">Total Project Value</span>
                       </div>
-                      <p className="text-2xl font-semibold text-[#e8e8e8]">
+                      <p className="text-2xl font-semibold text-[var(--text-primary)]">
                         {formatCurrency(totalProjectsValue)}
                       </p>
                     </div>
                     
-                    <div className="rounded-xl border border-[rgba(255,255,255,0.06)] bg-[#111111] p-4">
+                    <div className="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-sidebar)] p-4">
                       <div className="flex items-center gap-2 mb-2">
-                        <CreditCard size={14} className="text-[#e79d13]" />
-                        <span className="text-[11px] text-[#555]">Total Invoices</span>
+                        <CreditCard size={14} className="text-[var(--priority-high)]" />
+                        <span className="text-[11px] text-[var(--text-faint)]">Total Invoices</span>
                       </div>
-                      <p className="text-2xl font-semibold text-[#e8e8e8]">
+                      <p className="text-2xl font-semibold text-[var(--text-primary)]">
                         {formatCurrency(totalInvoicesAmount)}
                       </p>
                     </div>
                   </div>
 
                   {/* Projects / Invoices tabs */}
-                  <div className="rounded-xl border border-[rgba(255,255,255,0.06)] bg-[#111111] overflow-hidden">
-                    <div className="flex gap-1 border-b border-[rgba(255,255,255,0.06)] px-6 pt-3">
+                  <div className="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-sidebar)] overflow-hidden">
+                    <div className="flex gap-1 border-b border-[var(--border-subtle)] px-6 pt-3">
                       {(["projects", "invoices"] as const).map((tab) => (
                         <button
                           key={tab}
@@ -560,33 +560,33 @@ export default function ClientDetailClient({
                           className={[
                             "px-4 py-2 text-sm font-medium capitalize transition-colors duration-150 rounded-t-lg",
                             activeTab === tab 
-                              ? "text-[#5e6ad2] border-b-2 border-[#5e6ad2]" 
-                              : "text-[#555] hover:text-[#888]",
+                              ? "text-[var(--accent)] border-b-2 border-[var(--accent)]" 
+                              : "text-[var(--text-faint)] hover:text-[var(--text-muted)]",
                           ].join(" ")}
                         >
                           {tab}
-                          <span className="ml-2 px-1.5 py-0.5 rounded-md text-[10px] font-medium bg-[rgba(255,255,255,0.06)] text-[#555]">
+                          <span className="ml-2 px-1.5 py-0.5 rounded-md text-[10px] font-medium bg-[var(--border-subtle)] text-[var(--text-faint)]">
                             {tab === "projects" ? projects.length : invoices.length}
                           </span>
                         </button>
                       ))}
                     </div>
                     
-                    <div className="p-6">
+                    <div className="p-4 sm:p-6">
                       {activeTab === "projects" && (
                         relatedLoading ? (
                           <div className="space-y-3">
                             {[1, 2, 3].map(i => (
-                              <div key={i} className="h-16 bg-[#1a1a1a] rounded-lg animate-pulse" />
+                              <div key={i} className="h-16 bg-[var(--bg-input)] rounded-lg animate-pulse" />
                             ))}
                           </div>
                         ) : projects.length === 0 ? (
                           <div className="text-center py-8">
-                            <Briefcase className="h-12 w-12 text-[#3a3a3a] mx-auto mb-3" />
-                            <p className="text-sm text-[#555]">No projects yet for this client</p>
+                            <Briefcase className="h-12 w-12 text-[var(--text-disabled)] mx-auto mb-3" />
+                            <p className="text-sm text-[var(--text-faint)]">No projects yet for this client</p>
                           </div>
                         ) : (
-                          <div className="divide-y divide-[rgba(255,255,255,0.06)]">
+                          <div className="divide-y divide-[var(--border-subtle)]">
                             {projects.map((p) => (
                               <Link
                                 key={p.id}
@@ -595,25 +595,25 @@ export default function ClientDetailClient({
                               >
                                 <div className="min-w-0 flex-1">
                                   <div className="flex items-center gap-2">
-                                    <p className="text-sm font-medium text-[#e8e8e8] truncate group-hover:text-[#5e6ad2] transition-colors">
+                                    <p className="text-sm font-medium text-[var(--text-primary)] truncate group-hover:text-[var(--accent)] transition-colors">
                                       {p.name}
                                     </p>
                                     <ProjectStatusBadge status={p.status ?? "active"} />
                                   </div>
                                   {p.deadline && (
                                     <div className="flex items-center gap-1 mt-1">
-                                      <Calendar size={10} className="text-[#555]" />
-                                      <span className="text-[11px] text-[#555]">
+                                      <Calendar size={10} className="text-[var(--text-faint)]" />
+                                      <span className="text-[11px] text-[var(--text-faint)]">
                                         Due {formatDate(p.deadline)}
                                       </span>
                                     </div>
                                   )}
                                 </div>
                                 <div className="shrink-0 flex items-center gap-3">
-                                  <span className="text-sm font-medium text-[#e8e8e8] tabular-nums">
+                                  <span className="text-sm font-medium text-[var(--text-primary)] tabular-nums">
                                     {p.total_value != null ? formatCurrency(p.total_value) : "—"}
                                   </span>
-                                  <ChevronRight size={14} className="text-[#3a3a3a] group-hover:text-[#555] transition-colors" />
+                                  <ChevronRight size={14} className="text-[var(--text-disabled)] group-hover:text-[var(--text-faint)] transition-colors" />
                                 </div>
                               </Link>
                             ))}
@@ -625,16 +625,16 @@ export default function ClientDetailClient({
                         relatedLoading ? (
                           <div className="space-y-3">
                             {[1, 2, 3].map(i => (
-                              <div key={i} className="h-16 bg-[#1a1a1a] rounded-lg animate-pulse" />
+                              <div key={i} className="h-16 bg-[var(--bg-input)] rounded-lg animate-pulse" />
                             ))}
                           </div>
                         ) : invoices.length === 0 ? (
                           <div className="text-center py-8">
-                            <FileText className="h-12 w-12 text-[#3a3a3a] mx-auto mb-3" />
-                            <p className="text-sm text-[#555]">No invoices yet for this client</p>
+                            <FileText className="h-12 w-12 text-[var(--text-disabled)] mx-auto mb-3" />
+                            <p className="text-sm text-[var(--text-faint)]">No invoices yet for this client</p>
                           </div>
                         ) : (
-                          <div className="divide-y divide-[rgba(255,255,255,0.06)]">
+                          <div className="divide-y divide-[var(--border-subtle)]">
                             {invoices.map((inv) => (
                               <Link
                                 key={inv.id}
@@ -643,25 +643,25 @@ export default function ClientDetailClient({
                               >
                                 <div className="min-w-0 flex-1">
                                   <div className="flex items-center gap-2">
-                                    <p className="text-sm font-mono text-[#888] truncate group-hover:text-[#5e6ad2] transition-colors">
+                                    <p className="text-sm font-mono text-[var(--text-muted)] truncate group-hover:text-[var(--accent)] transition-colors">
                                       {inv.invoice_number ?? "—"}
                                     </p>
                                     <InvoiceStatusBadge status={inv.status as InvoiceStatus} />
                                   </div>
                                   {inv.due_date && (
                                     <div className="flex items-center gap-1 mt-1">
-                                      <Calendar size={10} className="text-[#555]" />
-                                      <span className="text-[11px] text-[#555]">
+                                      <Calendar size={10} className="text-[var(--text-faint)]" />
+                                      <span className="text-[11px] text-[var(--text-faint)]">
                                         Due {formatDate(inv.due_date)}
                                       </span>
                                     </div>
                                   )}
                                 </div>
                                 <div className="shrink-0 flex items-center gap-3">
-                                  <span className="text-sm font-medium text-[#e8e8e8] tabular-nums">
+                                  <span className="text-sm font-medium text-[var(--text-primary)] tabular-nums">
                                     {inv.amount != null ? formatCurrency(inv.amount) : "—"}
                                   </span>
-                                  <ChevronRight size={14} className="text-[#3a3a3a] group-hover:text-[#555] transition-colors" />
+                                  <ChevronRight size={14} className="text-[var(--text-disabled)] group-hover:text-[var(--text-faint)] transition-colors" />
                                 </div>
                               </Link>
                             ))}
@@ -672,28 +672,28 @@ export default function ClientDetailClient({
                   </div>
 
                   {/* Portal access */}
-                  <div className="rounded-xl border border-[rgba(255,255,255,0.06)] bg-[#111111] p-6">
-                    <h2 className="text-sm font-medium text-[#e8e8e8] mb-4">Portal Access</h2>
+                  <div className="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-sidebar)] p-6">
+                    <h2 className="text-sm font-medium text-[var(--text-primary)] mb-4">Portal Access</h2>
                     
                     {newPlainPassword ? (
-                      <div className="mb-4 rounded-lg bg-[rgba(38,201,127,0.1)] border border-[rgba(38,201,127,0.2)] p-4">
-                        <p className="text-[11px] font-medium uppercase tracking-wide text-[#26c97f] mb-2">
+                      <div className="mb-4 rounded-lg bg-[var(--tint-green)] border border-[var(--tint-green-border)] p-4">
+                        <p className="text-[11px] font-medium uppercase tracking-wide text-[var(--status-done)] mb-2">
                           New portal password — copy and share with client
                         </p>
                         <div className="flex items-center gap-2">
-                          <div className="flex-1 rounded-lg bg-[#1a1a1a] px-3 py-2 font-mono text-sm tracking-wide text-[#26c97f] border border-[rgba(38,201,127,0.2)]">
+                          <div className="flex-1 rounded-lg bg-[var(--bg-input)] px-3 py-2 font-mono text-sm tracking-wide text-[var(--status-done)] border border-[var(--tint-green-border)]">
                             {newPlainPassword}
                           </div>
                           <button 
                             onClick={copyPassword} 
                             title="Copy password" 
-                            className="p-2 rounded-lg text-[#26c97f] hover:bg-[rgba(38,201,127,0.1)] transition-all duration-150"
+                            className="p-2 rounded-lg text-[var(--status-done)] hover:bg-[var(--tint-green)] transition-all duration-150"
                           >
                             {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
                           </button>
                           <button 
                             onClick={() => setNewPlainPassword(null)} 
-                            className="px-3 py-2 rounded-lg text-xs font-medium text-[#26c97f] hover:bg-[rgba(38,201,127,0.1)] transition-all duration-150"
+                            className="px-3 py-2 rounded-lg text-xs font-medium text-[var(--status-done)] hover:bg-[var(--tint-green)] transition-all duration-150"
                           >
                             Done
                           </button>
@@ -701,7 +701,7 @@ export default function ClientDetailClient({
                       </div>
                     ) : (
                       <div className="flex items-center gap-2 mb-3">
-                        <div className="flex-1 rounded-lg bg-[#1a1a1a] px-4 py-2.5 font-mono text-sm tracking-wide text-[#555] border border-[rgba(255,255,255,0.08)]">
+                        <div className="flex-1 rounded-lg bg-[var(--bg-input)] px-4 py-2.5 font-mono text-sm tracking-wide text-[var(--text-faint)] border border-[var(--border-default)]">
                           {client.portal_password ? "•".repeat(12) : <span className="font-sans text-xs italic">Not set</span>}
                         </div>
                       </div>
@@ -712,7 +712,7 @@ export default function ClientDetailClient({
                         <button 
                           onClick={handlePasswordReset} 
                           disabled={resetting} 
-                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-medium text-[#888] hover:text-[#e8e8e8] hover:bg-white/5 border border-[rgba(255,255,255,0.08)] transition-all duration-150 disabled:opacity-50"
+                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-medium text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--hover-default)] border border-[var(--border-default)] transition-all duration-150 disabled:opacity-50"
                         >
                           <RefreshCw className={`h-3.5 w-3.5 ${resetting ? "animate-spin" : ""}`} />
                           {client.portal_password ? "Reset Password" : "Set Password"}

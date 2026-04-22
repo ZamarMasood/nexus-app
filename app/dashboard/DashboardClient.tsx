@@ -73,21 +73,21 @@ export default function DashboardClient({
   const completionPct = taskStats.total ? Math.round((taskStats.done / taskStats.total) * 100) : 0;
 
   return (
-    <div className="flex flex-col h-full bg-[#0d0d0d]">
+    <div className="flex flex-col h-full bg-[var(--bg-page)]">
 
       {/* Header toolbar */}
-      <div className="flex items-center justify-between px-6 h-[60px] border-b border-[rgba(255,255,255,0.06)] shrink-0">
+      <div className="flex items-center justify-between px-4 sm:px-6 h-[60px] border-b border-[var(--border-subtle)] shrink-0 gap-3">
         <div className="flex items-center gap-3">
-          <Layers size={16} className="text-[#555]" />
+          <Layers size={16} className="text-[var(--text-faint)]" />
           <div>
-            <h1 className="text-[15px] font-medium text-[#e8e8e8]">Dashboard</h1>
-            <p className="text-[11px] text-[#555] mt-0.5">{dateLabel}</p>
+            <h1 className="text-[15px] font-medium text-[var(--text-primary)]">Dashboard</h1>
+            <p className="text-[11px] text-[var(--text-faint)] mt-0.5">{dateLabel}</p>
           </div>
         </div>
         <button
           onClick={() => openTaskForm()}
           className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium
-            bg-[#5e6ad2] hover:bg-[#6872e5] text-white transition-all duration-150"
+            bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white transition-all duration-150"
         >
           <Plus size={14} />
           New Task
@@ -96,40 +96,40 @@ export default function DashboardClient({
 
       {/* Main content */}
       <div className="flex-1 overflow-y-auto">
-        <div className="p-6">
+        <div className="p-4 sm:p-6">
           
           {/* Welcome section */}
           <div className="mb-8">
-            <h2 className="text-[20px] font-semibold text-[#e8e8e8] tracking-tight">
+            <h2 className="text-[20px] font-semibold text-[var(--text-primary)] tracking-tight">
               Welcome back{userName ? `, ${userName}!` : ''}
             </h2>
           </div>
 
           {/* Stats grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-8">
             {/* Total Tasks */}
-            <div className="rounded-xl border border-[rgba(255,255,255,0.06)] bg-[#111111] p-4">
+            <div className="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-sidebar)] p-4">
               <div className="flex items-center justify-between mb-3">
-                <div className="p-1.5 rounded-md bg-[rgba(94,106,210,0.12)]">
-                  <Layers size={14} className="text-[#5e6ad2]" />
+                <div className="p-1.5 rounded-md bg-[var(--tint-accent)]">
+                  <Layers size={14} className="text-[var(--accent)]" />
                 </div>
-                <span className="text-[11px] text-[#555]">Total</span>
+                <span className="text-[11px] text-[var(--text-faint)]">Total</span>
               </div>
-              <p className="text-[24px] font-semibold text-[#e8e8e8] mb-1">{taskStats.total}</p>
-              <p className="text-[11px] text-[#555]">Tasks</p>
+              <p className="text-[24px] font-semibold text-[var(--text-primary)] mb-1">{taskStats.total}</p>
+              <p className="text-[11px] text-[var(--text-faint)]">Tasks</p>
             </div>
 
             {/* Completion Rate */}
-            <div className="rounded-xl border border-[rgba(255,255,255,0.06)] bg-[#111111] p-4">
+            <div className="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-sidebar)] p-4">
               <div className="flex items-center justify-between mb-3">
-                <div className="p-1.5 rounded-md bg-[rgba(38,201,127,0.12)]">
-                  <CheckCircle size={14} className="text-[#26c97f]" />
+                <div className="p-1.5 rounded-md bg-[var(--tint-green)]">
+                  <CheckCircle size={14} className="text-[var(--status-done)]" />
                 </div>
-                <span className="text-[11px] text-[#555]">Progress</span>
+                <span className="text-[11px] text-[var(--text-faint)]">Progress</span>
               </div>
-              <p className="text-[24px] font-semibold text-[#e8e8e8] mb-1">{completionPct}%</p>
-              <p className="text-[11px] text-[#555]">Complete</p>
-              <div className="mt-2 h-1 rounded-full bg-[rgba(255,255,255,0.06)] overflow-hidden">
+              <p className="text-[24px] font-semibold text-[var(--text-primary)] mb-1">{completionPct}%</p>
+              <p className="text-[11px] text-[var(--text-faint)]">Complete</p>
+              <div className="mt-2 h-1 rounded-full bg-[var(--border-subtle)] overflow-hidden">
                 <div 
                   className="h-full rounded-full transition-all"
                   style={{ width: `${completionPct}%`, background: '#5e6ad2' }}
@@ -138,44 +138,44 @@ export default function DashboardClient({
             </div>
 
             {/* Active Projects */}
-            <div className="rounded-xl border border-[rgba(255,255,255,0.06)] bg-[#111111] p-4">
+            <div className="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-sidebar)] p-4">
               <div className="flex items-center justify-between mb-3">
-                <div className="p-1.5 rounded-md bg-[rgba(94,106,210,0.12)]">
-                  <Briefcase size={14} className="text-[#5e6ad2]" />
+                <div className="p-1.5 rounded-md bg-[var(--tint-accent)]">
+                  <Briefcase size={14} className="text-[var(--accent)]" />
                 </div>
-                <span className="text-[11px] text-[#555]">Active</span>
+                <span className="text-[11px] text-[var(--text-faint)]">Active</span>
               </div>
-              <p className="text-[24px] font-semibold text-[#e8e8e8] mb-1">{activeProjects.length}</p>
-              <p className="text-[11px] text-[#555]">Projects</p>
+              <p className="text-[24px] font-semibold text-[var(--text-primary)] mb-1">{activeProjects.length}</p>
+              <p className="text-[11px] text-[var(--text-faint)]">Projects</p>
             </div>
 
             {/* Overdue */}
-            <div className="rounded-xl border border-[rgba(255,255,255,0.06)] bg-[#111111] p-4">
+            <div className="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-sidebar)] p-4">
               <div className="flex items-center justify-between mb-3">
-                <div className="p-1.5 rounded-md bg-[rgba(229,72,77,0.12)]">
-                  <AlertCircle size={14} className="text-[#e5484d]" />
+                <div className="p-1.5 rounded-md bg-[var(--tint-red)]">
+                  <AlertCircle size={14} className="text-[var(--priority-urgent)]" />
                 </div>
-                <span className="text-[11px] text-[#555]">Attention</span>
+                <span className="text-[11px] text-[var(--text-faint)]">Attention</span>
               </div>
-              <p className="text-[24px] font-semibold text-[#e5484d] mb-1">{taskStats.overdue}</p>
-              <p className="text-[11px] text-[#555]">Overdue tasks</p>
+              <p className="text-[24px] font-semibold text-[var(--priority-urgent)] mb-1">{taskStats.overdue}</p>
+              <p className="text-[11px] text-[var(--text-faint)]">Overdue tasks</p>
             </div>
           </div>
 
           {/* Two column layout */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
+
             {/* Recent Tasks */}
-            <div className="lg:col-span-2">
-              <div className="rounded-xl border border-[rgba(255,255,255,0.06)] bg-[#111111] overflow-hidden">
-                <div className="flex items-center justify-between px-5 py-3 border-b border-[rgba(255,255,255,0.06)]">
+            <div className="lg:col-span-2 flex flex-col">
+              <div className="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-sidebar)] overflow-hidden flex-1 flex flex-col">
+                <div className="flex items-center justify-between px-5 py-3 border-b border-[var(--border-subtle)]">
                   <div className="flex items-center gap-2">
-                    <Clock size={14} className="text-[#5e6ad2]" />
-                    <h3 className="text-[13px] font-medium text-[#e8e8e8]">Recent Tasks</h3>
+                    <Clock size={14} className="text-[var(--accent)]" />
+                    <h3 className="text-[13px] font-medium text-[var(--text-primary)]">Recent Tasks</h3>
                   </div>
                   <Link 
                     href={`/${slug}/tasks`}
-                    className="text-[11px] text-[#5e6ad2] hover:text-[#7e8ae6] transition-colors flex items-center gap-1"
+                    className="text-[11px] text-[var(--accent)] hover:text-[var(--accent-hover)] transition-colors flex items-center gap-1"
                   >
                     View all
                     <ArrowRight size={12} />
@@ -184,16 +184,16 @@ export default function DashboardClient({
 
                 {recentTasks.length === 0 ? (
                   <div className="p-8 text-center">
-                    <p className="text-[13px] text-[#888] mb-2">No tasks yet</p>
+                    <p className="text-[13px] text-[var(--text-muted)] mb-2">No tasks yet</p>
                     <button
                       onClick={() => openTaskForm()}
-                      className="text-[12px] text-[#5e6ad2] hover:text-[#7e8ae6]"
+                      className="text-[12px] text-[var(--accent)] hover:text-[var(--accent-hover)]"
                     >
                       Create your first task →
                     </button>
                   </div>
                 ) : (
-                  <div className="divide-y divide-[rgba(255,255,255,0.06)]">
+                  <div className="divide-y divide-[var(--border-subtle)]">
                     {recentTasks.map((task) => {
                       const isHighPriority = task.priority === "urgent" || task.priority === "high";
                       
@@ -201,7 +201,7 @@ export default function DashboardClient({
                         <Link 
                           key={task.id} 
                           href={`/${slug}/tasks/${task.id}`}
-                          className="group block px-5 py-3 hover:bg-[#1c1c1c] transition-colors"
+                          className="group block px-5 py-3 hover:bg-[var(--bg-elevated)] transition-colors"
                         >
                           <div className="flex items-start gap-3">
                             {isHighPriority && (
@@ -211,18 +211,18 @@ export default function DashboardClient({
                               />
                             )}
                             <div className="flex-1 min-w-0">
-                              <p className="text-[13px] text-[#d4d4d4] group-hover:text-[#5e6ad2] transition-colors">
+                              <p className="text-[13px] text-[var(--text-secondary)] group-hover:text-[var(--accent)] transition-colors">
                                 {task.title}
                               </p>
                               <div className="flex items-center gap-3 mt-1.5">
                                 <StatusBadge status={task.status ?? 'todo'} />
                                 {task.due_date && (
-                                  <span className="flex items-center gap-1 text-[11px] text-[#555]">
+                                  <span className="flex items-center gap-1 text-[11px] text-[var(--text-faint)]">
                                     <Calendar size={10} />
                                     {formatDate(task.due_date)}
                                   </span>
                                 )}
-                                <span className="flex items-center gap-1 text-[11px] text-[#555]">
+                                <span className="flex items-center gap-1 text-[11px] text-[var(--text-faint)]">
                                   <MessageSquare size={10} />
                                   0
                                 </span>
@@ -230,9 +230,9 @@ export default function DashboardClient({
                             </div>
                             {task.assignee && (
                               <div className="flex-shrink-0">
-                                <div className="w-6 h-6 rounded-full bg-[rgba(94,106,210,0.15)]
+                                <div className="w-6 h-6 rounded-full bg-[var(--tint-accent-strong)]
                                   flex items-center justify-center">
-                                  <span className="text-[10px] font-medium text-[#5e6ad2]">
+                                  <span className="text-[10px] font-medium text-[var(--accent)]">
                                     {task.assignee.name.slice(0, 2).toUpperCase()}
                                   </span>
                                 </div>
@@ -248,47 +248,47 @@ export default function DashboardClient({
             </div>
 
             {/* Right Column */}
-            <div className="space-y-6">
-              
+            <div className="flex flex-col gap-6">
+
               {/* Quick Actions */}
-              <div className="rounded-xl border border-[rgba(255,255,255,0.06)] bg-[#111111] p-4">
-                <h3 className="text-[13px] font-medium text-[#e8e8e8] mb-3">Quick Actions</h3>
+              <div className="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-sidebar)] p-4">
+                <h3 className="text-[13px] font-medium text-[var(--text-primary)] mb-3">Quick Actions</h3>
                 <div className="space-y-2">
                   <button
                     onClick={() => openTaskForm()}
                     className="w-full flex items-center gap-2 px-3 py-2 rounded-lg
-                      text-[12px] text-[#888] hover:text-[#e8e8e8] hover:bg-white/5
+                      text-[12px] text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--hover-default)]
                       transition-all duration-150"
                   >
-                    <Plus size={12} className="text-[#5e6ad2]" />
+                    <Plus size={12} className="text-[var(--accent)]" />
                     Create New Task
                   </button>
                   <Link
                     href={`/${slug}/projects`}
                     className="w-full flex items-center gap-2 px-3 py-2 rounded-lg
-                      text-[12px] text-[#888] hover:text-[#e8e8e8] hover:bg-white/5
+                      text-[12px] text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--hover-default)]
                       transition-all duration-150"
                   >
-                    <Briefcase size={12} className="text-[#5e6ad2]" />
+                    <Briefcase size={12} className="text-[var(--accent)]" />
                     View All Projects
                   </Link>
                 </div>
               </div>
 
               {/* Active Projects List */}
-              <div className="rounded-xl border border-[rgba(255,255,255,0.06)] bg-[#111111] p-4">
+              <div className="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-sidebar)] p-4 flex-1 flex flex-col">
                 <div className="flex items-center justify-between mb-3">
-                  <h3 className="text-[13px] font-medium text-[#e8e8e8]">Active Projects</h3>
+                  <h3 className="text-[13px] font-medium text-[var(--text-primary)]">Active Projects</h3>
                   <Link 
                     href={`/${slug}/projects`}
-                    className="text-[11px] text-[#5e6ad2] hover:text-[#7e8ae6]"
+                    className="text-[11px] text-[var(--accent)] hover:text-[var(--accent-hover)]"
                   >
                     Manage →
                   </Link>
                 </div>
                 
                 {activeProjects.length === 0 ? (
-                  <p className="text-[12px] text-[#555] text-center py-3">No active projects</p>
+                  <p className="text-[12px] text-[var(--text-faint)] text-center py-3">No active projects</p>
                 ) : (
                   <div className="space-y-2">
                     {activeProjects.slice(0, 4).map((project) => (
@@ -297,10 +297,10 @@ export default function DashboardClient({
                         href={`/${slug}/projects/${project.id}`}
                         className="flex items-center justify-between py-1.5 group"
                       >
-                        <span className="text-[12px] text-[#888] group-hover:text-[#e8e8e8] transition-colors">
+                        <span className="text-[12px] text-[var(--text-muted)] group-hover:text-[var(--text-primary)] transition-colors">
                           {project.name}
                         </span>
-                        <ArrowRight size={10} className="text-[#333] group-hover:text-[#5e6ad2]" />
+                        <ArrowRight size={10} className="text-[var(--text-disabled)] group-hover:text-[var(--accent)]" />
                       </Link>
                     ))}
                   </div>
@@ -309,13 +309,13 @@ export default function DashboardClient({
 
               {/* Upcoming Tasks */}
               {taskStats.dueSoon > 0 && (
-                <div className="rounded-xl border border-[rgba(255,255,255,0.06)] bg-[#111111] p-4">
+                <div className="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-sidebar)] p-4">
                   <div className="flex items-center gap-2 mb-3">
-                    <AlertCircle size={12} className="text-[#e79d13]" />
-                    <h3 className="text-[13px] font-medium text-[#e8e8e8]">Due This Week</h3>
+                    <AlertCircle size={12} className="text-[var(--priority-high)]" />
+                    <h3 className="text-[13px] font-medium text-[var(--text-primary)]">Due This Week</h3>
                   </div>
-                  <p className="text-[20px] font-semibold text-[#e79d13] mb-1">{taskStats.dueSoon}</p>
-                  <p className="text-[11px] text-[#555]">Tasks need attention</p>
+                  <p className="text-[20px] font-semibold text-[var(--priority-high)] mb-1">{taskStats.dueSoon}</p>
+                  <p className="text-[11px] text-[var(--text-faint)]">Tasks need attention</p>
                 </div>
               )}
             </div>

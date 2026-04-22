@@ -16,7 +16,7 @@ export function EmptyState({ title, description, action }: EmptyStateProps) {
     <div className="flex flex-col items-center justify-center h-full py-24 gap-4">
       {/* Abstract geometric icon */}
       <svg width="48" height="48" viewBox="0 0 48 48" fill="none"
-        className="text-[#333] opacity-80">
+        className="text-[var(--text-disabled)] opacity-80">
         <rect x="8" y="8" width="32" height="32" rx="6"
           stroke="currentColor" strokeWidth="1.5" fill="none" />
         <rect x="14" y="14" width="20" height="20" rx="4"
@@ -26,9 +26,9 @@ export function EmptyState({ title, description, action }: EmptyStateProps) {
       </svg>
 
       <div className="text-center space-y-1">
-        <p className="text-[14px] font-medium text-[#8a8a8a]">{title}</p>
+        <p className="text-[14px] font-medium text-[var(--text-muted)]">{title}</p>
         {description && (
-          <p className="text-[13px] text-[#555] max-w-[280px]">{description}</p>
+          <p className="text-[13px] text-[var(--text-faint)] max-w-[280px]">{description}</p>
         )}
       </div>
 
@@ -36,7 +36,7 @@ export function EmptyState({ title, description, action }: EmptyStateProps) {
         <button
           onClick={action.onClick}
           className="inline-flex items-center gap-1.5 px-4 py-2
-            bg-[#5e6ad2] hover:bg-[#6872e5] active:scale-[0.98]
+            bg-[var(--accent)] hover:bg-[var(--accent-hover)] active:scale-[0.98]
             text-white text-[13px] font-medium rounded-md
             transition-colors duration-150 mt-2"
         >

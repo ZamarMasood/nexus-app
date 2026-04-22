@@ -4,31 +4,62 @@ import { useTheme } from "next-themes";
 import { Sun, Moon } from "lucide-react";
 import { useEffect, useState } from "react";
 
-export function ThemeToggle() {
-  const { theme, setTheme } = useTheme();
-  const [mounted, setMounted] = useState(false);
+interface ThemeToggleProps {
+  /** 'button' = compact icon button; 'nav' = full-width nav row with label */
+  variant?: "button" | "nav";
+  className?: string;
+}
 
+export function ThemeToggle({ variant = "button", className = "" }: ThemeToggleProps) {
+  const { resolvedTheme, setTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
-  if (!mounted) {
+  const isDark = mounted ? resolvedTheme === "dark" : true;
+  const next = isDark ? "light" : "dark";
+  const Icon = isDark ? Sun : Moon;
+  const label = isDark ? "Light mode" : "Dark mode";
+
+  if (variant === "nav") {
     return (
-      <div className="h-8 w-8 rounded-lg bg-[rgba(255,255,255,0.06)] animate-pulse" />
+      <button
+        type="button"
+        onClick={() => setTheme(next)}
+        className={[
+          "group flex items-center gap-2.5 w-full px-3 py-1.5 rounded-md",
+          "text-[13px] font-medium text-[var(--text-muted)]",
+          "hover:bg-[var(--hover-default)] hover:text-[var(--text-primary)]",
+          "transition-colors duration-150",
+          className,
+        ].join(" ")}
+        aria-label={`Switch to ${next} mode`}
+        suppressHydrationWarning
+      >
+        <Icon size={15} className="flex-shrink-0 text-[var(--text-faint)] group-hover:text-[var(--text-muted)]" />
+        {label}
+      </button>
     );
   }
 
-  const isDark = theme === "dark";
-
   return (
     <button
-      onClick={() => setTheme(isDark ? "light" : "dark")}
-      title={isDark ? "Switch to light mode" : "Switch to dark mode"}
-      className="flex items-center justify-center rounded-lg p-1.5 text-[#555] transition-[background-color,color] duration-150 hover:bg-white/5 hover:text-[#8a8a8a] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(94,106,210,0.35)] active:scale-95"
+      type="button"
+      onClick={() => setTheme(next)}
+      className={[
+        "inline-flex h-8 w-8 items-center justify-center rounded-md",
+        "text-[var(--text-muted)] hover:text-[var(--text-primary)]",
+        "hover:bg-[var(--hover-default)]",
+        "transition-colors duration-150",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-ring)]",
+        className,
+      ].join(" ")}
+      aria-label={`Switch to ${next} mode`}
+      title={label}
+      suppressHydrationWarning
     >
-      {isDark ? (
-        <Sun className="h-4 w-4" />
-      ) : (
-        <Moon className="h-4 w-4" />
-      )}
+      <Icon size={15} />
     </button>
   );
 }
+
+export default ThemeToggle;

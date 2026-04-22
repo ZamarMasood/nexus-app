@@ -24,7 +24,7 @@ export default async function PortalAuthenticatedLayout({
   }
 
   return (
-    <div className="flex h-screen bg-[#0d0d0d] overflow-hidden">
+    <div className="flex h-screen bg-[var(--bg-page)] overflow-hidden">
       <PortalSidebar clientName={clientName} />
       <main className="flex-1 flex flex-col overflow-hidden pt-12 lg:pt-0">
         {children}

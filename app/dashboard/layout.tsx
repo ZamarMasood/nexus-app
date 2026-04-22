@@ -12,6 +12,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
   let orgName: string | undefined;
   let orgSlug: string = '';
   let memberName: string | undefined;
+  let memberAvatarUrl: string | undefined;
 
   try {
     const supabase = createSupabaseServerClient();
@@ -24,6 +25,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
       isAdmin = adminResult;
       currentMemberId = member?.id;
       memberName = member?.name;
+      memberAvatarUrl = member?.avatar_url ?? undefined;
       if (member?.org_id) {
         const { data: org } = await supabaseAdmin
           .from('organisations')
@@ -58,6 +60,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
         currentMemberId={currentMemberId}
         orgName={orgName}
         memberName={memberName}
+        memberAvatarUrl={memberAvatarUrl}
         slug={wsSlug || orgSlug}
       >
         {children}

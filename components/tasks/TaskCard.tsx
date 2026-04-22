@@ -6,6 +6,7 @@ import { CalendarDays, AlertCircle, ArrowUp, Minus, ArrowDown, Lock } from "luci
 
 export type TaskWithAssignee = Task & {
   assignee?: Pick<TeamMember, "name" | "avatar_url"> | null;
+  comment_count?: number;
 };
 
 interface TaskCardProps {
@@ -18,25 +19,25 @@ interface TaskCardProps {
 const PRIORITY_CONFIG = {
   urgent: {
     label: "Urgent",
-    badge: "bg-[rgba(229,72,77,0.12)] text-[#e5484d]",
+    badge: "bg-[var(--tint-red)] text-[var(--priority-urgent)]",
     borderColor: "#e5484d",
     icon: AlertCircle,
   },
   high: {
     label: "High",
-    badge: "bg-[rgba(231,157,19,0.12)] text-[#e79d13]",
+    badge: "bg-[var(--tint-orange)] text-[var(--priority-high)]",
     borderColor: "#e79d13",
     icon: ArrowUp,
   },
   normal: {
     label: "Normal",
-    badge: "bg-[rgba(94,106,210,0.12)] text-[#5e6ad2]",
+    badge: "bg-[var(--tint-accent)] text-[var(--accent)]",
     borderColor: "#5e6ad2",
     icon: Minus,
   },
   low: {
     label: "Low",
-    badge: "bg-[rgba(136,136,136,0.12)] text-[#888]",
+    badge: "bg-[var(--hover-default)] text-[var(--text-muted)]",
     borderColor: "#888",
     icon: ArrowDown,
   },
@@ -65,15 +66,15 @@ export function TaskCard({ task, onClick, isDragging = false, isLocked = false }
       onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onClick?.(task); } }}
       className={[
         "group relative flex flex-col gap-3 rounded-lg p-4",
-        "bg-[#161616] border border-[rgba(255,255,255,0.06)]",
+        "bg-[var(--bg-card)] border border-[var(--border-subtle)]",
         "border-l-[3px]",
         "select-none",
         isLocked ? "cursor-default opacity-60" : "cursor-pointer",
-        isLocked ? "" : "hover:bg-[#1c1c1c]",
-        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(94,106,210,0.35)]",
+        isLocked ? "" : "hover:bg-[var(--bg-elevated)]",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-ring)]",
         isLocked ? "" : "active:scale-[0.99]",
         "transition-colors duration-150",
-        isDragging ? "opacity-80 rotate-1 scale-[1.02] shadow-[0_8px_32px_rgba(0,0,0,0.6)]" : "",
+        isDragging ? "opacity-80 rotate-1 scale-[1.02] shadow-[var(--shadow-lg)]" : "",
       ].join(" ")}
       style={{ borderLeftColor: config.borderColor }}
     >
@@ -81,13 +82,13 @@ export function TaskCard({ task, onClick, isDragging = false, isLocked = false }
       <div className="flex items-start justify-between gap-3">
         <p className={[
           "text-[13px] font-medium leading-snug tracking-[-0.01em] line-clamp-2",
-          isLocked ? "text-[#555]" : "text-[#f0f0f0]",
+          isLocked ? "text-[var(--text-faint)]" : "text-[var(--text-primary)]",
         ].join(" ")}>
           {task.title}
         </p>
         <div className="flex shrink-0 items-center gap-1.5">
           {isLocked && (
-            <Lock className="h-3 w-3 text-[#3a3a3a]" />
+            <Lock className="h-3 w-3 text-[var(--text-disabled)]" />
           )}
           <span className={`inline-flex shrink-0 items-center gap-1 rounded-sm px-2 py-0.5 text-[11px] font-medium ${config.badge}`}>
             <PriorityIcon className="h-2.5 w-2.5" />
@@ -98,7 +99,7 @@ export function TaskCard({ task, onClick, isDragging = false, isLocked = false }
 
       {/* Description */}
       {task.description && (
-        <p className="text-[12px] leading-relaxed text-[#555] line-clamp-2">
+        <p className="text-[12px] leading-relaxed text-[var(--text-faint)] line-clamp-2">
           {task.description}
         </p>
       )}
@@ -116,23 +117,23 @@ export function TaskCard({ task, onClick, isDragging = false, isLocked = false }
                 className="h-5 w-5 rounded-full object-cover"
               />
             ) : (
-              <div className="flex h-5 w-5 items-center justify-center rounded-full bg-[rgba(94,106,210,0.15)]">
-                <span className="text-[9px] font-medium text-[#5e6ad2]">
+              <div className="flex h-5 w-5 items-center justify-center rounded-full bg-[var(--tint-accent-strong)]">
+                <span className="text-[9px] font-medium text-[var(--accent)]">
                   {getInitials(task.assignee.name)}
                 </span>
               </div>
             )}
-            <span className="text-[11px] text-[#8a8a8a]">{task.assignee.name}</span>
+            <span className="text-[11px] text-[var(--text-muted)]">{task.assignee.name}</span>
           </div>
         ) : (
           <div className="flex items-center gap-1.5">
-            <div className="h-5 w-5 rounded-full border border-dashed border-[rgba(255,255,255,0.10)]" />
-            <span className="text-[11px] text-[#555]">Unassigned</span>
+            <div className="h-5 w-5 rounded-full border border-dashed border-[var(--border-medium)]" />
+            <span className="text-[11px] text-[var(--text-faint)]">Unassigned</span>
           </div>
         )}
 
         {task.due_date && (
-          <div className={`flex items-center gap-1 text-[11px] font-medium ${overdue ? "text-[#e5484d]" : "text-[#555]"}`}>
+          <div className={`flex items-center gap-1 text-[11px] font-medium ${overdue ? "text-[var(--priority-urgent)]" : "text-[var(--text-faint)]"}`}>
             <CalendarDays className="h-3 w-3" />
             <span>
               {new Date(task.due_date).toLocaleDateString(undefined, { month: "short", day: "numeric" })}

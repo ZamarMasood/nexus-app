@@ -11,7 +11,16 @@ export type CommentWithAuthor = Comment & {
 
 export type TaskWithAssignee = Task & {
   assignee: Pick<TeamMember, 'id' | 'name' | 'avatar_url' | 'role'> | null;
+  comment_count?: number;
 };
+
+/** Normalize the `comments:[{count}]` aggregate from PostgREST into a flat number. */
+function mapCommentCount<T extends { comments?: { count: number }[] | null }>(
+  row: T
+): Omit<T, 'comments'> & { comment_count: number } {
+  const { comments, ...rest } = row;
+  return { ...rest, comment_count: comments?.[0]?.count ?? 0 };
+}
 
 export async function getTasks(projectId?: string): Promise<Task[]> {
   const orgId = await getCallerOrgId();
@@ -31,7 +40,7 @@ export async function getTasksWithAssignees(projectId?: string): Promise<TaskWit
   const orgId = await getCallerOrgId();
   let query = supabaseAdmin
     .from('tasks')
-    .select('*, assignee:team_members!tasks_assignee_id_fkey(id, name, avatar_url, role)')
+    .select('*, assignee:team_members!tasks_assignee_id_fkey(id, name, avatar_url, role), comments(count)')
     .eq('org_id', orgId)
     .order('created_at', { ascending: false });
 
@@ -42,7 +51,7 @@ export async function getTasksWithAssignees(projectId?: string): Promise<TaskWit
   const { data, error } = await query;
 
   if (error) throw new Error(`Failed to fetch tasks with assignees: ${error.message}`);
-  return data as TaskWithAssignee[];
+  return (data ?? []).map(mapCommentCount) as unknown as TaskWithAssignee[];
 }
 
 /** Fetch only recent N tasks with assignee info (for dashboard list). */
@@ -265,14 +274,14 @@ export async function getTasksWithAssigneesByMember(memberId: string): Promise<T
   const supabase = createSupabaseServerClient();
   const { data, error } = await supabase
     .from('tasks')
-    .select('*, assignee:team_members!tasks_assignee_id_fkey(id, name, avatar_url, role)')
+    .select('*, assignee:team_members!tasks_assignee_id_fkey(id, name, avatar_url, role), comments(count)')
     .or(ids.length > 0
       ? `assignee_id.eq.${encodeURIComponent(memberId)},project_id.in.(${ids.map(id => encodeURIComponent(id)).join(',')})`
       : `assignee_id.eq.${encodeURIComponent(memberId)}`)
     .order('created_at', { ascending: false });
 
   if (error) throw new Error(`Failed to fetch tasks for member: ${error.message}`);
-  return data as TaskWithAssignee[];
+  return (data ?? []).map(mapCommentCount) as unknown as TaskWithAssignee[];
 }
 
 /** Fetch recent N tasks visible to a member (assigned to them or in their projects). */

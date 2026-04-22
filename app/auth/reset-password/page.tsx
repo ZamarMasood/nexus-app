@@ -2,45 +2,33 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useTheme } from 'next-themes';
 import { createBrowserClient } from '@supabase/ssr';
-import { Layers, Eye, EyeOff, Lock, Sun, Moon, CheckCircle } from 'lucide-react';
+import { Eye, EyeOff, Lock, Sparkles, ArrowRight, CheckCircle } from 'lucide-react';
 import Link from 'next/link';
+import { ThemeToggle } from '@/components/ThemeToggle';
+
+const INPUT_CLASS = `
+  w-full pl-9 pr-10 py-2 rounded-md
+  bg-[var(--bg-input)] border border-[var(--border-default)]
+  text-[var(--text-primary)] text-[13px] placeholder:text-[var(--text-fainter)]
+  focus:outline-none focus:border-[var(--border-hover)]
+  focus:ring-1 focus:ring-[var(--accent-ring)]
+  transition-colors duration-150
+`;
+
+const LABEL_CLASS = "block text-[11px] font-medium text-[var(--text-subtle)] uppercase tracking-[0.06em] mb-1.5";
 
 export default function ResetPasswordPage() {
   const router = useRouter();
-  const { setTheme, resolvedTheme } = useTheme();
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
 
   const [password, setPassword] = useState('');
-  const [confirm, setConfirm] = useState('');
+  const [confirm, setConfirm]   = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading]   = useState(false);
   const [checking, setChecking] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState(false);
+  const [error, setError]       = useState<string | null>(null);
+  const [success, setSuccess]   = useState(false);
 
-  const isDark = mounted ? resolvedTheme === 'dark' : true;
-
-  const bg         = mounted ? (isDark ? '#120828' : '#f5f3ff') : '#120828';
-  const cardBg     = mounted ? (isDark ? 'rgba(255,255,255,0.07)' : 'rgba(255,255,255,0.72)') : 'rgba(255,255,255,0.07)';
-  const cardBdr    = mounted ? (isDark ? 'rgba(255,255,255,0.12)' : 'rgba(124,58,237,0.18)') : 'rgba(255,255,255,0.12)';
-  const cardShadow = mounted
-    ? (isDark
-        ? '0 8px 64px rgba(0,0,0,0.4), 0 1px 0 rgba(255,255,255,0.1) inset'
-        : '0 8px 64px rgba(124,58,237,0.15), 0 1px 0 rgba(255,255,255,0.95) inset')
-    : '0 8px 64px rgba(0,0,0,0.4), 0 1px 0 rgba(255,255,255,0.1) inset';
-  const textH      = mounted ? (isDark ? '#ffffff' : '#180a2e') : '#ffffff';
-  const textSub    = mounted ? (isDark ? 'rgba(255,255,255,0.45)' : 'rgba(24,10,46,0.45)') : 'rgba(255,255,255,0.45)';
-  const inputBg    = mounted ? (isDark ? 'rgba(255,255,255,0.07)' : 'rgba(255,255,255,0.7)') : 'rgba(255,255,255,0.07)';
-  const inputBdr   = mounted ? (isDark ? 'rgba(255,255,255,0.12)' : 'rgba(124,58,237,0.18)') : 'rgba(255,255,255,0.12)';
-  const orbHigh    = mounted ? (isDark ? 'rgba(109,40,217,0.7)' : 'rgba(124,58,237,0.22)') : 'rgba(109,40,217,0.7)';
-  const orbMid     = mounted ? (isDark ? 'rgba(124,58,237,0.6)' : 'rgba(99,45,220,0.14)') : 'rgba(124,58,237,0.6)';
-
-  // Check for a valid session on mount (user must have arrived via reset/invite link).
-  // Supabase may use the implicit flow and deliver the token in the URL hash fragment
-  // (#access_token=...&type=recovery) instead of a PKCE code — handle both cases.
   useEffect(() => {
     async function verifySession() {
       const supabase = createBrowserClient(
@@ -48,7 +36,6 @@ export default function ResetPasswordPage() {
         process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
       );
 
-      // Parse hash fragment for implicit-flow tokens
       const hash = window.location.hash.slice(1);
       if (hash) {
         const params = new URLSearchParams(hash);
@@ -65,14 +52,12 @@ export default function ResetPasswordPage() {
             router.replace('/login?error=session_expired');
             return;
           }
-          // Clear the tokens from the URL without a page reload
           window.history.replaceState(null, '', window.location.pathname);
           setChecking(false);
           return;
         }
       }
 
-      // PKCE flow — session already set by the server-side callback
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
         router.replace('/login?error=session_expired');
@@ -113,137 +98,81 @@ export default function ResetPasswordPage() {
 
     setSuccess(true);
     setLoading(false);
-
-    // Redirect to dashboard after a short delay
     setTimeout(() => router.push('/dashboard'), 2000);
   }
 
-  // Show spinner while verifying session
   if (checking) {
     return (
-      <div
-        className="flex min-h-screen items-center justify-center"
-        style={{
-          background: 'radial-gradient(ellipse 140% 120% at 50% 0%, #2d1060 0%, #1a0845 35%, #120828 65%, #0e0620 100%)',
-        }}
-      >
+      <div className="relative min-h-screen bg-[var(--bg-page)] flex items-center justify-center p-4">
+        <div className="absolute top-3 right-3 sm:top-6 sm:right-6 z-10">
+          <ThemeToggle />
+        </div>
         <div className="flex flex-col items-center gap-3">
-          <div className="h-8 w-8 animate-spin rounded-full border-2 border-violet-500/30 border-t-violet-500" />
-          <p className="text-sm text-white/45">Verifying your session...</p>
+          <div className="h-6 w-6 animate-spin rounded-full border-2 border-[var(--accent-border)] border-t-[var(--accent)]" />
+          <p className="text-[13px] text-[var(--text-subtle)]">Verifying your session...</p>
         </div>
       </div>
     );
   }
 
+  const strength =
+    password.length === 0 ? null :
+    password.length < 6  ? { label: 'Too short', color: '#e5484d', bars: 1 } :
+    password.length < 8  ? { label: 'Weak',      color: '#e5484d', bars: 2 } :
+    password.length < 12 ? { label: 'Good',      color: '#e79d13', bars: 3 } :
+                            { label: 'Strong',    color: '#26c97f', bars: 4 };
+
   return (
-    <>
-      <style>{`
-        @keyframes orb-a { 0%,100%{transform:translate(0,0) scale(1)}40%{transform:translate(50px,-70px) scale(1.07)}70%{transform:translate(-30px,35px) scale(0.95)} }
-        @keyframes orb-b { 0%,100%{transform:translate(0,0) scale(1)}35%{transform:translate(-55px,45px) scale(1.05)}70%{transform:translate(38px,-22px) scale(0.97)} }
-        @keyframes card-in { from{opacity:0;transform:translateY(24px) scale(0.97)} to{opacity:1;transform:translateY(0) scale(1)} }
-        @keyframes s-up { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
-        .orb-a { animation: orb-a 20s ease-in-out infinite; }
-        .orb-b { animation: orb-b 26s ease-in-out infinite; }
-        .card-in { animation: card-in 0.65s cubic-bezier(0.16,1,0.3,1) 0.05s both; }
-        .s1 { animation: s-up 0.5s cubic-bezier(0.16,1,0.3,1) 0.18s both; }
-        .s2 { animation: s-up 0.5s cubic-bezier(0.16,1,0.3,1) 0.27s both; }
-        .s3 { animation: s-up 0.5s cubic-bezier(0.16,1,0.3,1) 0.35s both; }
-        .s4 { animation: s-up 0.5s cubic-bezier(0.16,1,0.3,1) 0.43s both; }
-        .login-input {
-          width: 100%; border-radius: 12px; padding: 13px 16px; font-size: 14px;
-          outline: none; transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
-        }
-        .login-input:focus {
-          border-color: rgba(124,58,237,0.65) !important;
-          box-shadow: 0 0 0 3px rgba(124,58,237,0.15);
-        }
-      `}</style>
+    <div className="relative min-h-screen bg-[var(--bg-page)] flex items-center justify-center p-4">
+      <div className="absolute top-3 right-3 sm:top-6 sm:right-6 z-10">
+        <ThemeToggle />
+      </div>
+      <div className="w-full max-w-[400px]">
 
-      <div
-        className="relative flex min-h-screen items-center justify-center overflow-hidden px-4"
-        style={{
-          background: isDark
-            ? 'radial-gradient(ellipse 140% 120% at 50% 0%, #2d1060 0%, #1a0845 35%, #120828 65%, #0e0620 100%)'
-            : bg,
-        }}
-      >
-        {/* Dot grid */}
-        <div className="pointer-events-none absolute inset-0"
-          style={{
-            backgroundImage: `radial-gradient(${isDark ? 'rgba(255,255,255,0.06)' : 'rgba(124,58,237,0.12)'} 1px, transparent 1px)`,
-            backgroundSize: '28px 28px',
-          }}
-        />
-
-        {/* Orbs */}
-        <div className="orb-a pointer-events-none absolute -top-32 -left-32 size-[750px] rounded-full"
-          style={{ background: `radial-gradient(circle at 40% 40%, ${orbHigh} 0%, transparent 62%)`, filter: 'blur(28px)' }} />
-        <div className="orb-b pointer-events-none absolute -bottom-32 -right-32 size-[700px] rounded-full"
-          style={{ background: `radial-gradient(circle at 55% 55%, ${orbMid} 0%, transparent 62%)`, filter: 'blur(30px)' }} />
-
-        {/* Theme toggle */}
-        <button
-          onClick={() => setTheme(isDark ? 'light' : 'dark')}
-          className="s1 group absolute top-5 right-5 z-20 flex size-9 items-center justify-center rounded-xl transition-[background-color,transform,box-shadow] duration-200 hover:bg-violet-500/10 hover:shadow-[0_0_16px_rgba(124,58,237,0.18)] active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/40"
-          style={{ color: textSub, border: `1px solid ${cardBdr}`, backdropFilter: 'blur(8px)', background: cardBg }}
-          aria-label="Toggle theme"
-        >
-          {isDark ? <Sun size={15} /> : <Moon size={15} />}
-        </button>
+        {/* Logo + wordmark in a single row */}
+        <div className="flex items-center justify-center gap-2.5 mb-8">
+          <div className="inline-flex h-8 w-8 items-center justify-center rounded-md
+            bg-[var(--tint-accent)] border border-[var(--accent-border)]">
+            <Sparkles size={16} className="text-[var(--accent)]" />
+          </div>
+          <span className="text-[18px] font-medium text-[var(--text-primary)] tracking-[-0.02em]">
+            Nexus App
+          </span>
+        </div>
 
         {/* Card */}
-        <div
-          className="card-in relative z-10 w-full max-w-[400px] rounded-3xl p-8"
-          style={{ background: cardBg, border: `1px solid ${cardBdr}`, backdropFilter: 'blur(28px)', WebkitBackdropFilter: 'blur(28px)', boxShadow: cardShadow }}
-        >
-          <div className="pointer-events-none absolute inset-x-10 top-0 h-px rounded-full"
-            style={{ background: `linear-gradient(90deg, transparent, ${isDark ? 'rgba(255,255,255,0.18)' : 'rgba(255,255,255,0.9)'}, transparent)` }} />
+        <div className="bg-[var(--bg-card)] border border-[var(--border-default)]
+          rounded-lg p-6 sm:p-8 shadow-[var(--shadow-lg)]">
 
-          {/* Heading */}
-          <div className="s1 mb-7 flex flex-col items-center gap-4 text-center">
-            <div
-              className="flex size-12 items-center justify-center rounded-2xl"
-              style={{
-                background: 'linear-gradient(135deg, #7c3aed 0%, #5b21b6 100%)',
-                boxShadow: '0 0 0 1px rgba(124,58,237,0.5), 0 8px 32px rgba(124,58,237,0.4)',
-              }}
-            >
-              <Layers size={20} className="text-white" />
-            </div>
-            <div>
-              <h1 className="text-[26px] font-semibold leading-tight tracking-[-0.03em]"
-                style={{ color: textH, fontFamily: 'var(--font-display)' }}>
-                {success ? 'Password updated' : 'Set new password'}
-              </h1>
-              <p className="mt-1 text-[13px]" style={{ color: textSub }}>
-                {success ? 'Redirecting you to the dashboard…' : 'Choose a strong password for your account'}
-              </p>
-            </div>
-          </div>
+          <h1 className="text-[18px] font-medium text-[var(--text-primary)] tracking-[-0.02em] mb-1">
+            {success ? 'Password updated' : 'Set new password'}
+          </h1>
+          <p className="text-[13px] text-[var(--text-subtle)] mb-6">
+            {success ? 'Redirecting you to the dashboard…' : 'Choose a strong password for your account'}
+          </p>
 
-          {/* Success */}
           {success && (
-            <div className="s1 flex items-center gap-2.5 rounded-xl px-4 py-3 text-[13px]"
-              style={{ background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.2)', color: '#6ee7b7' }}>
-              <CheckCircle size={16} className="shrink-0" />
+            <div className="rounded-md px-3 py-2.5 text-[13px] text-[var(--status-done)]
+              bg-[var(--tint-green)] border border-[var(--tint-green-border)]
+              flex items-start gap-2">
+              <CheckCircle size={14} className="mt-0.5 flex-shrink-0" />
               Your password has been updated successfully.
             </div>
           )}
 
-          {/* Error */}
           {error && (
-            <div className="s1 mb-5 rounded-xl px-4 py-3 text-[13px]"
-              style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', color: '#fca5a5' }}>
+            <div className="mb-5 rounded-md px-3 py-2.5 text-[13px] text-[var(--priority-urgent)]
+              bg-[var(--tint-red)] border border-[var(--tint-red-border)]">
               {error}
             </div>
           )}
 
           {!success && (
             <form onSubmit={handleSubmit} className="space-y-4">
-              {/* New Password */}
-              <div className="s2">
-                <label className="mb-1.5 block text-[12px] font-medium" style={{ color: textSub }}>New Password</label>
+              <div>
+                <label className={LABEL_CLASS}>New Password</label>
                 <div className="relative">
+                  <Lock size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-faint)] pointer-events-none" />
                   <input
                     type={showPassword ? 'text' : 'password'}
                     required
@@ -251,102 +180,100 @@ export default function ResetPasswordPage() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="Min. 8 characters"
-                    className="login-input"
-                    style={{ background: inputBg, border: `1px solid ${inputBdr}`, color: textH, paddingRight: '44px' }}
+                    className={INPUT_CLASS}
                   />
                   <button
                     type="button"
-                    onClick={() => setShowPassword((v) => !v)}
-                    className="absolute right-4 top-1/2 -translate-y-1/2 transition-opacity duration-150 hover:opacity-70 active:scale-90 focus-visible:outline-none"
-                    style={{ color: textSub }}
+                    onClick={() => setShowPassword(v => !v)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--text-faint)]
+                      hover:text-[var(--text-primary)] transition-colors duration-150"
                     aria-label={showPassword ? 'Hide password' : 'Show password'}
                   >
-                    {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
+                    {showPassword ? <EyeOff size={14} /> : <Eye size={14} />}
                   </button>
                 </div>
               </div>
 
-              {/* Confirm Password */}
-              <div className="s3">
-                <label className="mb-1.5 block text-[12px] font-medium" style={{ color: textSub }}>Confirm Password</label>
-                <input
-                  type={showPassword ? 'text' : 'password'}
-                  required
-                  value={confirm}
-                  onChange={(e) => setConfirm(e.target.value)}
-                  placeholder="Repeat new password"
-                  className="login-input"
-                  style={{ background: inputBg, border: `1px solid ${inputBdr}`, color: textH }}
-                />
+              <div>
+                <label className={LABEL_CLASS}>Confirm Password</label>
+                <div className="relative">
+                  <Lock size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-faint)] pointer-events-none" />
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    required
+                    value={confirm}
+                    onChange={(e) => setConfirm(e.target.value)}
+                    placeholder="Repeat new password"
+                    className={INPUT_CLASS}
+                  />
+                </div>
               </div>
 
-              {/* Strength indicator */}
-              {password.length > 0 && (
-                <div className="s3 flex items-center gap-2">
+              {strength && (
+                <div className="flex items-center gap-2">
                   <div className="flex gap-1">
                     {[1, 2, 3, 4].map((level) => (
                       <div
                         key={level}
-                        className="h-1 w-8 rounded-full"
+                        className="h-1 w-8 rounded-full transition-colors duration-150"
                         style={{
-                          background: password.length >= level * 3
-                            ? password.length >= 12 ? '#34d399' : password.length >= 8 ? '#fbbf24' : '#f87171'
-                            : isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
-                          transition: 'background 0.3s',
+                          background: level <= strength.bars ? strength.color : 'rgba(255,255,255,0.08)',
                         }}
                       />
                     ))}
                   </div>
-                  <span className="text-[11px]" style={{ color: textSub }}>
-                    {password.length < 6 ? 'Too short' : password.length < 8 ? 'Weak' : password.length < 12 ? 'Good' : 'Strong'}
-                  </span>
+                  <span className="text-[11px] text-[var(--text-subtle)]">{strength.label}</span>
                 </div>
               )}
 
-              <div className="s4 pt-1">
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="group relative w-full overflow-hidden rounded-xl py-3.5 text-[14px] font-semibold text-white transition-[transform,box-shadow] duration-200 disabled:opacity-60 hover:scale-[1.015] hover:shadow-[0_8px_40px_rgba(124,58,237,0.5)] active:scale-[0.985] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/60"
-                  style={{
-                    background: 'linear-gradient(135deg, #7c3aed 0%, #5b21b6 100%)',
-                    boxShadow: '0 4px 24px rgba(124,58,237,0.4), 0 1px 0 rgba(255,255,255,0.1) inset',
-                  }}
-                >
-                  <span
-                    className="pointer-events-none absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-in-out"
-                    style={{ background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent)' }}
-                  />
-                  {loading ? (
-                    <span className="flex items-center justify-center gap-2.5">
-                      <span className="size-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-                      Updating…
-                    </span>
-                  ) : (
-                    <span className="flex items-center justify-center gap-2">
-                      <Lock className="size-4" />
-                      Update Password
-                    </span>
-                  )}
-                </button>
-              </div>
+              <button
+                type="submit"
+                disabled={loading}
+                className="mt-2 w-full inline-flex items-center justify-center gap-2
+                  rounded-md bg-[var(--accent)] hover:bg-[var(--accent-hover)] active:scale-[0.99]
+                  px-4 py-2 text-[13px] font-medium text-white
+                  transition-colors duration-150
+                  focus-visible:outline-none focus-visible:ring-2
+                  focus-visible:ring-[var(--accent-ring)]
+                  disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {loading ? (
+                  <>
+                    <svg className="animate-spin h-3.5 w-3.5" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                    </svg>
+                    Updating...
+                  </>
+                ) : (
+                  <>
+                    <Lock size={14} />
+                    Update Password
+                  </>
+                )}
+              </button>
             </form>
           )}
 
           {!success && (
-            <p className="s4 mt-6 text-center text-[13px]" style={{ color: textSub }}>
-              Remember your password?{' '}
-              <Link
-                href="/login"
-                className="font-medium transition-opacity duration-150 hover:opacity-70 focus-visible:outline-none focus-visible:underline"
-                style={{ color: isDark ? 'rgba(167,139,250,0.9)' : '#7c3aed' }}
-              >
-                Sign in
-              </Link>
-            </p>
+            <div className="mt-6 pt-5 border-t border-[var(--border-subtle)] text-center">
+              <span className="text-[12px] text-[var(--text-subtle)]">
+                Remember your password?{' '}
+                <Link href="/login"
+                  className="group inline-flex items-center gap-1 text-[var(--accent)] hover:text-[var(--accent-hover)]
+                    transition-colors duration-150 font-medium">
+                  Sign in
+                  <ArrowRight size={12} className="transition-transform duration-150 group-hover:translate-x-0.5" />
+                </Link>
+              </span>
+            </div>
           )}
         </div>
+
+        <p className="text-center mt-6 text-[11px] text-[var(--text-fainter)]">
+          Secure login with end-to-end encryption
+        </p>
       </div>
-    </>
+    </div>
   );
 }

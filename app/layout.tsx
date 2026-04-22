@@ -26,7 +26,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning className={GeistSans.className}>
       <body>
-        <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
           <NextTopLoader color="#5e6ad2" shadow="0 0 10px #5e6ad2,0 0 5px #5e6ad2" height={2} showSpinner={false} />
           {children}
         </ThemeProvider>

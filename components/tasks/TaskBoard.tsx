@@ -106,7 +106,7 @@ export function TaskBoard({ initialTasks, columns, onTaskClick, isAdmin = false 
                     {col.label}
                   </h3>
                 </div>
-                <span className="text-[12px] font-medium text-[#555]">
+                <span className="text-[12px] font-medium text-[var(--text-faint)]">
                   {colTasks.length}
                 </span>
               </div>
@@ -121,8 +121,8 @@ export function TaskBoard({ initialTasks, columns, onTaskClick, isAdmin = false 
                       "flex flex-col gap-2 rounded-lg p-2 min-h-[240px]",
                       "border",
                       snapshot.isDraggingOver
-                        ? "border-[rgba(94,106,210,0.3)] bg-[rgba(94,106,210,0.05)]"
-                        : "border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.02)]",
+                        ? "border-[var(--accent-border)] bg-[var(--tint-accent)]"
+                        : "border-[var(--border-subtle)] bg-[var(--hover-subtle)]",
                       "transition-colors duration-150",
                     ].join(" ")}
                   >
@@ -156,7 +156,7 @@ export function TaskBoard({ initialTasks, columns, onTaskClick, isAdmin = false 
 
                     {colTasks.length === 0 && !snapshot.isDraggingOver && (
                       <div className="flex flex-1 items-center justify-center py-8">
-                        <p className="text-[12px] text-[#3a3a3a] select-none">Drop tasks here</p>
+                        <p className="text-[12px] text-[var(--text-disabled)] select-none">Drop tasks here</p>
                       </div>
                     )}
                   </div>
@@ -167,7 +167,7 @@ export function TaskBoard({ initialTasks, columns, onTaskClick, isAdmin = false 
                 <button
                   onClick={() => openTaskForm()}
                   className="mt-2 flex items-center gap-1.5 rounded-md px-2 py-1.5
-                    text-[12px] text-[#555] hover:bg-white/5 hover:text-[#8a8a8a]
+                    text-[12px] text-[var(--text-faint)] hover:bg-[var(--hover-default)] hover:text-[var(--text-muted)]
                     transition-colors duration-150"
                 >
                   <Plus size={13} />

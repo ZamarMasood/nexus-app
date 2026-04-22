@@ -43,11 +43,11 @@ const PAGE_SIZE = 5;
 // ── Avatar helpers ────────────────────────────────────────────────────────────
 
 const AVATAR_PALETTES = [
-  "bg-[rgba(94,106,210,0.15)] text-[#5e6ad2]",
-  "bg-[rgba(38,201,127,0.15)] text-[#26c97f]",
-  "bg-[rgba(231,157,19,0.15)] text-[#e79d13]",
-  "bg-[rgba(229,72,77,0.15)] text-[#e5484d]",
-  "bg-[rgba(136,136,136,0.15)] text-[#888]",
+  "bg-[var(--tint-accent-strong)] text-[var(--accent)]",
+  "bg-[var(--tint-green)] text-[var(--status-done)]",
+  "bg-[var(--tint-orange)] text-[var(--priority-high)]",
+  "bg-[var(--tint-red)] text-[var(--priority-urgent)]",
+  "bg-[var(--hover-strong)] text-[var(--text-muted)]",
 ];
 
 function getAvatarColor(name: string) {
@@ -76,19 +76,19 @@ function ToastContainer({ toasts, onDismiss }: { toasts: Toast[]; onDismiss: (id
           key={t.id}
           className={[
             "flex items-center gap-3 rounded-lg px-4 py-3 text-[13px] font-medium pointer-events-auto",
-            "bg-[#1c1c1c] border border-[rgba(255,255,255,0.10)] shadow-[0_8px_32px_rgba(0,0,0,0.6)]",
+            "bg-[var(--bg-elevated)] border border-[var(--border-medium)] shadow-[var(--shadow-lg)]",
             "animate-in slide-in-from-right-4 duration-200",
           ].join(" ")}
         >
           {t.type === "success" ? (
-            <CheckCircle className="h-4 w-4 shrink-0 text-[#26c97f]" />
+            <CheckCircle className="h-4 w-4 shrink-0 text-[var(--status-done)]" />
           ) : (
-            <AlertCircle className="h-4 w-4 shrink-0 text-[#e5484d]" />
+            <AlertCircle className="h-4 w-4 shrink-0 text-[var(--priority-urgent)]" />
           )}
-          <span className="text-[#f0f0f0]">{t.message}</span>
+          <span className="text-[var(--text-primary)]">{t.message}</span>
           <button
             onClick={() => onDismiss(t.id)}
-            className="ml-2 text-[#555] hover:text-[#8a8a8a] transition-colors duration-150"
+            className="ml-2 text-[var(--text-faint)] hover:text-[var(--text-muted)] transition-colors duration-150"
           >
             <X className="h-3.5 w-3.5" />
           </button>
@@ -130,9 +130,9 @@ function SubmitButton({ label, pendingLabel, className }: { label: string; pendi
 // ── Input field class ─────────────────────────────────────────────────────────
 
 const fieldCls =
-  "w-full px-3 py-2 rounded-lg bg-[#1a1a1a] border border-[rgba(255,255,255,0.08)] text-[#f0f0f0] text-[13px] placeholder:text-[#555] focus:outline-none focus:border-[rgba(94,106,210,0.5)] focus:ring-1 focus:ring-[rgba(94,106,210,0.3)] transition-all duration-150";
+  "w-full px-3 py-2 rounded-lg bg-[var(--bg-input)] border border-[var(--border-default)] text-[var(--text-primary)] text-[13px] placeholder:text-[var(--text-faint)] focus:outline-none focus:border-[var(--accent-border)] focus:ring-1 focus:ring-[var(--accent-ring)] transition-all duration-150";
 
-const labelCls = "block text-[11px] font-medium text-[#8a8a8a] mb-1.5";
+const labelCls = "block text-[11px] font-medium text-[var(--text-muted)] mb-1.5";
 
 // ── Project multi-select checklist ────────────────────────────────────────────
 
@@ -147,7 +147,7 @@ function ProjectChecklist({
 }) {
   if (projects.length === 0) {
     return (
-      <p className="text-[12px] text-[#3a3a3a] italic py-2">
+      <p className="text-[12px] text-[var(--text-disabled)] italic py-2">
         No projects available. Create projects first.
       </p>
     );
@@ -160,8 +160,8 @@ function ProjectChecklist({
   }
 
   return (
-    <div className="rounded-lg border border-[rgba(255,255,255,0.06)] overflow-hidden bg-[#1a1a1a] max-h-32 overflow-y-auto">
-      <div className="divide-y divide-[rgba(255,255,255,0.06)]">
+    <div className="rounded-lg border border-[var(--border-subtle)] overflow-hidden bg-[var(--bg-input)] max-h-32 overflow-y-auto">
+      <div className="divide-y divide-[var(--border-subtle)]">
         {projects.map((p) => {
           const checked = selected.includes(p.id);
           return (
@@ -170,20 +170,20 @@ function ProjectChecklist({
               onClick={() => toggle(p.id)}
               className={[
                 "flex items-center gap-3 px-3 py-2 cursor-pointer transition-colors duration-[120ms]",
-                checked ? "bg-[rgba(94,106,210,0.08)] hover:bg-[rgba(94,106,210,0.12)]" : "hover:bg-[#1c1c1c]",
+                checked ? "bg-[var(--tint-accent)] hover:bg-[var(--tint-accent)]" : "hover:bg-[var(--bg-elevated)]",
               ].join(" ")}
             >
               <div
                 className={[
                   "flex h-4 w-4 shrink-0 items-center justify-center rounded border transition-colors duration-150",
                   checked
-                    ? "border-[#5e6ad2] bg-[#5e6ad2]"
-                    : "border-[rgba(255,255,255,0.10)] bg-[#1a1a1a]",
+                    ? "border-[var(--accent)] bg-[var(--accent)]"
+                    : "border-[var(--border-medium)] bg-[var(--bg-input)]",
                 ].join(" ")}
               >
                 {checked && <CheckCircle className="h-3 w-3 text-white" />}
               </div>
-              <span className="text-[13px] text-[#8a8a8a] flex-1">{p.name}</span>
+              <span className="text-[13px] text-[var(--text-muted)] flex-1">{p.name}</span>
               <input
                 type="checkbox"
                 name="project_ids"
@@ -208,7 +208,7 @@ function ProjectPills({ member }: { member: TeamMemberWithProjects }) {
     .filter((p): p is { id: string; name: string } => p !== null);
 
   if (allProjects.length === 0) {
-    return <span className="text-xs text-[#3a3a3a]">—</span>;
+    return <span className="text-xs text-[var(--text-disabled)]">—</span>;
   }
 
   const visible = allProjects.slice(0, 3);
@@ -219,7 +219,7 @@ function ProjectPills({ member }: { member: TeamMemberWithProjects }) {
       {visible.map((p) => (
         <span
           key={p.id}
-          className="inline-block rounded-md bg-[rgba(255,255,255,0.06)] px-2 py-1 text-[11px] font-medium text-[#8a8a8a]"
+          className="inline-block rounded-md bg-[var(--border-subtle)] px-2 py-1 text-[11px] font-medium text-[var(--text-muted)]"
         >
           {p.name}
         </span>
@@ -251,13 +251,13 @@ function RoleBadge({ userRole, isOwner }: { userRole: string | null; isOwner?: b
           Admin
         </span>
       ) : (
-        <span className="inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-[11px] font-medium bg-[rgba(255,255,255,0.06)] text-[#8a8a8a]">
+        <span className="inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-[11px] font-medium bg-[var(--border-subtle)] text-[var(--text-muted)]">
           <User className="h-3 w-3" />
           Member
         </span>
       )}
       {isOwner && (
-        <span className="inline-flex items-center gap-1 rounded-md bg-[rgba(231,157,19,0.12)] text-[#e79d13] px-2 py-1 text-[10px] font-medium">
+        <span className="inline-flex items-center gap-1 rounded-md bg-[var(--tint-orange)] text-[var(--priority-high)] px-2 py-1 text-[10px] font-medium">
           Owner
         </span>
       )}
@@ -296,26 +296,27 @@ function AddMemberModal({
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
       <DialogContent className="
-        bg-[#111111] border border-[rgba(255,255,255,0.08)] rounded-xl
-        shadow-2xl p-0 gap-0 max-w-[520px] w-full">
-        
-        <div className="flex items-center justify-between px-6 pt-5 pb-4
-          border-b border-[rgba(255,255,255,0.06)]">
+        bg-[var(--bg-sidebar)] border border-[var(--border-default)] rounded-xl
+        shadow-[var(--shadow-modal)] p-0 gap-0 w-[calc(100vw-24px)] max-w-[520px]
+        max-h-[92vh] sm:max-h-[90vh] overflow-y-auto">
+
+        <div className="flex items-center justify-between px-4 sm:px-6 pt-5 pb-4
+          border-b border-[var(--border-subtle)]">
           <div>
-            <h3 className="text-[15px] font-semibold text-[#f0f0f0]">Invite Team Member</h3>
-            <p className="text-[11px] text-[#555] mt-1">Send an invitation to join your workspace</p>
+            <h3 className="text-[15px] font-semibold text-[var(--text-primary)]">Invite Team Member</h3>
+            <p className="text-[11px] text-[var(--text-faint)] mt-1">Send an invitation to join your workspace</p>
           </div>
         </div>
 
         <div className="px-6 py-5">
           <form action={formAction} className="space-y-4">
             <div>
-              <label htmlFor="add-name" className={labelCls}>Full Name <span className="text-[#e5484d]">*</span></label>
+              <label htmlFor="add-name" className={labelCls}>Full Name <span className="text-[var(--priority-urgent)]">*</span></label>
               <input id="add-name" name="name" type="text" required placeholder="Jane Smith" className={fieldCls} />
             </div>
 
             <div>
-              <label htmlFor="add-email" className={labelCls}>Email <span className="text-[#e5484d]">*</span></label>
+              <label htmlFor="add-email" className={labelCls}>Email <span className="text-[var(--priority-urgent)]">*</span></label>
               <input id="add-email" name="email" type="email" required placeholder="jane@company.com" className={fieldCls} />
             </div>
 
@@ -331,7 +332,7 @@ function AddMemberModal({
             </div>
 
             {state.error && (
-              <div className="flex items-center gap-2 rounded-lg bg-[#e5484d]/10 border border-[#e5484d]/20 px-3 py-2 text-[12px] text-[#e5484d]">
+              <div className="flex items-center gap-2 rounded-lg bg-[var(--priority-urgent)]/10 border border-[var(--priority-urgent)]/20 px-3 py-2 text-[12px] text-[var(--priority-urgent)]">
                 <AlertCircle className="h-3.5 w-3.5 shrink-0" />
                 {state.error}
               </div>
@@ -341,8 +342,8 @@ function AddMemberModal({
               <button
                 type="button"
                 onClick={onClose}
-                className="px-3 py-1.5 rounded-lg text-[12px] font-medium text-[#8a8a8a]
-                  hover:bg-white/5 hover:text-[#f0f0f0] transition-all duration-150"
+                className="px-3 py-1.5 rounded-lg text-[12px] font-medium text-[var(--text-muted)]
+                  hover:bg-[var(--hover-default)] hover:text-[var(--text-primary)] transition-all duration-150"
               >
                 Cancel
               </button>
@@ -350,7 +351,7 @@ function AddMemberModal({
                 label="Send Invite"
                 pendingLabel="Sending..."
                 className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-[12px] font-medium
-                  bg-[#5e6ad2] hover:bg-[#6872e5] text-white
+                  bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white
                   active:scale-[0.98] transition-all duration-150
                   disabled:opacity-50 disabled:cursor-not-allowed"
               />
@@ -404,14 +405,15 @@ function EditMemberModal({
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
       <DialogContent className="
-        bg-[#111111] border border-[rgba(255,255,255,0.08)] rounded-xl
-        shadow-2xl p-0 gap-0 max-w-[520px] w-full">
-        
-        <div className="flex items-center justify-between px-6 pt-5 pb-4
-          border-b border-[rgba(255,255,255,0.06)]">
+        bg-[var(--bg-sidebar)] border border-[var(--border-default)] rounded-xl
+        shadow-[var(--shadow-modal)] p-0 gap-0 w-[calc(100vw-24px)] max-w-[520px]
+        max-h-[92vh] sm:max-h-[90vh] overflow-y-auto">
+
+        <div className="flex items-center justify-between px-4 sm:px-6 pt-5 pb-4
+          border-b border-[var(--border-subtle)]">
           <div>
-            <h3 className="text-[15px] font-semibold text-[#f0f0f0]">Edit Member</h3>
-            <p className="text-[11px] text-[#555] mt-1">Update member information and permissions</p>
+            <h3 className="text-[15px] font-semibold text-[var(--text-primary)]">Edit Member</h3>
+            <p className="text-[11px] text-[var(--text-faint)] mt-1">Update member information and permissions</p>
           </div>
         </div>
 
@@ -420,7 +422,7 @@ function EditMemberModal({
             <input type="hidden" name="id" value={member.id} />
 
             <div>
-              <label htmlFor="edit-name" className={labelCls}>Full Name <span className="text-[#e5484d]">*</span></label>
+              <label htmlFor="edit-name" className={labelCls}>Full Name <span className="text-[var(--priority-urgent)]">*</span></label>
               <input id="edit-name" name="name" type="text" required defaultValue={member.name} className={fieldCls} />
             </div>
 
@@ -430,9 +432,9 @@ function EditMemberModal({
                 type="email"
                 value={member.email}
                 readOnly
-                className="w-full rounded-lg bg-[rgba(255,255,255,0.06)] border border-[rgba(255,255,255,0.08)] px-3 py-2 text-[13px] text-[#555] cursor-not-allowed"
+                className="w-full rounded-lg bg-[var(--border-subtle)] border border-[var(--border-default)] px-3 py-2 text-[13px] text-[var(--text-faint)] cursor-not-allowed"
               />
-              <p className="text-[10px] text-[#3a3a3a] mt-1">Email cannot be changed</p>
+              <p className="text-[10px] text-[var(--text-disabled)] mt-1">Email cannot be changed</p>
             </div>
 
             <input type="hidden" name="original_user_role" value={member.user_role ?? 'member'} />
@@ -456,9 +458,9 @@ function EditMemberModal({
                     type="text"
                     value={member.is_owner ? 'Owner (Admin)' : role === 'admin' ? 'Admin' : 'Member'}
                     readOnly
-                    className="w-full rounded-lg bg-[rgba(255,255,255,0.06)] border border-[rgba(255,255,255,0.08)] px-3 py-2 text-[13px] text-[#555] cursor-not-allowed"
+                    className="w-full rounded-lg bg-[var(--border-subtle)] border border-[var(--border-default)] px-3 py-2 text-[13px] text-[var(--text-faint)] cursor-not-allowed"
                   />
-                  <p className="text-[10px] text-[#3a3a3a] mt-1">
+                  <p className="text-[10px] text-[var(--text-disabled)] mt-1">
                     {member.is_owner ? 'Owner role cannot be changed' : 'Only workspace owner can change roles'}
                   </p>
                 </>
@@ -475,7 +477,7 @@ function EditMemberModal({
             </div>
 
             {state.error && (
-              <div className="flex items-center gap-2 rounded-lg bg-[#e5484d]/10 border border-[#e5484d]/20 px-3 py-2 text-[12px] text-[#e5484d]">
+              <div className="flex items-center gap-2 rounded-lg bg-[var(--priority-urgent)]/10 border border-[var(--priority-urgent)]/20 px-3 py-2 text-[12px] text-[var(--priority-urgent)]">
                 <AlertCircle className="h-3.5 w-3.5 shrink-0" />
                 {state.error}
               </div>
@@ -485,8 +487,8 @@ function EditMemberModal({
               <button
                 type="button"
                 onClick={onClose}
-                className="px-3 py-1.5 rounded-lg text-[12px] font-medium text-[#8a8a8a]
-                  hover:bg-white/5 hover:text-[#f0f0f0] transition-all duration-150"
+                className="px-3 py-1.5 rounded-lg text-[12px] font-medium text-[var(--text-muted)]
+                  hover:bg-[var(--hover-default)] hover:text-[var(--text-primary)] transition-all duration-150"
               >
                 Cancel
               </button>
@@ -494,7 +496,7 @@ function EditMemberModal({
                 label="Save Changes"
                 pendingLabel="Saving..."
                 className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-[12px] font-medium
-                  bg-[#5e6ad2] hover:bg-[#6872e5] text-white
+                  bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white
                   active:scale-[0.98] transition-all duration-150
                   disabled:opacity-50 disabled:cursor-not-allowed"
               />
@@ -532,14 +534,15 @@ function DeleteMemberModal({
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
       <DialogContent className="
-        bg-[#111111] border border-[rgba(255,255,255,0.08)] rounded-xl
-        shadow-2xl p-0 gap-0 max-w-[480px] w-full">
-        
-        <div className="flex items-center justify-between px-6 pt-5 pb-4
-          border-b border-[rgba(255,255,255,0.06)]">
+        bg-[var(--bg-sidebar)] border border-[var(--border-default)] rounded-xl
+        shadow-[var(--shadow-modal)] p-0 gap-0 w-[calc(100vw-24px)] max-w-[480px]
+        max-h-[92vh] sm:max-h-[90vh] overflow-y-auto">
+
+        <div className="flex items-center justify-between px-4 sm:px-6 pt-5 pb-4
+          border-b border-[var(--border-subtle)]">
           <div>
-            <h3 className="text-[15px] font-semibold text-[#f0f0f0]">Remove Member</h3>
-            <p className="text-[11px] text-[#555] mt-1">This action cannot be undone</p>
+            <h3 className="text-[15px] font-semibold text-[var(--text-primary)]">Remove Member</h3>
+            <p className="text-[11px] text-[var(--text-faint)] mt-1">This action cannot be undone</p>
           </div>
         </div>
 
@@ -547,13 +550,13 @@ function DeleteMemberModal({
           <form action={formAction} className="space-y-4">
             <input type="hidden" name="id" value={member.id} />
 
-            <p className="text-[13px] text-[#8a8a8a]">
+            <p className="text-[13px] text-[var(--text-muted)]">
               Are you sure you want to remove{" "}
-              <span className="font-semibold text-[#f0f0f0]">{member.name}</span> from the team?
+              <span className="font-semibold text-[var(--text-primary)]">{member.name}</span> from the team?
             </p>
 
             {state.error && (
-              <div className="flex items-center gap-2 rounded-lg bg-[#e5484d]/10 border border-[#e5484d]/20 px-3 py-2 text-[12px] text-[#e5484d]">
+              <div className="flex items-center gap-2 rounded-lg bg-[var(--priority-urgent)]/10 border border-[var(--priority-urgent)]/20 px-3 py-2 text-[12px] text-[var(--priority-urgent)]">
                 <AlertCircle className="h-3.5 w-3.5 shrink-0" />
                 {state.error}
               </div>
@@ -563,8 +566,8 @@ function DeleteMemberModal({
               <button
                 type="button"
                 onClick={onClose}
-                className="px-3 py-1.5 rounded-lg text-[12px] font-medium text-[#8a8a8a]
-                  hover:bg-white/5 hover:text-[#f0f0f0] transition-all duration-150"
+                className="px-3 py-1.5 rounded-lg text-[12px] font-medium text-[var(--text-muted)]
+                  hover:bg-[var(--hover-default)] hover:text-[var(--text-primary)] transition-all duration-150"
               >
                 Cancel
               </button>
@@ -572,7 +575,7 @@ function DeleteMemberModal({
                 label="Remove Member"
                 pendingLabel="Removing..."
                 className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-[12px] font-medium
-                  bg-[#e5484d] hover:bg-[#e5484d]/90 text-white
+                  bg-[var(--priority-urgent)] hover:bg-[var(--priority-urgent)]/90 text-white
                   active:scale-[0.98] transition-all duration-150
                   disabled:opacity-50 disabled:cursor-not-allowed"
               />
@@ -655,21 +658,21 @@ export default function TeamMembersClient({
   }
 
   return (
-    <div className="flex flex-col h-full bg-[#0d0d0d]">
+    <div className="flex flex-col h-full bg-[var(--bg-page)]">
       <ToastContainer toasts={toasts} onDismiss={dismiss} />
 
       {/* Header toolbar */}
-      <div className="flex items-center justify-between px-6 h-[60px] border-b border-[rgba(255,255,255,0.06)] shrink-0">
+      <div className="flex items-center justify-between px-4 sm:px-6 h-[60px] border-b border-[var(--border-subtle)] shrink-0 gap-3">
         <div className="flex items-center gap-3">
-          <Layers size={16} className="text-[#555]" />
-          <h1 className="text-[15px] font-medium text-[#e8e8e8]">Team Members</h1>
-          <span className="text-[12px] text-[#555]">{total} total</span>
+          <Layers size={16} className="text-[var(--text-faint)]" />
+          <h1 className="text-[15px] font-medium text-[var(--text-primary)]">Team Members</h1>
+          <span className="text-[12px] text-[var(--text-faint)]">{total} total</span>
         </div>
         {isOwner && (
           <button
             onClick={() => { setAddOpen(true); setAddKey((k) => k + 1); }}
             className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium
-              bg-[#5e6ad2] hover:bg-[#6872e5] text-white transition-all duration-150"
+              bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white transition-all duration-150"
           >
             <Plus size={14} />
             Invite Member
@@ -679,48 +682,48 @@ export default function TeamMembersClient({
 
       {/* Main content */}
       <div className="flex-1 overflow-y-auto">
-        <div className="p-6">
+        <div className="p-4 sm:p-6">
           
           {/* Stats cards */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-            <div className="rounded-xl border border-[rgba(255,255,255,0.06)] bg-[#111111] p-4">
+            <div className="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-sidebar)] p-4">
               <div className="flex items-center gap-2 mb-2">
-                <Users size={14} className="text-[#5e6ad2]" />
-                <span className="text-[11px] text-[#555]">Total Members</span>
+                <Users size={14} className="text-[var(--accent)]" />
+                <span className="text-[11px] text-[var(--text-faint)]">Total Members</span>
               </div>
-              <p className="text-[24px] font-medium text-[#e8e8e8]">{total}</p>
+              <p className="text-[24px] font-medium text-[var(--text-primary)]">{total}</p>
             </div>
             
-            <div className="rounded-xl border border-[rgba(255,255,255,0.06)] bg-[#111111] p-4">
+            <div className="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-sidebar)] p-4">
               <div className="flex items-center gap-2 mb-2">
-                <ShieldCheck size={14} className="text-[#26c97f]" />
-                <span className="text-[11px] text-[#555]">Admins</span>
+                <ShieldCheck size={14} className="text-[var(--status-done)]" />
+                <span className="text-[11px] text-[var(--text-faint)]">Admins</span>
               </div>
-              <p className="text-[24px] font-medium text-[#e8e8e8]">{adminCount}</p>
+              <p className="text-[24px] font-medium text-[var(--text-primary)]">{adminCount}</p>
             </div>
             
-            <div className="rounded-xl border border-[rgba(255,255,255,0.06)] bg-[#111111] p-4">
+            <div className="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-sidebar)] p-4">
               <div className="flex items-center gap-2 mb-2">
-                <User size={14} className="text-[#e79d13]" />
-                <span className="text-[11px] text-[#555]">Members</span>
+                <User size={14} className="text-[var(--priority-high)]" />
+                <span className="text-[11px] text-[var(--text-faint)]">Members</span>
               </div>
-              <p className="text-[24px] font-medium text-[#e8e8e8]">{total - adminCount}</p>
+              <p className="text-[24px] font-medium text-[var(--text-primary)]">{total - adminCount}</p>
             </div>
           </div>
 
           {/* Search bar */}
           <div className="mb-6">
             <div className="relative">
-              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#555]" />
+              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-faint)]" />
               <input
                 type="text"
                 placeholder="Search team members..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full pl-9 pr-3 py-2 rounded-lg
-                  bg-[#111111] border border-[rgba(255,255,255,0.08)]
-                  text-[13px] text-[#f0f0f0] placeholder:text-[#555]
-                  focus:outline-none focus:border-[rgba(94,106,210,0.5)]
+                  bg-[var(--bg-sidebar)] border border-[var(--border-default)]
+                  text-[13px] text-[var(--text-primary)] placeholder:text-[var(--text-faint)]
+                  focus:outline-none focus:border-[var(--accent-border)]
                   transition-all duration-150"
               />
             </div>
@@ -729,37 +732,37 @@ export default function TeamMembersClient({
           {/* Members Table */}
           {filteredMembers.length === 0 && !loading ? (
             <div className="text-center py-12">
-              <p className="text-[13px] text-[#888] mb-2">
+              <p className="text-[13px] text-[var(--text-muted)] mb-2">
                 {searchQuery ? "No members found" : "No team members yet"}
               </p>
               {isOwner && !searchQuery && (
                 <button
                   onClick={() => { setAddOpen(true); setAddKey((k) => k + 1); }}
-                  className="text-[12px] text-[#5e6ad2] hover:text-[#7e8ae6]"
+                  className="text-[12px] text-[var(--accent)] hover:text-[var(--accent-hover)]"
                 >
                   Invite your first member →
                 </button>
               )}
             </div>
           ) : (
-            <div className="rounded-lg border border-[rgba(255,255,255,0.06)] overflow-hidden">
+            <div className="rounded-lg border border-[var(--border-subtle)] overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead>
-                    <tr className="border-b border-[rgba(255,255,255,0.06)] bg-[#111111]">
-                      <th className="px-5 py-3 text-left text-[11px] font-medium text-[#555] uppercase tracking-[0.06em]">
+                    <tr className="border-b border-[var(--border-subtle)] bg-[var(--bg-sidebar)]">
+                      <th className="px-5 py-3 text-left text-[11px] font-medium text-[var(--text-faint)] uppercase tracking-[0.06em]">
                         Member
                       </th>
-                      <th className="px-5 py-3 text-left text-[11px] font-medium text-[#555] uppercase tracking-[0.06em] hidden sm:table-cell">
+                      <th className="px-5 py-3 text-left text-[11px] font-medium text-[var(--text-faint)] uppercase tracking-[0.06em] hidden sm:table-cell">
                         Contact
                       </th>
-                      <th className="px-5 py-3 text-left text-[11px] font-medium text-[#555] uppercase tracking-[0.06em]">
+                      <th className="px-5 py-3 text-left text-[11px] font-medium text-[var(--text-faint)] uppercase tracking-[0.06em]">
                         Role
                       </th>
-                      <th className="px-5 py-3 text-left text-[11px] font-medium text-[#555] uppercase tracking-[0.06em] hidden lg:table-cell">
+                      <th className="px-5 py-3 text-left text-[11px] font-medium text-[var(--text-faint)] uppercase tracking-[0.06em] hidden lg:table-cell">
                         Projects
                       </th>
-                      <th className="px-5 py-3 text-right text-[11px] font-medium text-[#555] uppercase tracking-[0.06em]">
+                      <th className="px-5 py-3 text-right text-[11px] font-medium text-[var(--text-faint)] uppercase tracking-[0.06em]">
                         Actions
                       </th>
                     </tr>
@@ -768,8 +771,8 @@ export default function TeamMembersClient({
                     {filteredMembers.map((member) => (
                       <tr
                         key={member.id}
-                        className="group border-b border-[rgba(255,255,255,0.06)] last:border-0
-                          hover:bg-[#1c1c1c] transition-colors duration-[120ms]"
+                        className="group border-b border-[var(--border-subtle)] last:border-0
+                          hover:bg-[var(--bg-elevated)] transition-colors duration-[120ms]"
                       >
                         <td className="px-5 py-3.5">
                           <div className="flex items-center gap-3">
@@ -779,11 +782,11 @@ export default function TeamMembersClient({
                               {initials(member.name)}
                             </div>
                             <div>
-                              <span className="text-[13px] font-medium text-[#f0f0f0] block">
+                              <span className="text-[13px] font-medium text-[var(--text-primary)] block">
                                 {member.name}
                               </span>
                               {member.id === currentUserId && (
-                                <span className="text-[10px] text-[#5e6ad2] font-medium">You</span>
+                                <span className="text-[10px] text-[var(--accent)] font-medium">You</span>
                               )}
                             </div>
                           </div>
@@ -791,8 +794,8 @@ export default function TeamMembersClient({
 
                         <td className="px-5 py-3.5 hidden sm:table-cell">
                           <div className="flex items-center gap-1.5">
-                            <Mail size={12} className="text-[#555]" />
-                            <span className="text-[12px] text-[#888] truncate">
+                            <Mail size={12} className="text-[var(--text-faint)]" />
+                            <span className="text-[12px] text-[var(--text-muted)] truncate">
                               {member.email}
                             </span>
                           </div>
@@ -811,7 +814,7 @@ export default function TeamMembersClient({
                             {(!member.is_owner || isOwner) && (
                               <button
                                 onClick={() => { setEditMember(member); setEditKey((k) => k + 1); }}
-                                className="p-1.5 rounded-md text-[#555] hover:text-[#f0f0f0] hover:bg-white/5
+                                className="p-1.5 rounded-md text-[var(--text-faint)] hover:text-[var(--text-primary)] hover:bg-[var(--hover-default)]
                                   transition-all duration-150"
                                 title="Edit member"
                               >
@@ -823,9 +826,9 @@ export default function TeamMembersClient({
                                 onClick={() => { setDeleteMember(member); setDeleteKey((k) => k + 1); }}
                                 disabled={member.is_owner}
                                 title={member.is_owner ? "Owner cannot be removed" : "Remove member"}
-                                className="p-1.5 rounded-md text-[#555] hover:text-[#e5484d] hover:bg-[#e5484d]/10
+                                className="p-1.5 rounded-md text-[var(--text-faint)] hover:text-[var(--priority-urgent)] hover:bg-[var(--priority-urgent)]/10
                                   transition-all duration-150 disabled:opacity-30 disabled:cursor-not-allowed
-                                  disabled:hover:text-[#555] disabled:hover:bg-transparent"
+                                  disabled:hover:text-[var(--text-faint)] disabled:hover:bg-transparent"
                               >
                                 <Trash2 size={14} />
                               </button>
@@ -841,8 +844,8 @@ export default function TeamMembersClient({
               {/* Pagination controls */}
               {totalPages > 1 && (
                 <div className="flex items-center justify-between px-5 py-3
-                  border-t border-[rgba(255,255,255,0.06)] bg-[#111111]">
-                  <span className="text-[12px] text-[#555]">
+                  border-t border-[var(--border-subtle)] bg-[var(--bg-sidebar)]">
+                  <span className="text-[12px] text-[var(--text-faint)]">
                     Page {currentPage + 1} of {totalPages}
                   </span>
                   <div className="flex items-center gap-2">
@@ -850,8 +853,8 @@ export default function TeamMembersClient({
                       onClick={() => fetchPage(currentPage - 1)}
                       disabled={currentPage === 0 || loading}
                       className="flex items-center gap-1 px-3 py-1.5 rounded-md text-[12px] font-medium
-                        text-[#888] hover:text-[#e8e8e8] hover:bg-white/5
-                        disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-[#888]
+                        text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--hover-default)]
+                        disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-[var(--text-muted)]
                         transition-colors duration-150"
                     >
                       <ChevronLeft size={14} />
@@ -865,8 +868,8 @@ export default function TeamMembersClient({
                           disabled={loading}
                           className={`w-8 h-8 rounded-md text-[12px] font-medium transition-colors duration-150
                             ${i === currentPage
-                              ? 'bg-[#5e6ad2] text-white'
-                              : 'text-[#888] hover:text-[#e8e8e8] hover:bg-white/5'
+                              ? 'bg-[var(--accent)] text-white'
+                              : 'text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--hover-default)]'
                             }
                             disabled:cursor-not-allowed`}
                         >
@@ -878,8 +881,8 @@ export default function TeamMembersClient({
                       onClick={() => fetchPage(currentPage + 1)}
                       disabled={currentPage >= totalPages - 1 || loading}
                       className="flex items-center gap-1 px-3 py-1.5 rounded-md text-[12px] font-medium
-                        text-[#888] hover:text-[#e8e8e8] hover:bg-white/5
-                        disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-[#888]
+                        text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--hover-default)]
+                        disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-[var(--text-muted)]
                         transition-colors duration-150"
                     >
                       Next

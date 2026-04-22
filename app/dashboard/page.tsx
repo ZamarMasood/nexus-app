@@ -37,8 +37,8 @@ export default async function DashboardPage() {
     !hasMember
       ? []
       : isAdmin
-        ? getRecentTasksWithAssignees(10)
-        : getRecentTasksWithAssigneesByMember(memberId, 10),
+        ? getRecentTasksWithAssignees(5)
+        : getRecentTasksWithAssigneesByMember(memberId, 5),
     !hasMember
       ? { total: 0, done: 0, overdue: 0, dueSoon: 0 }
       : isAdmin

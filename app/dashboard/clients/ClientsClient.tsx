@@ -145,20 +145,20 @@ export default function ClientsClient({ initialClients, totalClients, projects: 
   }
 
   return (
-    <div className="flex flex-col h-full bg-[#0d0d0d]">
+    <div className="flex flex-col h-full bg-[var(--bg-page)]">
 
       {/* Header toolbar */}
-      <div className="flex items-center justify-between px-6 h-[60px] border-b border-[rgba(255,255,255,0.06)] shrink-0">
+      <div className="flex items-center justify-between px-4 sm:px-6 h-[60px] border-b border-[var(--border-subtle)] shrink-0 gap-3">
         <div className="flex items-center gap-3">
-          <Layers size={16} className="text-[#555]" />
-          <h1 className="text-[15px] font-medium text-[#e8e8e8]">Clients</h1>
-          <span className="text-[12px] text-[#555]">{total} total</span>
+          <Layers size={16} className="text-[var(--text-faint)]" />
+          <h1 className="text-[15px] font-medium text-[var(--text-primary)]">Clients</h1>
+          <span className="text-[12px] text-[var(--text-faint)]">{total} total</span>
         </div>
         {isAdmin && (
           <button
             onClick={() => setAddOpen(true)}
             className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium
-              bg-[#5e6ad2] hover:bg-[#6872e5] text-white transition-colors duration-150"
+              bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white transition-colors duration-150"
           >
             <Plus size={14} />
             Add Client
@@ -168,57 +168,57 @@ export default function ClientsClient({ initialClients, totalClients, projects: 
 
       {/* Main content */}
       <div className="flex-1 overflow-y-auto">
-        <div className="p-6">
+        <div className="p-4 sm:p-6">
 
           {/* Stats cards */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-            <div className="rounded-xl border border-[rgba(255,255,255,0.06)] bg-[#111111] p-4">
+            <div className="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-sidebar)] p-4">
               <div className="flex items-center gap-2 mb-2">
-                <Users size={14} className="text-[#5e6ad2]" />
-                <span className="text-[11px] text-[#555]">Total Clients</span>
+                <Users size={14} className="text-[var(--accent)]" />
+                <span className="text-[11px] text-[var(--text-faint)]">Total Clients</span>
               </div>
-              <p className="text-[24px] font-medium text-[#e8e8e8]">{total}</p>
+              <p className="text-[24px] font-medium text-[var(--text-primary)]">{total}</p>
             </div>
 
-            <div className="rounded-xl border border-[rgba(255,255,255,0.06)] bg-[#111111] p-4">
+            <div className="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-sidebar)] p-4">
               <div className="flex items-center gap-2 mb-2">
-                <TrendingUp size={14} className="text-[#26c97f]" />
-                <span className="text-[11px] text-[#555]">Active Clients</span>
+                <TrendingUp size={14} className="text-[var(--status-done)]" />
+                <span className="text-[11px] text-[var(--text-faint)]">Active Clients</span>
               </div>
-              <p className="text-[24px] font-medium text-[#e8e8e8]">{activeClients}</p>
-              <p className="text-[11px] text-[#555] mt-1">{total > 0 ? Math.round((activeClients / total) * 100) : 0}% of total</p>
+              <p className="text-[24px] font-medium text-[var(--text-primary)]">{activeClients}</p>
+              <p className="text-[11px] text-[var(--text-faint)] mt-1">{total > 0 ? Math.round((activeClients / total) * 100) : 0}% of total</p>
             </div>
 
-            <div className="rounded-xl border border-[rgba(255,255,255,0.06)] bg-[#111111] p-4">
+            <div className="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-sidebar)] p-4">
               <div className="flex items-center gap-2 mb-2">
-                <Briefcase size={14} className="text-[#5e6ad2]" />
-                <span className="text-[11px] text-[#555]">Active Projects</span>
+                <Briefcase size={14} className="text-[var(--accent)]" />
+                <span className="text-[11px] text-[var(--text-faint)]">Active Projects</span>
               </div>
-              <p className="text-[24px] font-medium text-[#e8e8e8]">{totalActiveProjects}</p>
+              <p className="text-[24px] font-medium text-[var(--text-primary)]">{totalActiveProjects}</p>
             </div>
 
-            <div className="rounded-xl border border-[rgba(255,255,255,0.06)] bg-[#111111] p-4">
+            <div className="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-sidebar)] p-4">
               <div className="flex items-center gap-2 mb-2">
-                <DollarSign size={14} className="text-[#e79d13]" />
-                <span className="text-[11px] text-[#555]">Monthly Revenue</span>
+                <DollarSign size={14} className="text-[var(--priority-high)]" />
+                <span className="text-[11px] text-[var(--text-faint)]">Monthly Revenue</span>
               </div>
-              <p className="text-[24px] font-medium text-[#e8e8e8]">{formatCurrency(totalMonthlyRevenue)}</p>
+              <p className="text-[24px] font-medium text-[var(--text-primary)]">{formatCurrency(totalMonthlyRevenue)}</p>
             </div>
           </div>
 
           {/* Search and Filter */}
           <div className="flex flex-col sm:flex-row gap-3 mb-6">
             <div className="flex-1 relative">
-              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#555]" />
+              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-faint)]" />
               <input
                 type="text"
                 placeholder="Search clients by name or email..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full pl-9 pr-3 py-2 rounded-lg
-                  bg-[#111111] border border-[rgba(255,255,255,0.08)]
-                  text-[13px] text-[#f0f0f0] placeholder:text-[#555]
-                  focus:outline-none focus:border-[rgba(94,106,210,0.5)]
+                  bg-[var(--bg-sidebar)] border border-[var(--border-default)]
+                  text-[13px] text-[var(--text-primary)] placeholder:text-[var(--text-faint)]
+                  focus:outline-none focus:border-[var(--accent-border)]
                   transition-colors duration-150"
               />
             </div>
@@ -229,8 +229,8 @@ export default function ClientsClient({ initialClients, totalClients, projects: 
                   onClick={() => setFilter(filterValue as ClientStatus | "all")}
                   className={`px-3 py-1.5 rounded-lg text-[12px] font-medium transition-colors duration-150
                     ${filter === filterValue
-                      ? 'bg-[#5e6ad2] text-white'
-                      : 'bg-[#111111] text-[#888] hover:text-[#e8e8e8] border border-[rgba(255,255,255,0.08)]'}`}
+                      ? 'bg-[var(--accent)] text-white'
+                      : 'bg-[var(--bg-sidebar)] text-[var(--text-muted)] hover:text-[var(--text-primary)] border border-[var(--border-default)]'}`}
                 >
                   {filterValue === "all" ? "All" : filterValue.charAt(0).toUpperCase() + filterValue.slice(1)}
                 </button>
@@ -241,37 +241,37 @@ export default function ClientsClient({ initialClients, totalClients, projects: 
           {/* Clients Table */}
           {filteredClients.length === 0 && !loading ? (
             <div className="text-center py-12">
-              <p className="text-[13px] text-[#888] mb-2">
+              <p className="text-[13px] text-[var(--text-muted)] mb-2">
                 {searchQuery || filter !== "all" ? "No clients found" : "No clients yet"}
               </p>
               {isAdmin && !searchQuery && filter === "all" && (
                 <button
                   onClick={() => setAddOpen(true)}
-                  className="text-[12px] text-[#5e6ad2] hover:text-[#7e8ae6] transition-colors duration-150"
+                  className="text-[12px] text-[var(--accent)] hover:text-[var(--accent-hover)] transition-colors duration-150"
                 >
                   Add your first client →
                 </button>
               )}
             </div>
           ) : (
-            <div className="rounded-lg border border-[rgba(255,255,255,0.06)] overflow-hidden">
+            <div className="rounded-lg border border-[var(--border-subtle)] overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead>
-                    <tr className="border-b border-[rgba(255,255,255,0.06)] bg-[#111111]">
-                      <th className="px-5 py-3 text-left text-[11px] font-medium text-[#555] uppercase tracking-[0.06em]">
+                    <tr className="border-b border-[var(--border-subtle)] bg-[var(--bg-sidebar)]">
+                      <th className="px-5 py-3 text-left text-[11px] font-medium text-[var(--text-faint)] uppercase tracking-[0.06em]">
                         Client
                       </th>
-                      <th className="px-5 py-3 text-left text-[11px] font-medium text-[#555] uppercase tracking-[0.06em] hidden sm:table-cell">
+                      <th className="px-5 py-3 text-left text-[11px] font-medium text-[var(--text-faint)] uppercase tracking-[0.06em] hidden sm:table-cell">
                         Contact
                       </th>
-                      <th className="px-5 py-3 text-left text-[11px] font-medium text-[#555] uppercase tracking-[0.06em]">
+                      <th className="px-5 py-3 text-left text-[11px] font-medium text-[var(--text-faint)] uppercase tracking-[0.06em]">
                         Status
                       </th>
-                      <th className="px-5 py-3 text-left text-[11px] font-medium text-[#555] uppercase tracking-[0.06em] hidden md:table-cell">
+                      <th className="px-5 py-3 text-left text-[11px] font-medium text-[var(--text-faint)] uppercase tracking-[0.06em] hidden md:table-cell">
                         Monthly Rate
                       </th>
-                      <th className="px-5 py-3 text-left text-[11px] font-medium text-[#555] uppercase tracking-[0.06em] hidden lg:table-cell">
+                      <th className="px-5 py-3 text-left text-[11px] font-medium text-[var(--text-faint)] uppercase tracking-[0.06em] hidden lg:table-cell">
                         Active Projects
                       </th>
                       <th className="px-5 py-3 w-8" />
@@ -286,21 +286,21 @@ export default function ClientsClient({ initialClients, totalClients, projects: 
                         <tr
                           key={client.id}
                           onClick={() => router.push(`/${slug}/clients/${client.id}`)}
-                          className="group border-b border-[rgba(255,255,255,0.06)] last:border-0
-                            hover:bg-[#1c1c1c] cursor-pointer transition-colors duration-[120ms]"
+                          className="group border-b border-[var(--border-subtle)] last:border-0
+                            hover:bg-[var(--bg-elevated)] cursor-pointer transition-colors duration-[120ms]"
                         >
                           <td className="px-5 py-3.5">
                             <div className="flex items-center gap-3">
-                              <div className="w-8 h-8 rounded-lg bg-[rgba(94,106,210,0.12)]
+                              <div className="w-8 h-8 rounded-lg bg-[var(--tint-accent)]
                                 flex items-center justify-center flex-shrink-0">
-                                <Building2 size={14} className="text-[#5e6ad2]" />
+                                <Building2 size={14} className="text-[var(--accent)]" />
                               </div>
                               <div className="min-w-0">
-                                <span className="text-[13px] text-[#f0f0f0] block truncate">
+                                <span className="text-[13px] text-[var(--text-primary)] block truncate">
                                   {client.name}
                                 </span>
                                 {client.email && (
-                                  <span className="text-[11px] text-[#555] block truncate sm:hidden">
+                                  <span className="text-[11px] text-[var(--text-faint)] block truncate sm:hidden">
                                     {client.email}
                                   </span>
                                 )}
@@ -312,13 +312,13 @@ export default function ClientsClient({ initialClients, totalClients, projects: 
                             <div className="min-w-0">
                               {client.email ? (
                                 <div className="flex items-center gap-1.5">
-                                  <Mail size={12} className="text-[#555] flex-shrink-0" />
-                                  <span className="text-[12px] text-[#888] truncate">
+                                  <Mail size={12} className="text-[var(--text-faint)] flex-shrink-0" />
+                                  <span className="text-[12px] text-[var(--text-muted)] truncate">
                                     {client.email}
                                   </span>
                                 </div>
                               ) : (
-                                <span className="text-[12px] text-[#3a3a3a]">—</span>
+                                <span className="text-[12px] text-[var(--text-disabled)]">—</span>
                               )}
                             </div>
                           </td>
@@ -329,11 +329,11 @@ export default function ClientsClient({ initialClients, totalClients, projects: 
 
                           <td className="px-5 py-3.5 hidden md:table-cell">
                             {client.monthly_rate != null ? (
-                              <span className="text-[13px] text-[#f0f0f0] font-medium tabular-nums">
+                              <span className="text-[13px] text-[var(--text-primary)] font-medium tabular-nums">
                                 {formatCurrency(client.monthly_rate)}
                               </span>
                             ) : (
-                              <span className="text-[12px] text-[#3a3a3a]">—</span>
+                              <span className="text-[12px] text-[var(--text-disabled)]">—</span>
                             )}
                           </td>
 
@@ -345,12 +345,12 @@ export default function ClientsClient({ initialClients, totalClients, projects: 
                                 {projectCount} {projectCount === 1 ? 'project' : 'projects'}
                               </span>
                             ) : (
-                              <span className="text-[12px] text-[#3a3a3a]">—</span>
+                              <span className="text-[12px] text-[var(--text-disabled)]">—</span>
                             )}
                           </td>
 
                           <td className="px-5 py-3.5 text-right">
-                            <ChevronRight size={14} className="text-[#3a3a3a] group-hover:text-[#555]
+                            <ChevronRight size={14} className="text-[var(--text-disabled)] group-hover:text-[var(--text-faint)]
                               transition-colors duration-150 ml-auto" />
                           </td>
                         </tr>
@@ -363,8 +363,8 @@ export default function ClientsClient({ initialClients, totalClients, projects: 
               {/* Pagination controls */}
               {totalPages > 1 && (
                 <div className="flex items-center justify-between px-5 py-3
-                  border-t border-[rgba(255,255,255,0.06)] bg-[#111111]">
-                  <span className="text-[12px] text-[#555]">
+                  border-t border-[var(--border-subtle)] bg-[var(--bg-sidebar)]">
+                  <span className="text-[12px] text-[var(--text-faint)]">
                     Page {currentPage + 1} of {totalPages}
                   </span>
                   <div className="flex items-center gap-2">
@@ -372,8 +372,8 @@ export default function ClientsClient({ initialClients, totalClients, projects: 
                       onClick={() => fetchPage(currentPage - 1)}
                       disabled={currentPage === 0 || loading}
                       className="flex items-center gap-1 px-3 py-1.5 rounded-md text-[12px] font-medium
-                        text-[#888] hover:text-[#e8e8e8] hover:bg-white/5
-                        disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-[#888]
+                        text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--hover-default)]
+                        disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-[var(--text-muted)]
                         transition-colors duration-150"
                     >
                       <ChevronLeft size={14} />
@@ -387,8 +387,8 @@ export default function ClientsClient({ initialClients, totalClients, projects: 
                           disabled={loading}
                           className={`w-8 h-8 rounded-md text-[12px] font-medium transition-colors duration-150
                             ${i === currentPage
-                              ? 'bg-[#5e6ad2] text-white'
-                              : 'text-[#888] hover:text-[#e8e8e8] hover:bg-white/5'
+                              ? 'bg-[var(--accent)] text-white'
+                              : 'text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--hover-default)]'
                             }
                             disabled:cursor-not-allowed`}
                         >
@@ -400,8 +400,8 @@ export default function ClientsClient({ initialClients, totalClients, projects: 
                       onClick={() => fetchPage(currentPage + 1)}
                       disabled={currentPage >= totalPages - 1 || loading}
                       className="flex items-center gap-1 px-3 py-1.5 rounded-md text-[12px] font-medium
-                        text-[#888] hover:text-[#e8e8e8] hover:bg-white/5
-                        disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-[#888]
+                        text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--hover-default)]
+                        disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-[var(--text-muted)]
                         transition-colors duration-150"
                     >
                       Next
@@ -417,16 +417,17 @@ export default function ClientsClient({ initialClients, totalClients, projects: 
 
       <Dialog open={addOpen} onOpenChange={setAddOpen}>
         <DialogContent className="
-          bg-[#111111] border border-[rgba(255,255,255,0.08)] rounded-xl
-          shadow-2xl p-0 gap-0 max-w-[520px] w-full">
-          <div className="flex items-center justify-between px-6 pt-5 pb-4
-            border-b border-[rgba(255,255,255,0.06)]">
+          bg-[var(--bg-sidebar)] border border-[var(--border-default)] rounded-xl
+          shadow-[var(--shadow-modal)] p-0 gap-0 w-[calc(100vw-24px)] max-w-[520px]
+          max-h-[92vh] sm:max-h-[90vh] overflow-y-auto">
+          <div className="flex items-center justify-between px-4 sm:px-6 pt-5 pb-4
+            border-b border-[var(--border-subtle)]">
             <div>
-              <h3 className="text-[15px] font-medium text-[#f0f0f0]">Add Client</h3>
-              <p className="text-[11px] text-[#555] mt-1">Add a new client to your workspace</p>
+              <h3 className="text-[15px] font-medium text-[var(--text-primary)]">Add Client</h3>
+              <p className="text-[11px] text-[var(--text-faint)] mt-1">Add a new client to your workspace</p>
             </div>
           </div>
-          <div className="p-6">
+          <div className="p-4 sm:p-6">
             <ClientForm onSuccess={handleClientAdded} onCancel={() => setAddOpen(false)} />
           </div>
         </DialogContent>

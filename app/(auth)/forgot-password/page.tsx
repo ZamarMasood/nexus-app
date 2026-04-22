@@ -2,8 +2,9 @@
 
 import { useFormState, useFormStatus } from 'react-dom';
 import { forgotPasswordAction, type ForgotPasswordState } from './actions';
-import { Mail } from 'lucide-react';
+import { Mail, Sparkles, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
+import { ThemeToggle } from '@/components/ThemeToggle';
 
 function SubmitButton() {
   const { pending } = useFormStatus();
@@ -11,14 +12,28 @@ function SubmitButton() {
     <button
       type="submit"
       disabled={pending}
-      className="mt-4 w-full py-2 rounded-md text-[13px] font-medium text-white
-        bg-[#5e6ad2] hover:bg-[#6872e5] active:scale-[0.99]
+      className="mt-2 w-full inline-flex items-center justify-center gap-2
+        rounded-md bg-[var(--accent)] hover:bg-[var(--accent-hover)] active:scale-[0.99]
+        px-4 py-2 text-[13px] font-medium text-white
         transition-colors duration-150
         focus-visible:outline-none focus-visible:ring-2
-        focus-visible:ring-[rgba(94,106,210,0.35)]
+        focus-visible:ring-[var(--accent-ring)]
         disabled:opacity-50 disabled:cursor-not-allowed"
     >
-      {pending ? 'Sending...' : 'Send reset link'}
+      {pending ? (
+        <>
+          <svg className="animate-spin h-3.5 w-3.5" viewBox="0 0 24 24">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+          </svg>
+          Sending...
+        </>
+      ) : (
+        <>
+          Send reset link
+          <ArrowRight size={14} />
+        </>
+      )}
     </button>
   );
 }
@@ -29,79 +44,104 @@ export default function ForgotPasswordPage() {
   const [state, formAction] = useFormState(forgotPasswordAction, INITIAL);
 
   return (
-    <div className="min-h-screen bg-[#0d0d0d] flex items-center justify-center p-4">
+    <div className="relative min-h-screen bg-[var(--bg-page)] flex items-center justify-center p-4">
+      <div className="absolute top-3 right-3 sm:top-6 sm:right-6 z-10">
+        <ThemeToggle />
+      </div>
       <div className="w-full max-w-[400px]">
 
-        <div className="flex justify-center mb-8">
-          <span className="text-[18px] font-medium text-[#f0f0f0] tracking-[-0.02em]">
-            Nexus
+        {/* Logo + wordmark in a single row */}
+        <div className="flex items-center justify-center gap-2.5 mb-8">
+          <div className="inline-flex h-8 w-8 items-center justify-center rounded-md
+            bg-[var(--tint-accent)] border border-[var(--accent-border)]">
+            <Sparkles size={16} className="text-[var(--accent)]" />
+          </div>
+          <span className="text-[18px] font-medium text-[var(--text-primary)] tracking-[-0.02em]">
+            Nexus App
           </span>
         </div>
 
-        <div className="bg-[#161616] border border-[rgba(255,255,255,0.10)]
-          rounded-lg p-8 shadow-[0_8px_32px_rgba(0,0,0,0.6)]">
+        {/* Card */}
+        <div className="bg-[var(--bg-card)] border border-[var(--border-default)]
+          rounded-lg p-6 sm:p-8 shadow-[var(--shadow-lg)]">
 
           {state.success ? (
             <div className="text-center">
-              <div className="mx-auto mb-4 w-10 h-10 rounded-full bg-[rgba(38,201,127,0.15)]
-                flex items-center justify-center">
-                <Mail size={18} className="text-[#26c97f]" />
+              <div className="mx-auto mb-5 inline-flex h-12 w-12 items-center justify-center rounded-md
+                bg-[var(--tint-green)] border border-[var(--tint-green-border)]">
+                <Mail size={20} className="text-[var(--status-done)]" />
               </div>
-              <h1 className="text-[18px] font-medium text-[#f0f0f0] tracking-[-0.02em] mb-2">
+              <h1 className="text-[18px] font-medium text-[var(--text-primary)] tracking-[-0.02em] mb-2">
                 Check your email
               </h1>
-              <p className="text-[13px] text-[#8a8a8a] mb-6">
+              <p className="text-[13px] text-[var(--text-subtle)] mb-6 leading-relaxed">
                 We sent a password reset link to your email. Click the link to set a new password.
               </p>
               <Link href="/login"
-                className="inline-flex w-full justify-center py-2 rounded-md text-[13px] font-medium
-                  text-white bg-[#5e6ad2] hover:bg-[#6872e5]
+                className="inline-flex w-full items-center justify-center gap-2
+                  rounded-md bg-[var(--accent)] hover:bg-[var(--accent-hover)] active:scale-[0.99]
+                  px-4 py-2 text-[13px] font-medium text-white
                   transition-colors duration-150">
                 Back to Login
               </Link>
             </div>
           ) : (
             <>
-              <h1 className="text-[18px] font-medium text-[#f0f0f0] tracking-[-0.02em] mb-1">
+              <h1 className="text-[18px] font-medium text-[var(--text-primary)] tracking-[-0.02em] mb-1">
                 Reset password
               </h1>
-              <p className="text-[13px] text-[#8a8a8a] mb-6">
+              <p className="text-[13px] text-[var(--text-subtle)] mb-6">
                 Enter your email and we&apos;ll send you a reset link
               </p>
 
               {state.error && (
-                <p className="mb-4 text-[13px] text-[#e5484d]">{state.error}</p>
+                <div className="mb-5 rounded-md px-3 py-2.5 text-[13px] text-[var(--priority-urgent)]
+                  bg-[var(--tint-red)] border border-[var(--tint-red-border)]">
+                  {state.error}
+                </div>
               )}
 
-              <form action={formAction}>
+              <form action={formAction} className="space-y-4">
                 <div>
-                  <label className="block text-[12px] font-medium text-[#8a8a8a]
-                    uppercase tracking-[0.04em] mb-1.5">
+                  <label className="block text-[11px] font-medium text-[var(--text-subtle)]
+                    uppercase tracking-[0.06em] mb-1.5">
                     Email
                   </label>
-                  <input
-                    name="email" type="email" required autoComplete="email"
-                    placeholder="alex@acme.com"
-                    className="w-full px-3 py-2 rounded-md
-                      bg-[#1a1a1a] border border-[rgba(255,255,255,0.10)]
-                      text-[#f0f0f0] text-[13px] placeholder:text-[#555]
-                      focus:outline-none focus:border-[rgba(255,255,255,0.16)]
-                      focus:ring-1 focus:ring-[rgba(94,106,210,0.35)]
-                      transition-colors duration-150"
-                  />
+                  <div className="relative">
+                    <Mail size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-faint)] pointer-events-none" />
+                    <input
+                      name="email" type="email" required autoComplete="email"
+                      placeholder="alex@acme.com"
+                      className="w-full pl-9 pr-3 py-2 rounded-md
+                        bg-[var(--bg-input)] border border-[var(--border-default)]
+                        text-[var(--text-primary)] text-[13px] placeholder:text-[var(--text-fainter)]
+                        focus:outline-none focus:border-[var(--border-hover)]
+                        focus:ring-1 focus:ring-[var(--accent-ring)]
+                        transition-colors duration-150"
+                    />
+                  </div>
                 </div>
                 <SubmitButton />
               </form>
 
-              <p className="mt-4 text-center text-[13px] text-[#8a8a8a]">
-                Remember your password?{' '}
-                <Link href="/login" className="hover:text-[#f0f0f0] transition-colors duration-150">
-                  Sign in
-                </Link>
-              </p>
+              <div className="mt-6 pt-5 border-t border-[var(--border-subtle)] text-center">
+                <span className="text-[12px] text-[var(--text-subtle)]">
+                  Remember your password?{' '}
+                  <Link href="/login"
+                    className="group inline-flex items-center gap-1 text-[var(--accent)] hover:text-[var(--accent-hover)]
+                      transition-colors duration-150 font-medium">
+                    Sign in
+                    <ArrowRight size={12} className="transition-transform duration-150 group-hover:translate-x-0.5" />
+                  </Link>
+                </span>
+              </div>
             </>
           )}
         </div>
+
+        <p className="text-center mt-6 text-[11px] text-[var(--text-fainter)]">
+          Secure login with end-to-end encryption
+        </p>
       </div>
     </div>
   );

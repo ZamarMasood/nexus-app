@@ -37,30 +37,35 @@ interface FormErrors {
   project_id?: string;
 }
 
-const LABEL = "block text-[12px] font-medium text-[#8a8a8a] uppercase tracking-[0.04em] mb-1.5";
-const FIELD = `w-full px-3 py-2 rounded-md bg-[#1a1a1a] border border-[rgba(255,255,255,0.10)]
-  text-[#f0f0f0] text-[13px] placeholder:text-[#555]
-  focus:outline-none focus:border-[rgba(255,255,255,0.16)]
-  focus:ring-1 focus:ring-[rgba(94,106,210,0.35)]
-  transition-colors duration-150`;
-const SELECT_TRIGGER = `w-full rounded-md border border-[rgba(255,255,255,0.10)] bg-[#1a1a1a]
-  h-[38px] text-[13px] text-[#f0f0f0]
-  focus:ring-1 focus:ring-[rgba(94,106,210,0.35)] focus:border-[rgba(255,255,255,0.16)]
-  data-[placeholder]:text-[#555]`;
-const SELECT_CONTENT = "bg-[#1c1c1c] border-[rgba(255,255,255,0.10)] text-[#f0f0f0]";
-const SELECT_ITEM = "text-[13px] text-[#8a8a8a] focus:bg-white/5 focus:text-[#f0f0f0] cursor-pointer";
+const LABEL = "block text-[11px] font-medium text-[var(--text-faint)] uppercase tracking-[0.06em] mb-1.5";
+const FIELD = `w-full px-3 py-2 rounded-lg bg-[var(--bg-input)] border border-[var(--border-default)]
+  text-[var(--text-primary)] text-[13px] placeholder:text-[var(--text-faint)]
+  focus:outline-none focus:border-[var(--accent-border)]
+  focus:ring-1 focus:ring-[var(--accent-ring)]
+  transition-all duration-150`;
+const TEXTAREA_FIELD = `w-full px-3 py-2 rounded-lg bg-[var(--bg-input)] border border-[var(--border-default)]
+  text-[var(--text-primary)] text-[13px] placeholder:text-[var(--text-faint)] resize-none
+  focus:outline-none focus:border-[var(--accent-border)]
+  focus:ring-1 focus:ring-[var(--accent-ring)]
+  transition-all duration-150`;
+const SELECT_TRIGGER = `w-full rounded-lg border border-[var(--border-default)] bg-[var(--bg-input)]
+  h-[42px] text-[13px] text-[var(--text-primary)]
+  focus:ring-1 focus:ring-[var(--accent-ring)] focus:border-[var(--accent-border)]
+  data-[placeholder]:text-[var(--text-faint)]`;
+const SELECT_CONTENT = "bg-[var(--bg-sidebar)] border-[var(--border-default)] text-[var(--text-primary)]";
+const SELECT_ITEM = "text-[13px] text-[var(--text-muted)] focus:bg-[var(--tint-accent)] focus:text-[var(--accent)] cursor-pointer";
 
-const PRIORITY_COLORS: Record<string, string> = {
-  urgent: "text-[#e5484d]",
-  high:   "text-[#e79d13]",
-  normal: "text-[#5e6ad2]",
-  low:    "text-[#888]",
+const PRIORITY_CONFIG: Record<string, { label: string; color: string; dot: string }> = {
+  urgent: { label: "Urgent", color: "#e5484d", dot: "bg-[var(--priority-urgent)]" },
+  high:   { label: "High",   color: "#e79d13", dot: "bg-[var(--priority-high)]" },
+  normal: { label: "Normal", color: "#5e6ad2", dot: "bg-[var(--accent)]" },
+  low:    { label: "Low",    color: "#888",    dot: "bg-[var(--text-muted)]" },
 };
 
-const STATUS_COLORS: Record<string, string> = {
-  todo:        "text-[#888]",
-  in_progress: "text-[#5e6ad2]",
-  done:        "text-[#26c97f]",
+const STATUS_CONFIG: Record<string, { label: string; color: string; dot: string }> = {
+  todo:        { label: "To Do",       color: "#888",    dot: "bg-[var(--text-muted)]" },
+  in_progress: { label: "In Progress", color: "#5e6ad2", dot: "bg-[var(--accent)]" },
+  done:        { label: "Done",        color: "#26c97f", dot: "bg-[var(--status-done)]" },
 };
 
 export function TaskFormDialog({
@@ -156,32 +161,36 @@ export function TaskFormDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="
-        bg-[#161616] border border-[rgba(255,255,255,0.10)] rounded-lg
-        shadow-[0_24px_64px_rgba(0,0,0,0.7)] p-0 gap-0
-        max-w-[560px] w-full">
+        bg-[var(--bg-sidebar)] border border-[var(--border-default)] rounded-xl
+        shadow-[var(--shadow-modal)] p-0 gap-0 w-[calc(100vw-24px)] max-w-[560px]
+        max-h-[92vh] sm:max-h-[90vh] flex flex-col overflow-hidden">
 
-        <div className="flex items-center justify-between px-5 pt-5 pb-4
-          border-b border-[rgba(255,255,255,0.06)]">
-          <span className="text-[15px] font-medium text-[#f0f0f0]">
-            {isEdit ? "Edit Task" : "New Task"}
-          </span>
+        <div className="flex items-center justify-between px-4 sm:px-6 pt-5 sm:pt-6 pb-4
+          border-b border-[var(--border-subtle)] flex-shrink-0">
+          <div>
+            <h3 className="text-[15px] font-semibold text-[var(--text-primary)]">
+              {isEdit ? "Edit Task" : "New Task"}
+            </h3>
+            <p className="text-[11px] text-[var(--text-faint)] mt-1">
+              {isEdit ? "Update task details" : "Create a new task to track work"}
+            </p>
+          </div>
         </div>
 
         {loadError && (
-          <div className="mx-5 mt-4 rounded-md px-3 py-2 text-[13px] text-[#e5484d]
-            bg-[rgba(229,72,77,0.1)] border border-[rgba(229,72,77,0.2)]">
+          <div className="mx-6 mt-4 rounded-lg bg-[var(--tint-red)] border border-[var(--tint-red-border)] px-4 py-3 text-[13px] text-[var(--priority-urgent)] flex-shrink-0">
             {loadError}
           </div>
         )}
 
-        <form onSubmit={handleSubmit} noValidate>
-          <div className="px-5 py-4 space-y-3">
+        <form onSubmit={handleSubmit} noValidate className="flex flex-col flex-1 min-h-0">
+          <div className="px-4 sm:px-6 py-5 sm:mr-1 space-y-4 overflow-y-auto flex-1 min-h-0">
 
             <div>
               <label className={LABEL}>
                 <span className="flex items-center gap-1.5">
-                  <Hash className="h-3 w-3" />
-                  Title <span className="text-[#e5484d] normal-case tracking-normal font-normal">*</span>
+                  <Hash className="h-3 w-3 text-[var(--accent)]" />
+                  Title <span className="text-[var(--priority-urgent)] normal-case tracking-normal font-normal">*</span>
                 </span>
               </label>
               <input
@@ -191,13 +200,13 @@ export function TaskFormDialog({
                 className={FIELD}
                 autoFocus
               />
-              {errors.title && <p className="mt-1 text-[12px] text-[#e5484d]">{errors.title}</p>}
+              {errors.title && <p className="mt-1 text-[11px] text-[var(--priority-urgent)]">{errors.title}</p>}
             </div>
 
             <div>
               <label className={LABEL}>
                 <span className="flex items-center gap-1.5">
-                  <AlignLeft className="h-3 w-3" />
+                  <AlignLeft className="h-3 w-3 text-[var(--accent)]" />
                   Description
                 </span>
               </label>
@@ -206,16 +215,16 @@ export function TaskFormDialog({
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="Optional details..."
                 rows={3}
-                className={`${FIELD} resize-none`}
+                className={TEXTAREA_FIELD}
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className={LABEL}>
                   <span className="flex items-center gap-1.5">
-                    <FolderKanban className="h-3 w-3" />
-                    Project <span className="text-[#e5484d] normal-case tracking-normal font-normal">*</span>
+                    <FolderKanban className="h-3 w-3 text-[var(--accent)]" />
+                    Project <span className="text-[var(--priority-urgent)] normal-case tracking-normal font-normal">*</span>
                   </span>
                 </label>
                 <Select value={projectId} onValueChange={setProjectId}>
@@ -230,13 +239,13 @@ export function TaskFormDialog({
                     ))}
                   </SelectContent>
                 </Select>
-                {errors.project_id && <p className="mt-1 text-[12px] text-[#e5484d]">{errors.project_id}</p>}
+                {errors.project_id && <p className="mt-1 text-[11px] text-[var(--priority-urgent)]">{errors.project_id}</p>}
               </div>
 
               <div>
                 <label className={LABEL}>
                   <span className="flex items-center gap-1.5">
-                    <UserCircle2 className="h-3 w-3" />
+                    <UserCircle2 className="h-3 w-3 text-[var(--accent)]" />
                     Assignee
                   </span>
                 </label>
@@ -262,11 +271,11 @@ export function TaskFormDialog({
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className={LABEL}>
                   <span className="flex items-center gap-1.5">
-                    <Flag className="h-3 w-3" />
+                    <Flag className="h-3 w-3 text-[var(--accent)]" />
                     Priority
                   </span>
                 </label>
@@ -275,17 +284,28 @@ export function TaskFormDialog({
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent className={SELECT_CONTENT}>
-                    {(["urgent", "high", "normal", "low"] as TaskPriority[]).map((p) => (
-                      <SelectItem key={p} value={p} className={`${SELECT_ITEM} ${PRIORITY_COLORS[p]}`}>
-                        {p.charAt(0).toUpperCase() + p.slice(1)}
-                      </SelectItem>
-                    ))}
+                    {(["urgent", "high", "normal", "low"] as TaskPriority[]).map((p) => {
+                      const config = PRIORITY_CONFIG[p];
+                      return (
+                        <SelectItem key={p} value={p} className={SELECT_ITEM}>
+                          <div className="flex items-center gap-2">
+                            <span className={`h-1.5 w-1.5 rounded-full ${config.dot}`} />
+                            <span style={{ color: config.color }}>{config.label}</span>
+                          </div>
+                        </SelectItem>
+                      );
+                    })}
                   </SelectContent>
                 </Select>
               </div>
 
               <div>
-                <label className={LABEL}>Board</label>
+                <label className={LABEL}>
+                  <span className="flex items-center gap-1.5">
+                    <FolderKanban className="h-3 w-3 text-[var(--accent)]" />
+                    Status
+                  </span>
+                </label>
                 <Select value={status} onValueChange={(v) => setStatus(v as TaskStatus)}>
                   <SelectTrigger className={SELECT_TRIGGER}>
                     <SelectValue />
@@ -294,82 +314,69 @@ export function TaskFormDialog({
                     {(taskStatuses.length > 0
                       ? taskStatuses.map((s) => ({ value: s.slug, label: s.label, color: s.color }))
                       : [
-                          { value: "todo",        label: "To Do",        color: "#888" },
-                          { value: "in_progress", label: "In Progress",  color: "#5e6ad2" },
-                          { value: "done",        label: "Done",         color: "#26c97f" },
+                          { value: "todo",        label: "To Do",       color: "#888" },
+                          { value: "in_progress", label: "In Progress", color: "#5e6ad2" },
+                          { value: "done",        label: "Done",        color: "#26c97f" },
                         ]
-                    ).map(({ value, label, color }) => (
-                      <SelectItem key={value} value={value} className={SELECT_ITEM} style={{ color }}>
-                        {label}
-                      </SelectItem>
-                    ))}
+                    ).map(({ value, label, color }) => {
+                      const dotColor = value === "todo" ? "bg-[var(--text-muted)]" : value === "in_progress" ? "bg-[var(--accent)]" : "bg-[var(--status-done)]";
+                      return (
+                        <SelectItem key={value} value={value} className={SELECT_ITEM}>
+                          <div className="flex items-center gap-2">
+                            <span className={`h-1.5 w-1.5 rounded-full ${dotColor}`} />
+                            <span style={{ color }}>{label}</span>
+                          </div>
+                        </SelectItem>
+                      );
+                    })}
                   </SelectContent>
                 </Select>
               </div>
-
-              {!isEdit && (
-                <div>
-                  <label className={LABEL}>
-                    <span className="flex items-center gap-1.5">
-                      <CalendarDays className="h-3 w-3" />
-                      Due Date
-                    </span>
-                  </label>
-                  <input
-                    type="date"
-                    value={dueDate}
-                    onChange={(e) => setDueDate(e.target.value)}
-                    className={FIELD}
-                  />
-                </div>
-              )}
             </div>
 
-            {isEdit && (
-              <div>
-                <label className={LABEL}>
-                  <span className="flex items-center gap-1.5">
-                    <CalendarDays className="h-3 w-3" />
-                    Due Date
-                  </span>
-                </label>
-                <input
-                  type="date"
-                  value={dueDate}
-                  onChange={(e) => setDueDate(e.target.value)}
-                  className={FIELD}
-                />
-              </div>
-            )}
+            <div>
+              <label className={LABEL}>
+                <span className="flex items-center gap-1.5">
+                  <CalendarDays className="h-3 w-3 text-[var(--accent)]" />
+                  Due Date
+                </span>
+              </label>
+              <input
+                type="date"
+                value={dueDate}
+                onChange={(e) => setDueDate(e.target.value)}
+                className={FIELD}
+              />
+            </div>
           </div>
 
           {submitError && (
-            <div className="mx-5 mb-3 rounded-md px-3 py-2 text-[13px] text-[#e5484d]
-              bg-[rgba(229,72,77,0.1)] border border-[rgba(229,72,77,0.2)]">
+            <div className="mx-6 mb-4 rounded-lg bg-[var(--tint-red)] border border-[var(--tint-red-border)] px-4 py-3 text-[13px] text-[var(--priority-urgent)] flex-shrink-0">
               {submitError}
             </div>
           )}
 
-          <div className="flex items-center justify-end gap-2 px-5 py-4
-            border-t border-[rgba(255,255,255,0.06)]">
+          <div className="flex items-center justify-end gap-3 px-4 sm:px-6 py-4
+            border-t border-[var(--border-subtle)] flex-shrink-0">
             <button
               type="button"
               onClick={() => onOpenChange(false)}
-              className="px-3 py-1.5 rounded-md text-[13px] font-medium text-[#8a8a8a]
-                hover:bg-white/5 hover:text-[#f0f0f0] transition-colors duration-150"
+              className="px-4 py-2 rounded-lg text-[13px] font-medium text-[var(--text-muted)]
+                hover:text-[var(--text-primary)] hover:bg-[var(--hover-default)] 
+                transition-all duration-150"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={submitting}
-              className="flex items-center gap-2 px-3 py-1.5 rounded-md text-[13px] font-medium
-                bg-[#5e6ad2] hover:bg-[#6872e5] text-white
-                active:scale-[0.98] transition-colors duration-150
-                disabled:opacity-50"
+              className="flex items-center gap-2 px-4 py-2 rounded-lg text-[13px] font-medium
+                bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white
+                active:scale-[0.98] transition-all duration-150
+                disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {submitting && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-              {submitting ? "Saving..." : isEdit ? "Save changes" : "Create task"}
+              {submitting ? "Saving..." : isEdit ? "Save Changes" : "Create Task"}
             </button>
           </div>
         </form>

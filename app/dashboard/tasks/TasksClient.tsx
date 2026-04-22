@@ -49,11 +49,11 @@ function OrchestraCard({
       onClick={onClick}
       className={[
         "group relative rounded-[10px] cursor-pointer select-none",
-        "bg-[#161616] border border-[rgba(255,255,255,0.07)]",
-        "hover:border-[rgba(255,255,255,0.13)]",
+        "bg-[var(--bg-card)] border border-[var(--border-default)]",
+        "hover:border-[var(--border-hover)]",
         "transition-colors duration-150",
         isDragging
-          ? "shadow-[0_16px_48px_rgba(0,0,0,0.8)] scale-[1.015] rotate-[0.5deg]"
+          ? "shadow-[var(--shadow-modal)] scale-[1.015] rotate-[0.5deg]"
           : "",
       ].join(" ")}
     >
@@ -67,22 +67,22 @@ function OrchestraCard({
       )}
 
       <div className="px-4 pt-4 pb-3">
-        <p className="text-[13.5px] text-[#d4d4d4] leading-[1.4]">
+        <p className="text-[13.5px] text-[var(--text-secondary)] leading-[1.4]">
           {task.title}
         </p>
 
         <div className="flex items-center justify-end gap-2 mt-3">
           <button
             onClick={(e) => { e.stopPropagation(); navigator.clipboard.writeText(task.title); }}
-            className="opacity-0 group-hover:opacity-100 p-0.5 text-[#333]
-              hover:text-[#666] transition-opacity duration-150"
+            className="opacity-0 group-hover:opacity-100 p-0.5 text-[var(--text-disabled)]
+              hover:text-[var(--text-subtle)] transition-opacity duration-150"
             title="Copy"
           >
             <Copy size={13} />
           </button>
-          <span className="flex items-center gap-1 text-[11px] text-[#333]">
+          <span className="flex items-center gap-1 text-[11px] text-[var(--text-disabled)]">
             <MessageSquare size={12} />
-            <span>0</span>
+            <span>{task.comment_count ?? 0}</span>
           </span>
         </div>
       </div>
@@ -130,17 +130,17 @@ function AddBoardDialog({
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-[2px] flex items-center justify-center z-50">
-      <div className="bg-[#161616] border border-[rgba(255,255,255,0.07)] rounded-lg
-        w-full max-w-[400px] shadow-[0_24px_64px_rgba(0,0,0,0.7)]">
-        <div className="flex items-center justify-between px-6 pt-5 pb-4
-          border-b border-[rgba(255,255,255,0.06)]">
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-[2px] flex items-center justify-center z-50 p-3">
+      <div className="bg-[var(--bg-card)] border border-[var(--border-default)] rounded-lg
+        w-full max-w-[400px] max-h-[92vh] overflow-y-auto shadow-[var(--shadow-modal)]">
+        <div className="flex items-center justify-between px-4 sm:px-6 pt-5 pb-4
+          border-b border-[var(--border-subtle)]">
           <div>
-            <h3 className="text-[15px] font-medium text-[#e8e8e8]">Add Board Column</h3>
-            <p className="text-[11px] text-[#555] mt-1">Create a custom task status</p>
+            <h3 className="text-[15px] font-medium text-[var(--text-primary)]">Add Board Column</h3>
+            <p className="text-[11px] text-[var(--text-faint)] mt-1">Create a custom task status</p>
           </div>
-          <button onClick={onClose} className="p-1.5 rounded-md text-[#555] hover:text-[#e8e8e8]
-            hover:bg-white/5 transition-colors duration-150">
+          <button onClick={onClose} className="p-1.5 rounded-md text-[var(--text-faint)] hover:text-[var(--text-primary)]
+            hover:bg-[var(--hover-default)] transition-colors duration-150">
             <X size={16} />
           </button>
         </div>
@@ -148,24 +148,24 @@ function AddBoardDialog({
         <form onSubmit={handleSubmit}>
           <div className="px-6 py-4 space-y-4">
             <div>
-              <label className="block text-[11px] font-medium text-[#666] uppercase tracking-[0.06em] mb-1.5">
-                Name <span className="text-[#e5484d]">*</span>
+              <label className="block text-[11px] font-medium text-[var(--text-subtle)] uppercase tracking-[0.06em] mb-1.5">
+                Name <span className="text-[var(--priority-urgent)]">*</span>
               </label>
               <input
                 value={label}
                 onChange={(e) => setLabel(e.target.value)}
                 placeholder="e.g. In Testing, Review, QA..."
                 autoFocus
-                className="w-full px-3 py-2 rounded-md bg-[#1a1a1a] border border-[rgba(255,255,255,0.07)]
-                  text-[#e8e8e8] text-[13px] placeholder:text-[#444]
-                  focus:outline-none focus:border-[rgba(255,255,255,0.13)]
-                  focus:ring-1 focus:ring-[rgba(94,106,210,0.35)]
+                className="w-full px-3 py-2 rounded-md bg-[var(--bg-input)] border border-[var(--border-default)]
+                  text-[var(--text-primary)] text-[13px] placeholder:text-[var(--text-fainter)]
+                  focus:outline-none focus:border-[var(--border-hover)]
+                  focus:ring-1 focus:ring-[var(--accent-ring)]
                   transition-colors duration-150"
               />
             </div>
 
             <div>
-              <label className="block text-[11px] font-medium text-[#666] uppercase tracking-[0.06em] mb-1.5">
+              <label className="block text-[11px] font-medium text-[var(--text-subtle)] uppercase tracking-[0.06em] mb-1.5">
                 Color
               </label>
               <div className="flex items-center gap-2">
@@ -183,31 +183,31 @@ function AddBoardDialog({
             </div>
 
             {/* Preview */}
-            <div className="flex items-center gap-2 px-3 py-2 rounded-md bg-[#0d0d0d] border border-[rgba(255,255,255,0.06)]">
+            <div className="flex items-center gap-2 px-3 py-2 rounded-md bg-[var(--bg-page)] border border-[var(--border-subtle)]">
               <StatusDot color={color} />
-              <span className="text-[13px] text-[#999]">
+              <span className="text-[13px] text-[var(--text-muted)]">
                 {label.trim() || 'Preview'}
               </span>
             </div>
           </div>
 
           {error && (
-            <div className="mx-6 mb-3 rounded-md px-3 py-2 text-[12px] text-[#e5484d]
-              bg-[rgba(229,72,77,0.1)] border border-[rgba(229,72,77,0.2)]">
+            <div className="mx-6 mb-3 rounded-md px-3 py-2 text-[12px] text-[var(--priority-urgent)]
+              bg-[var(--tint-red)] border border-[var(--tint-red-border)]">
               {error}
             </div>
           )}
 
           <div className="flex items-center justify-end gap-2 px-6 py-4
-            border-t border-[rgba(255,255,255,0.06)]">
+            border-t border-[var(--border-subtle)]">
             <button type="button" onClick={onClose}
-              className="px-3 py-1.5 rounded-md text-[12px] font-medium text-[#888]
-                hover:bg-white/5 hover:text-[#e8e8e8] transition-colors duration-150">
+              className="px-3 py-1.5 rounded-md text-[12px] font-medium text-[var(--text-muted)]
+                hover:bg-[var(--hover-default)] hover:text-[var(--text-primary)] transition-colors duration-150">
               Cancel
             </button>
             <button type="submit" disabled={submitting}
               className="px-3 py-1.5 rounded-md text-[12px] font-medium
-                bg-[#5e6ad2] hover:bg-[#6872e5] text-white
+                bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white
                 active:scale-[0.98] transition-colors duration-150
                 disabled:opacity-50 flex items-center gap-1.5">
               {submitting ? 'Creating...' : 'Add Column'}
@@ -340,42 +340,44 @@ export default function TasksClient({
   ];
 
   return (
-    <div className="flex flex-col h-full bg-[#0d0d0d]">
+    <div className="flex flex-col h-full bg-[var(--bg-page)]">
 
       {/* ═══ Top Toolbar ═══════════════════════════════════════════════════ */}
-      <div className="flex items-center justify-between px-6 h-[60px] border-b border-[rgba(255,255,255,0.06)] shrink-0">
-        <div className="flex items-center gap-3">
-          <Layers size={16} className="text-[#555]" />
-          <div>
-            <h1 className="text-[15px] font-medium text-[#e8e8e8]">Tasks</h1>
-            <p className="text-[11px] text-[#555] mt-0.5">{totalTasks} total tasks</p>
+      <div className="flex items-center justify-between px-4 sm:px-6 h-[60px] border-b border-[var(--border-subtle)] shrink-0 gap-3">
+        <div className="flex items-center gap-3 min-w-0">
+          <Layers size={16} className="text-[var(--text-faint)] shrink-0" />
+          <div className="min-w-0">
+            <h1 className="text-[15px] font-medium text-[var(--text-primary)] truncate">Tasks</h1>
+            <p className="text-[11px] text-[var(--text-faint)] mt-0.5 truncate">{totalTasks} total tasks</p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 shrink-0">
           {isAdmin && (
             <button
               onClick={() => setAddBoardOpen(true)}
-              className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium
-                text-[#888] hover:text-[#e8e8e8] border border-[rgba(255,255,255,0.08)]
-                hover:bg-white/5 transition-colors duration-150"
+              className="flex items-center gap-2 px-2 sm:px-3 py-1.5 rounded-lg text-sm font-medium
+                text-[var(--text-muted)] hover:text-[var(--text-primary)] border border-[var(--border-default)]
+                hover:bg-[var(--hover-default)] transition-colors duration-150"
+              title="Add Board"
             >
               <Plus size={14} />
-              Add Board
+              <span className="hidden sm:inline">Add Board</span>
             </button>
           )}
           <button
             onClick={() => openTaskForm()}
-            className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium
-              bg-[#5e6ad2] hover:bg-[#6872e5] text-white transition-colors duration-150"
+            className="flex items-center gap-2 px-2 sm:px-3 py-1.5 rounded-lg text-sm font-medium
+              bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white transition-colors duration-150"
+            title="New Task"
           >
             <Plus size={14} />
-            New Task
+            <span className="hidden sm:inline">New Task</span>
           </button>
         </div>
       </div>
 
       {/* ═══ Tab Bar ════════════════════════════════════════════════════════ */}
-      <div className="flex items-center gap-1 px-6 h-[48px] border-b border-[rgba(255,255,255,0.06)] shrink-0">
+      <div className="flex items-center gap-1 px-4 sm:px-6 h-[48px] border-b border-[var(--border-subtle)] shrink-0 overflow-x-auto">
         {tabs.map((tab) => (
           <button
             key={tab.value}
@@ -383,8 +385,8 @@ export default function TasksClient({
             className={[
               "px-3 py-1.5 rounded-lg text-[13px] font-medium transition-colors duration-150",
               activeTab === tab.value
-                ? "bg-[#5e6ad2] text-white"
-                : "text-[#888] hover:text-[#e8e8e8] hover:bg-white/5",
+                ? "bg-[var(--accent)] text-white"
+                : "text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--hover-default)]",
             ].join(" ")}
           >
             {tab.label}
@@ -410,9 +412,9 @@ export default function TasksClient({
                 <div
                   key={col.id}
                   className={[
-                    "flex flex-col flex-1 min-w-[280px] h-full",
+                    "flex flex-col flex-1 min-w-[260px] sm:min-w-[280px] h-full",
                     colIdx < columns.length - 1
-                      ? "border-r border-[rgba(255,255,255,0.06)]"
+                      ? "border-r border-[var(--border-subtle)]"
                       : "",
                   ].join(" ")}
                 >
@@ -420,13 +422,13 @@ export default function TasksClient({
                   <div className="flex items-center justify-between px-4 h-[42px] shrink-0">
                     <div className="flex items-center gap-2">
                       <StatusDot color={col.color} />
-                      <span className="text-[13px] text-[#999]">
+                      <span className="text-[13px] text-[var(--text-muted)]">
                         {col.label}
                       </span>
                       {colTasks.length > 0 && (
                         <span className="flex items-center justify-center min-w-[20px] h-[18px]
                           px-1.5 rounded-full text-[10px] font-medium tabular-nums
-                          bg-[rgba(229,72,77,0.15)] text-[#e5484d]">
+                          bg-[var(--tint-red)] text-[var(--priority-urgent)]">
                           {colTasks.length}/{totalTasks}
                         </span>
                       )}
@@ -438,8 +440,8 @@ export default function TasksClient({
                           onClick={() => handleDeleteStatus(col.statusId)}
                           disabled={deletingStatusId === col.statusId}
                           title={`Remove "${col.label}" column`}
-                          className="p-0.5 rounded text-[#333] hover:text-[#e5484d]
-                            hover:bg-[rgba(229,72,77,0.1)] transition-colors duration-150
+                          className="p-0.5 rounded text-[var(--text-disabled)] hover:text-[var(--priority-urgent)]
+                            hover:bg-[var(--tint-red)] transition-colors duration-150
                             disabled:opacity-50"
                         >
                           <Trash2 size={12} />
@@ -447,8 +449,8 @@ export default function TasksClient({
                       )}
                       <button
                         onClick={() => openTaskForm(undefined, col.id)}
-                        className="p-0.5 rounded text-[#444] hover:text-[#888]
-                          hover:bg-white/5 transition-colors duration-150"
+                        className="p-0.5 rounded text-[var(--text-fainter)] hover:text-[var(--text-muted)]
+                          hover:bg-[var(--hover-default)] transition-colors duration-150"
                       >
                         <Plus size={14} />
                       </button>
@@ -466,7 +468,7 @@ export default function TasksClient({
                           "px-7 pt-2 pb-4",
                           "flex flex-col gap-3",
                           snapshot.isDraggingOver
-                            ? "bg-[rgba(255,255,255,0.015)]"
+                            ? "bg-[var(--hover-subtle)]"
                             : "",
                           "transition-colors duration-150",
                         ].join(" ")}
@@ -501,10 +503,10 @@ export default function TasksClient({
                         {/* Empty state */}
                         {colTasks.length === 0 && !snapshot.isDraggingOver && (
                           <div className="px-1 pt-2">
-                            <p className="text-[13px] text-[#888] mb-1">
+                            <p className="text-[13px] text-[var(--text-muted)] mb-1">
                               {col.label}
                             </p>
-                            <p className="text-[12px] text-[#444] leading-[1.6]">
+                            <p className="text-[12px] text-[var(--text-fainter)] leading-[1.6]">
                               Drag tasks here or create a new one.
                             </p>
                           </div>

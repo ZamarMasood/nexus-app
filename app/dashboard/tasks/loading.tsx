@@ -1,45 +1,64 @@
 export default function TasksLoading() {
+  const BAR = "bg-[var(--border-subtle)] rounded";
   return (
-    <div className="p-4 sm:p-6 lg:p-10 space-y-6 animate-pulse">
-      {/* Header row */}
-      <div className="flex items-center justify-between">
-        <div className="h-7 w-20 rounded-lg bg-[rgba(255,255,255,0.06)]" />
-        <div className="flex gap-2">
-          <div className="h-9 w-32 rounded-lg bg-[rgba(255,255,255,0.06)]" />
-          <div className="h-9 w-28 rounded-lg bg-[rgba(255,255,255,0.06)]" />
+    <div className="flex flex-col h-full bg-[var(--bg-page)] animate-pulse">
+
+      {/* Top toolbar */}
+      <div className="flex items-center justify-between px-4 sm:px-6 h-[60px]
+        border-b border-[var(--border-subtle)] shrink-0 gap-3">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className={`h-4 w-4 shrink-0 ${BAR}`} />
+          <div className="min-w-0">
+            <div className={`h-4 w-20 ${BAR}`} />
+            <div className={`h-3 w-28 mt-1 ${BAR}`} />
+          </div>
+        </div>
+        <div className="flex items-center gap-2 shrink-0">
+          <div className={`h-8 w-8 sm:w-28 rounded-lg ${BAR}`} />
+          <div className={`h-8 w-8 sm:w-28 rounded-lg ${BAR}`} />
         </div>
       </div>
-      {/* Kanban columns — desktop */}
-      <div className="hidden lg:flex lg:justify-center gap-5">
-        {[0, 1, 2].map((col) => (
-          <div key={col} className="flex w-[380px] flex-col gap-3">
-            <div className="h-10 rounded-lg bg-[rgba(255,255,255,0.06)]" />
-            <div className="rounded-lg bg-[rgba(255,255,255,0.06)] p-3 min-h-[240px] space-y-2.5">
-              {Array.from({ length: col === 1 ? 3 : 2 }).map((_, i) => (
-                <div key={i} className="rounded-lg bg-[#161616] border border-[rgba(255,255,255,0.06)] p-4 space-y-2">
-                  <div className="h-4 w-3/4 rounded bg-[rgba(255,255,255,0.06)]" />
-                  <div className="flex items-center gap-2">
-                    <div className="h-5 w-14 rounded-full bg-[rgba(255,255,255,0.06)]" />
-                    <div className="h-5 w-18 rounded-full bg-[rgba(255,255,255,0.06)]" />
-                  </div>
-                  <div className="h-3 w-24 rounded bg-[rgba(255,255,255,0.06)]" />
-                </div>
-              ))}
-            </div>
-          </div>
+
+      {/* Tab bar */}
+      <div className="flex items-center gap-1 px-4 sm:px-6 h-[48px]
+        border-b border-[var(--border-subtle)] shrink-0 overflow-x-auto">
+        {[0, 1, 2, 3].map((i) => (
+          <div key={i} className={`h-7 w-20 rounded-lg shrink-0 ${BAR}`} />
         ))}
       </div>
-      {/* Task list — mobile/tablet */}
-      <div className="lg:hidden space-y-2.5">
-        {[0, 1, 2, 3, 4].map((i) => (
-          <div key={i} className="rounded-lg bg-[#161616] border border-[rgba(255,255,255,0.06)] p-4 space-y-2">
-            <div className="h-4 w-3/4 rounded bg-[rgba(255,255,255,0.06)]" />
-            <div className="flex items-center gap-2">
-              <div className="h-5 w-14 rounded-full bg-[rgba(255,255,255,0.06)]" />
-              <div className="h-5 w-18 rounded-full bg-[rgba(255,255,255,0.06)]" />
+
+      {/* Kanban board */}
+      <div className="flex-1 overflow-x-auto overflow-y-hidden">
+        <div className="flex h-full min-w-full">
+          {[0, 1, 2].map((col) => (
+            <div key={col}
+              className="flex flex-col flex-1 min-w-[280px] h-full border-r border-[var(--border-subtle)] last:border-0">
+              {/* Column header */}
+              <div className="flex items-center justify-between px-4 h-[42px] shrink-0">
+                <div className="flex items-center gap-2">
+                  <div className={`h-3.5 w-3.5 rounded-full ${BAR}`} />
+                  <div className={`h-3 w-20 ${BAR}`} />
+                  <div className={`h-4 w-10 rounded-full ${BAR}`} />
+                </div>
+                <div className={`h-4 w-4 ${BAR}`} />
+              </div>
+              {/* Cards */}
+              <div className="flex-1 overflow-y-auto px-4 pt-2 pb-4 flex flex-col gap-2.5">
+                {Array.from({ length: col === 1 ? 4 : 3 }).map((_, i) => (
+                  <div key={i}
+                    className="rounded-[10px] bg-[var(--bg-card)] border border-[var(--border-default)] p-3 space-y-2.5">
+                    <div className={`h-4 w-3/4 ${BAR}`} />
+                    <div className={`h-3 w-1/2 ${BAR}`} />
+                    <div className="flex items-center justify-between gap-2">
+                      <div className={`h-3 w-16 ${BAR}`} />
+                      <div className={`h-3 w-8 ${BAR}`} />
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
     </div>
   );

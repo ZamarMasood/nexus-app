@@ -1,72 +1,90 @@
 export default function ClientDetailLoading() {
+  const BAR = "bg-[var(--border-subtle)] rounded";
   return (
-    <div className="p-4 sm:p-6 lg:p-8 animate-pulse">
-      {/* Mobile back button skeleton */}
-      <div className="lg:hidden h-5 w-28 rounded bg-[rgba(255,255,255,0.06)] mb-4" />
+    <div className="flex flex-col h-full bg-[var(--bg-page)] animate-pulse">
 
-      <div className="flex gap-6 items-start">
-        {/* Sidebar card skeleton — hidden on mobile */}
-        <div className="hidden lg:flex w-[300px] shrink-0 flex-col rounded-lg border border-[rgba(255,255,255,0.06)] bg-[#161616] overflow-hidden">
-          <div className="px-4 pt-4 pb-3 border-b border-[rgba(255,255,255,0.06)] space-y-3">
-            <div className="flex items-center gap-2">
-              <div className="h-7 w-7 rounded-lg bg-[rgba(255,255,255,0.06)]" />
-              <div className="h-5 w-20 rounded bg-[rgba(255,255,255,0.06)]" />
-            </div>
-            <div className="h-9 rounded-lg bg-[rgba(255,255,255,0.06)]" />
-          </div>
-          {[0, 1, 2].map((i) => (
-            <div key={i} className="px-4 py-3 border-b border-[rgba(255,255,255,0.06)] last:border-0 space-y-2">
-              <div className="flex items-center justify-between">
-                <div className="h-4 w-28 rounded bg-[rgba(255,255,255,0.06)]" />
-                <div className="h-5 w-14 rounded-full bg-[rgba(255,255,255,0.06)]" />
-              </div>
-              <div className="flex items-center justify-between">
-                <div className="h-3 w-36 max-w-full rounded bg-[rgba(255,255,255,0.06)]" />
-                <div className="h-3 w-16 rounded bg-[rgba(255,255,255,0.06)]" />
-              </div>
-            </div>
-          ))}
+      {/* Header toolbar */}
+      <div className="flex items-center justify-between px-4 sm:px-6 h-[60px]
+        border-b border-[var(--border-subtle)] shrink-0 gap-3">
+        <div className="flex items-center gap-3">
+          <div className={`h-8 w-8 rounded-lg ${BAR}`} />
+          <div className="h-5 w-px bg-[var(--border-subtle)]" />
+          <div className={`h-4 w-4 ${BAR}`} />
+          <div className={`h-4 w-32 ${BAR}`} />
         </div>
+        <div className={`h-8 w-8 sm:w-24 rounded-lg ${BAR}`} />
+      </div>
 
-        {/* Detail skeleton */}
-        <div className="flex-1 min-w-0 space-y-6">
-          {/* Client info card */}
-          <div className="rounded-lg border border-[rgba(255,255,255,0.06)] bg-[#161616] overflow-hidden">
-            <div className="px-4 sm:px-6 pt-5 sm:pt-6 pb-5 flex items-start justify-between">
-              <div className="space-y-2 min-w-0">
-                <div className="flex items-center gap-3">
-                  <div className="h-7 w-40 max-w-full rounded bg-[rgba(255,255,255,0.06)]" />
-                  <div className="h-5 w-16 rounded-full bg-[rgba(255,255,255,0.06)]" />
+      {/* Main content */}
+      <div className="flex-1 overflow-y-auto">
+        <div className="p-4 sm:p-6">
+          <div className="flex gap-6 items-start">
+
+            {/* Left sidebar — hidden on mobile */}
+            <aside className="hidden lg:block w-[320px] shrink-0">
+              <div className="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-sidebar)] overflow-hidden">
+                <div className="p-4 border-b border-[var(--border-subtle)] space-y-3">
+                  <div className="flex items-center gap-2">
+                    <div className={`h-3.5 w-3.5 ${BAR}`} />
+                    <div className={`h-3.5 w-20 ${BAR}`} />
+                  </div>
+                  <div className={`h-9 rounded-lg ${BAR}`} />
                 </div>
-                <div className="h-4 w-48 max-w-full rounded bg-[rgba(255,255,255,0.06)]" />
+                {[0, 1, 2].map((i) => (
+                  <div key={i}
+                    className="px-4 py-3 border-b border-[var(--border-subtle)] last:border-0 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div className={`h-4 w-28 ${BAR}`} />
+                      <div className={`h-5 w-14 rounded-full ${BAR}`} />
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <div className={`h-3 w-36 ${BAR}`} />
+                      <div className={`h-3 w-16 ${BAR}`} />
+                    </div>
+                  </div>
+                ))}
               </div>
-              <div className="h-8 w-16 rounded-lg bg-[rgba(255,255,255,0.06)] shrink-0" />
-            </div>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-3 border-t border-[rgba(255,255,255,0.06)] px-4 sm:px-6 py-4 sm:py-5">
-              {[0, 1, 2].map((i) => (
-                <div key={i} className="space-y-2">
-                  <div className="h-3 w-20 rounded bg-[rgba(255,255,255,0.06)]" />
-                  <div className="h-4 w-24 rounded bg-[rgba(255,255,255,0.06)]" />
+            </aside>
+
+            {/* Right panel */}
+            <div className="flex-1 min-w-0 space-y-6">
+              {/* Client info card */}
+              <div className="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-sidebar)] p-6">
+                <div className="flex items-start justify-between gap-4 mb-5">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className={`h-10 w-10 rounded-lg shrink-0 ${BAR}`} />
+                    <div className="space-y-2 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <div className={`h-6 w-40 ${BAR}`} />
+                        <div className={`h-5 w-16 rounded-full ${BAR}`} />
+                      </div>
+                      <div className={`h-4 w-48 ${BAR}`} />
+                    </div>
+                  </div>
                 </div>
-              ))}
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 pt-4 border-t border-[var(--border-subtle)]">
+                  {[0, 1, 2].map((i) => (
+                    <div key={i} className="space-y-2">
+                      <div className={`h-3 w-20 ${BAR}`} />
+                      <div className={`h-4 w-24 ${BAR}`} />
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Tabs card */}
+              <div className="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-sidebar)] overflow-hidden">
+                <div className="flex gap-2 border-b border-[var(--border-subtle)] px-4 pt-3 pb-0">
+                  <div className={`h-8 w-24 rounded-t ${BAR}`} />
+                  <div className={`h-8 w-24 rounded-t ${BAR}`} />
+                </div>
+                <div className="p-4 space-y-2">
+                  {[0, 1, 2].map((i) => (
+                    <div key={i} className={`h-12 rounded-lg ${BAR}`} />
+                  ))}
+                </div>
+              </div>
             </div>
-          </div>
-          {/* Tabs card */}
-          <div className="rounded-lg border border-[rgba(255,255,255,0.06)] bg-[#161616] overflow-hidden">
-            <div className="flex gap-4 border-b border-[rgba(255,255,255,0.06)] px-4 pt-3 pb-0">
-              <div className="h-8 w-24 rounded bg-[rgba(255,255,255,0.06)]" />
-              <div className="h-8 w-24 rounded bg-[rgba(255,255,255,0.06)]" />
-            </div>
-            <div className="p-4 space-y-3">
-              {[0, 1, 2].map((i) => (
-                <div key={i} className="h-12 rounded-lg bg-[rgba(255,255,255,0.06)]" />
-              ))}
-            </div>
-          </div>
-          {/* Portal access */}
-          <div className="rounded-lg border border-[rgba(255,255,255,0.06)] bg-[#161616] px-4 sm:px-6 py-5">
-            <div className="h-4 w-28 rounded bg-[rgba(255,255,255,0.06)] mb-4" />
-            <div className="h-10 rounded-lg bg-[rgba(255,255,255,0.06)]" />
           </div>
         </div>
       </div>

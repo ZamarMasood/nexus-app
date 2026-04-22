@@ -3,24 +3,23 @@
 import { useState, useCallback, useEffect, useMemo, createContext, useContext } from "react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import {
   Inbox,
   Layers,
   CheckSquare,
   Users,
   FileText,
-  Settings,
-  UserPlus,
   LogOut,
   Menu,
   X,
   Search,
-  ChevronDown,
   UserCog,
 } from "lucide-react";
 import { TaskFormProvider } from "./task-form-context";
 import { signOutAction } from "@/app/(auth)/login/actions";
 import SearchCommandPalette from "@/components/layout/SearchCommandPalette";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 // ── Sidebar collapsed context ─────────────────────────────────────────────
 const SidebarCollapsedContext = createContext(false);
@@ -32,6 +31,7 @@ interface DashboardShellProps {
   currentMemberId?: string;
   orgName?: string;
   memberName?: string;
+  memberAvatarUrl?: string;
   slug: string;
 }
 
@@ -67,15 +67,15 @@ function NavItem({
       href={href}
       data-active={active}
       className="nav-item group flex items-center gap-2.5 w-full px-3 py-1.5 rounded-md
-        text-[13px] font-medium text-[#8a8a8a]
-        hover:bg-white/5 hover:text-[#f0f0f0]
-        data-[active=true]:bg-white/[0.08] data-[active=true]:text-[#f0f0f0]
+        text-[13px] font-medium text-[var(--text-muted)]
+        hover:bg-[var(--hover-default)] hover:text-[var(--text-primary)]
+        data-[active=true]:bg-[var(--hover-strong)] data-[active=true]:text-[var(--text-primary)]
         transition-colors duration-150"
     >
       <Icon
         size={15}
-        className="flex-shrink-0 text-[#555]
-          group-hover:text-[#8a8a8a] group-data-[active=true]:text-[#8a8a8a]"
+        className="flex-shrink-0 text-[var(--text-faint)]
+          group-hover:text-[var(--text-muted)] group-data-[active=true]:text-[var(--text-muted)]"
       />
       {label}
     </Link>
@@ -86,7 +86,7 @@ function SidebarSection({ label, children }: { label: string; children: React.Re
   return (
     <div className="pt-4">
       <div className="px-3 pb-1">
-        <span className="text-[11px] font-medium text-[#555] uppercase tracking-[0.06em]">
+        <span className="text-[11px] font-medium text-[var(--text-faint)] uppercase tracking-[0.06em]">
           {label}
         </span>
       </div>
@@ -95,7 +95,7 @@ function SidebarSection({ label, children }: { label: string; children: React.Re
   );
 }
 
-export default function DashboardShell({ children, isAdmin, currentMemberId, orgName, memberName, slug }: DashboardShellProps) {
+export default function DashboardShell({ children, isAdmin, currentMemberId, orgName, memberName, memberAvatarUrl, slug }: DashboardShellProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
@@ -159,16 +159,16 @@ export default function DashboardShell({ children, isAdmin, currentMemberId, org
   const sidebarContent = (
     <>
       {/* Workspace header */}
-      <div className="flex items-center gap-2 px-4 py-6 border-b border-[rgba(255,255,255,0.06)]">
-        <div className="w-5 h-5 rounded-sm bg-[#5e6ad2] flex items-center justify-center">
-          <span className="text-white text-[10px] font-medium">
+      <div className="flex items-center gap-2 px-3 py-3 border-b border-[var(--border-subtle)]">
+        <div className="w-6 h-6 rounded-md bg-[var(--accent)] flex items-center justify-center shrink-0">
+          <span className="text-white text-[11px] font-medium">
             {orgName ? orgName[0].toUpperCase() : 'N'}
           </span>
         </div>
-        <span className="text-[13px] font-medium text-[#f0f0f0] flex-1 truncate">
+        <span className="text-[13px] font-medium text-[var(--text-primary)] flex-1 truncate">
           {orgName ?? 'Workspace'}
         </span>
-        <ChevronDown size={14} className="text-[#555]" />
+        <ThemeToggle className="h-7 w-7" />
       </div>
 
       {/* Search button */}
@@ -176,16 +176,16 @@ export default function DashboardShell({ children, isAdmin, currentMemberId, org
         <button
           onClick={() => setSearchOpen(true)}
           className="flex items-center gap-2 w-full px-2 py-1.5 rounded-md
-          text-[13px] text-[#8a8a8a] hover:bg-white/5 hover:text-[#f0f0f0]
+          text-[13px] text-[var(--text-muted)] hover:bg-[var(--hover-default)] hover:text-[var(--text-primary)]
           transition-colors duration-150">
           <Search size={15} />
           Search...
-          <kbd className="ml-auto text-[11px] text-[#555] font-mono">Ctrl+K</kbd>
+          <kbd className="ml-auto text-[11px] text-[var(--text-faint)] font-mono">Ctrl+K</kbd>
         </button>
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 px-2 py-1 overflow-y-auto space-y-0.5">
+      <nav className="flex-1 min-h-0 px-2 py-1 space-y-0.5">
         {/* Top-level nav */}
         <NavItem href={`${base}`} icon={Inbox} label="Overview" active={isActive({ path: "", exact: true })} />
 
@@ -203,29 +203,50 @@ export default function DashboardShell({ children, isAdmin, currentMemberId, org
         </SidebarSection>
       </nav>
 
-      {/* Bottom links */}
-      <div className="px-2 py-5 border-t border-[rgba(255,255,255,0.06)] space-y-0.5">
-        <NavItem href={`${base}/settings`} icon={Settings} label="Settings" active={pathname.startsWith(`${base}/settings`)} />
-        {memberName && (
-          <div className="flex items-center gap-2 px-3 py-1.5 mt-1">
-            <div className="w-5 h-5 rounded-full bg-[#5e6ad2] flex items-center justify-center">
-              <span className="text-white text-[9px] font-medium">
-                {memberName.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)}
+      {/* User row — avatar + name/role (link to Settings) + logout icon */}
+      <div className="flex items-center gap-3 px-3 py-3 mb-2 border-t border-[var(--border-subtle)]">
+        <Link
+          href={`${base}/settings`}
+          title="Account settings"
+          className="group flex items-center gap-3 flex-1 min-w-0 rounded-md px-1 py-1 -mx-1 -my-1
+            hover:bg-[var(--hover-default)] transition-colors duration-150
+            focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-ring)]"
+        >
+          {memberAvatarUrl ? (
+            <Image
+              src={memberAvatarUrl}
+              alt={memberName ?? 'User'}
+              width={36}
+              height={36}
+              className="h-9 w-9 shrink-0 rounded-full object-cover border border-[var(--accent-border)]"
+            />
+          ) : (
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full
+              bg-[var(--tint-accent-strong)] border border-[var(--accent-border)]">
+              <span className="text-[12px] font-medium text-[var(--accent)]">
+                {memberName ? memberName.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2) : 'U'}
               </span>
             </div>
-            <span className="text-[12px] text-[#8a8a8a] truncate flex-1">{memberName}</span>
+          )}
+          <div className="flex-1 min-w-0">
+            <p className="text-[13px] font-medium text-[var(--text-primary)] truncate">
+              {memberName ?? 'User'}
+            </p>
+            <p className="text-[11px] text-[var(--text-muted)] truncate">
+              {isAdmin ? 'Admin' : 'Member'}
+            </p>
           </div>
-        )}
+        </Link>
         <form action={signOutAction}>
           <button
             type="submit"
-            className="group flex items-center gap-2.5 w-full px-3 py-1.5 rounded-md
-              text-[13px] font-medium text-[#8a8a8a]
-              hover:bg-white/5 hover:text-[#f0f0f0]
-              transition-colors duration-150"
+            title="Sign out"
+            className="inline-flex h-8 w-8 items-center justify-center rounded-md
+              text-[var(--text-faint)] hover:text-[var(--text-primary)] hover:bg-[var(--hover-default)]
+              transition-colors duration-150
+              focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-ring)]"
           >
-            <LogOut size={15} className="text-[#555] group-hover:text-[#8a8a8a]" />
-            Sign out
+            <LogOut size={15} />
           </button>
         </form>
       </div>
@@ -235,21 +256,21 @@ export default function DashboardShell({ children, isAdmin, currentMemberId, org
   return (
     <TaskFormProvider currentMemberId={currentMemberId} isAdmin={isAdmin}>
       <SidebarCollapsedContext.Provider value={sidebarCollapsed}>
-      <div className="flex h-screen bg-[#0d0d0d] overflow-hidden">
+      <div className="flex h-screen bg-[var(--bg-page)] overflow-hidden">
 
         {/* ── Mobile top bar ─────────────────────────────────────────── */}
         <header className="fixed top-0 left-0 right-0 z-30 flex items-center justify-between
-          bg-[#111111] border-b border-[rgba(255,255,255,0.06)] px-4 h-12 lg:hidden">
+          bg-[var(--bg-page)] border-b border-[var(--border-default)] px-4 h-12 lg:hidden">
           <button
             type="button"
             onClick={toggleMenu}
             aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
-            className="p-1.5 rounded-md text-[#555] hover:text-[#8a8a8a] hover:bg-white/5
+            className="p-1.5 rounded-md text-[var(--text-faint)] hover:text-[var(--text-muted)] hover:bg-[var(--hover-default)]
               transition-colors duration-150"
           >
             {mobileMenuOpen ? <X size={18} /> : <Menu size={18} />}
           </button>
-          <span className="text-[13px] font-medium text-[#f0f0f0]">{orgName ?? 'Nexus'}</span>
+          <span className="text-[13px] font-medium text-[var(--text-primary)]">{orgName ?? 'Nexus'}</span>
           <div className="w-9" />
         </header>
 
@@ -266,8 +287,8 @@ export default function DashboardShell({ children, isAdmin, currentMemberId, org
         {/* ── Mobile drawer ──────────────────────────────────────────── */}
         <aside
           className={[
-            "fixed inset-y-0 left-0 z-50 w-[240px] flex flex-col h-full",
-            "bg-[#111111] border-r border-[rgba(255,255,255,0.06)] lg:hidden",
+            "fixed inset-y-0 left-0 z-50 w-[min(260px,calc(100vw-48px))] flex flex-col h-full",
+            "bg-[var(--bg-page)] border-r border-[var(--border-default)] lg:hidden",
             "transition-transform duration-200 ease-out",
             mobileMenuOpen ? "translate-x-0" : "-translate-x-full",
           ].join(" ")}
@@ -278,11 +299,11 @@ export default function DashboardShell({ children, isAdmin, currentMemberId, org
         {/* ── Desktop sidebar ────────────────────────────────────────── */}
         <aside
           className="hidden lg:flex flex-shrink-0 flex-col h-full
-            bg-[#111111] border-r border-[rgba(255,255,255,0.06)]
+            bg-[var(--bg-page)] border-r border-[var(--border-default)]
             transition-[width] duration-200 ease-out overflow-hidden relative"
-          style={{ width: sidebarCollapsed ? 0 : 240 }}
+          style={{ width: sidebarCollapsed ? 0 : 260 }}
         >
-          <div className="w-[240px] flex flex-col h-full">
+          <div className="w-[260px] flex flex-col h-full">
             {sidebarContent}
           </div>
         </aside>
@@ -305,18 +326,19 @@ export default function DashboardShell({ children, isAdmin, currentMemberId, org
               <svg
                 width="6" height="48" viewBox="0 0 6 48" fill="none"
                 className="transition-all duration-200 ease-out"
+                style={{ color: 'var(--text-faint)' }}
               >
                 <rect
                   x="1" y="2" width="4" height="44" rx="2"
-                  className="fill-[rgba(255,255,255,0.18)] group-hover:fill-transparent
-                    transition-colors duration-200"
+                  fill="currentColor"
+                  className="group-hover:fill-transparent transition-colors duration-200"
                 />
                 <path
                   d={sidebarCollapsed
                     ? "M1 4 C1 4, 5 14, 5 24 C5 34, 1 44, 1 44"
                     : "M5 4 C5 4, 1 14, 1 24 C1 34, 5 44, 5 44"
                   }
-                  stroke="rgba(255,255,255,0.40)"
+                  stroke="currentColor"
                   strokeWidth="3"
                   strokeLinecap="round"
                   fill="none"

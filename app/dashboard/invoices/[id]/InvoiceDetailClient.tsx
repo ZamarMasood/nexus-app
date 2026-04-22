@@ -43,23 +43,23 @@ import type { Invoice, InvoiceStatus } from "@/lib/types";
 const STATUS_CONFIG: Record<string, { label: string; dot: string; text: string; badge: string; icon: any }> = {
   paid: {
     label: "Paid",
-    dot: "bg-[#26c97f]",
-    text: "text-[#26c97f]",
-    badge: "text-[#26c97f] bg-[rgba(38,201,127,0.10)] border-[rgba(38,201,127,0.20)]",
+    dot: "bg-[var(--status-done)]",
+    text: "text-[var(--status-done)]",
+    badge: "text-[var(--status-done)] bg-[var(--tint-green)] border-[var(--tint-green-border)]",
     icon: CheckCircle
   },
   pending: {
     label: "Pending",
-    dot: "bg-[#e79d13]",
-    text: "text-[#e79d13]",
-    badge: "text-[#e79d13] bg-[rgba(231,157,19,0.10)] border-[rgba(231,157,19,0.20)]",
+    dot: "bg-[var(--priority-high)]",
+    text: "text-[var(--priority-high)]",
+    badge: "text-[var(--priority-high)] bg-[var(--tint-orange)] border-[var(--tint-orange-border)]",
     icon: AlertCircle
   },
   overdue: {
     label: "Overdue",
-    dot: "bg-[#e5484d]",
-    text: "text-[#e5484d]",
-    badge: "text-[#e5484d] bg-[rgba(229,72,77,0.10)] border-[rgba(229,72,77,0.20)]",
+    dot: "bg-[var(--priority-urgent)]",
+    text: "text-[var(--priority-urgent)]",
+    badge: "text-[var(--priority-urgent)] bg-[var(--tint-red)] border-[var(--tint-red-border)]",
     icon: AlertCircle
   },
 };
@@ -67,17 +67,17 @@ const STATUS_CONFIG: Record<string, { label: string; dot: string; text: string; 
 function getStatusConfig(status: string | null) {
   return STATUS_CONFIG[status ?? ""] ?? {
     label: status ?? "Unknown",
-    dot: "bg-[#888888]",
-    text: "text-[#8a8a8a]",
-    badge: "text-[#8a8a8a] bg-[rgba(255,255,255,0.06)] border-[rgba(255,255,255,0.06)]",
+    dot: "bg-[var(--text-muted)]",
+    text: "text-[var(--text-muted)]",
+    badge: "text-[var(--text-muted)] bg-[var(--border-subtle)] border-[var(--border-subtle)]",
     icon: Receipt,
   };
 }
 
 const EDIT_STATUS_OPTIONS: { value: InvoiceStatus; label: string; color: string }[] = [
-  { value: "pending", label: "Pending", color: "text-[#e79d13]" },
-  { value: "paid", label: "Paid", color: "text-[#26c97f]" },
-  { value: "overdue", label: "Overdue", color: "text-[#e5484d]" },
+  { value: "pending", label: "Pending", color: "text-[var(--priority-high)]" },
+  { value: "paid", label: "Paid", color: "text-[var(--status-done)]" },
+  { value: "overdue", label: "Overdue", color: "text-[var(--priority-urgent)]" },
 ];
 
 // Edit Form Component
@@ -98,7 +98,7 @@ function EditForm({ invoice, clients, onSave, onCancel }: EditFormProps) {
   const [error, setError] = useState<string | null>(null);
 
   const fieldClass =
-    "w-full px-3 py-2 rounded-lg bg-[#1a1a1a] border border-[rgba(255,255,255,0.08)] text-[#f0f0f0] text-[13px] placeholder:text-[#555] focus:outline-none focus:border-[rgba(94,106,210,0.5)] focus:ring-1 focus:ring-[rgba(94,106,210,0.3)] transition-all duration-150";
+    "w-full px-3 py-2 rounded-lg bg-[var(--bg-input)] border border-[var(--border-default)] text-[var(--text-primary)] text-[13px] placeholder:text-[var(--text-faint)] focus:outline-none focus:border-[var(--accent-border)] focus:ring-1 focus:ring-[var(--accent-ring)] transition-all duration-150";
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
@@ -128,9 +128,9 @@ function EditForm({ invoice, clients, onSave, onCancel }: EditFormProps) {
   return (
     <form onSubmit={handleSave} className="space-y-4">
       <div>
-        <label className="block text-[11px] font-medium text-[#8a8a8a] mb-1.5">
+        <label className="block text-[11px] font-medium text-[var(--text-muted)] mb-1.5">
           <span className="flex items-center gap-1.5">
-            <Users className="h-3 w-3" /> Client <span className="text-[#e5484d]">*</span>
+            <Users className="h-3 w-3" /> Client <span className="text-[var(--priority-urgent)]">*</span>
           </span>
         </label>
         <select value={clientId} onChange={(e) => setClientId(e.target.value)} className={fieldClass} required>
@@ -143,9 +143,9 @@ function EditForm({ invoice, clients, onSave, onCancel }: EditFormProps) {
       
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <label className="block text-[11px] font-medium text-[#8a8a8a] mb-1.5">
+          <label className="block text-[11px] font-medium text-[var(--text-muted)] mb-1.5">
             <span className="flex items-center gap-1.5">
-              <Hash className="h-3 w-3" /> Invoice # <span className="text-[#e5484d]">*</span>
+              <Hash className="h-3 w-3" /> Invoice # <span className="text-[var(--priority-urgent)]">*</span>
             </span>
           </label>
           <input 
@@ -156,7 +156,7 @@ function EditForm({ invoice, clients, onSave, onCancel }: EditFormProps) {
           />
         </div>
         <div>
-          <label className="block text-[11px] font-medium text-[#8a8a8a] mb-1.5">Status</label>
+          <label className="block text-[11px] font-medium text-[var(--text-muted)] mb-1.5">Status</label>
           <select value={status} onChange={(e) => setStatus(e.target.value as InvoiceStatus)} className={fieldClass}>
             {EDIT_STATUS_OPTIONS.map((o) => (
               <option key={o.value} value={o.value}>{o.label}</option>
@@ -167,9 +167,9 @@ function EditForm({ invoice, clients, onSave, onCancel }: EditFormProps) {
       
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <label className="block text-[11px] font-medium text-[#8a8a8a] mb-1.5">
+          <label className="block text-[11px] font-medium text-[var(--text-muted)] mb-1.5">
             <span className="flex items-center gap-1.5">
-              <DollarSign className="h-3 w-3" /> Amount <span className="text-[#e5484d]">*</span>
+              <DollarSign className="h-3 w-3" /> Amount <span className="text-[var(--priority-urgent)]">*</span>
             </span>
           </label>
           <input 
@@ -184,7 +184,7 @@ function EditForm({ invoice, clients, onSave, onCancel }: EditFormProps) {
           />
         </div>
         <div>
-          <label className="block text-[11px] font-medium text-[#8a8a8a] mb-1.5">
+          <label className="block text-[11px] font-medium text-[var(--text-muted)] mb-1.5">
             <span className="flex items-center gap-1.5">
               <CalendarDays className="h-3 w-3" /> Due Date
             </span>
@@ -199,7 +199,7 @@ function EditForm({ invoice, clients, onSave, onCancel }: EditFormProps) {
       </div>
       
       {error && (
-        <div className="rounded-lg bg-[rgba(229,72,77,0.10)] px-3 py-2 text-[12px] text-[#e5484d] border border-[rgba(229,72,77,0.2)]">
+        <div className="rounded-lg bg-[var(--tint-red)] px-3 py-2 text-[12px] text-[var(--priority-urgent)] border border-[var(--tint-red-border)]">
           {error}
         </div>
       )}
@@ -208,14 +208,14 @@ function EditForm({ invoice, clients, onSave, onCancel }: EditFormProps) {
         <button 
           type="button" 
           onClick={onCancel} 
-          className="px-3 py-1.5 rounded-lg text-[12px] font-medium text-[#8a8a8a] hover:bg-white/5 hover:text-[#f0f0f0] transition-all duration-150 flex items-center gap-1.5"
+          className="px-3 py-1.5 rounded-lg text-[12px] font-medium text-[var(--text-muted)] hover:bg-[var(--hover-default)] hover:text-[var(--text-primary)] transition-all duration-150 flex items-center gap-1.5"
         >
           <X className="h-3.5 w-3.5" /> Cancel
         </button>
         <button 
           type="submit" 
           disabled={saving} 
-          className="px-3 py-1.5 rounded-lg text-[12px] font-medium bg-[#5e6ad2] hover:bg-[#6872e5] text-white active:scale-[0.98] transition-all duration-150 flex items-center gap-1.5 disabled:opacity-50"
+          className="px-3 py-1.5 rounded-lg text-[12px] font-medium bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white active:scale-[0.98] transition-all duration-150 flex items-center gap-1.5 disabled:opacity-50"
         >
           <Check className="h-3.5 w-3.5" /> {saving ? "Saving..." : "Save Changes"}
         </button>
@@ -385,49 +385,49 @@ export default function InvoiceDetailClient({
   const StatusIcon = cfg.icon;
 
   return (
-    <div className="flex flex-col h-full bg-[#0d0d0d]">
+    <div className="flex flex-col h-full bg-[var(--bg-page)]">
       
       {/* Header toolbar */}
-      <div className="flex items-center justify-between px-6 h-[60px] border-b border-[rgba(255,255,255,0.06)] shrink-0">
+      <div className="flex items-center justify-between px-4 sm:px-6 h-[60px] border-b border-[var(--border-subtle)] shrink-0 gap-3">
         <div className="flex items-center gap-3">
           <button
             onClick={() => router.push(`/${slug}/invoices`)}
-            className="p-1.5 rounded-lg text-[#555] hover:text-[#e8e8e8] hover:bg-white/5 transition-all duration-150"
+            className="p-1.5 rounded-lg text-[var(--text-faint)] hover:text-[var(--text-primary)] hover:bg-[var(--hover-default)] transition-all duration-150"
             title="Back to Invoices"
           >
             <ArrowLeft size={16} />
           </button>
-          <div className="w-px h-5 bg-[rgba(255,255,255,0.06)]" />
+          <div className="w-px h-5 bg-[var(--border-subtle)]" />
           <div className="flex items-center gap-2">
-            <Receipt size={16} className="text-[#5e6ad2]" />
-            <h1 className="text-[15px] font-medium text-[#e8e8e8]">Invoice Details</h1>
+            <Receipt size={16} className="text-[var(--accent)]" />
+            <h1 className="text-[15px] font-medium text-[var(--text-primary)]">Invoice Details</h1>
           </div>
         </div>
       </div>
 
       {/* Main content */}
       <div className="flex-1 overflow-y-auto">
-        <div className="p-6">
+        <div className="p-4 sm:p-6">
           
           {/* Invoice sidebar and content - 2 column layout */}
           <div className="flex gap-6 items-start">
             
             {/* Left sidebar - Invoice list */}
             <aside className="hidden lg:block w-[320px] shrink-0">
-              <div className="rounded-xl border border-[rgba(255,255,255,0.06)] bg-[#111111] overflow-hidden sticky top-6">
-                <div className="p-4 border-b border-[rgba(255,255,255,0.06)]">
+              <div className="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-sidebar)] overflow-hidden sticky top-6">
+                <div className="p-4 border-b border-[var(--border-subtle)]">
                   <div className="flex items-center gap-2 mb-3">
-                    <Layers size={14} className="text-[#5e6ad2]" />
-                    <h2 className="text-[13px] font-medium text-[#e8e8e8]">All Invoices</h2>
+                    <Layers size={14} className="text-[var(--accent)]" />
+                    <h2 className="text-[13px] font-medium text-[var(--text-primary)]">All Invoices</h2>
                   </div>
                   <div className="relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-[#555]" />
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-[var(--text-faint)]" />
                     <input
                       type="text"
                       value={search}
                       onChange={(e) => setSearch(e.target.value)}
                       placeholder="Search invoices..."
-                      className="w-full pl-9 pr-3 py-2 rounded-lg bg-[#1a1a1a] border border-[rgba(255,255,255,0.08)] text-[#f0f0f0] text-[13px] placeholder:text-[#555] focus:outline-none focus:border-[rgba(94,106,210,0.5)] transition-all duration-150"
+                      className="w-full pl-9 pr-3 py-2 rounded-lg bg-[var(--bg-input)] border border-[var(--border-default)] text-[var(--text-primary)] text-[13px] placeholder:text-[var(--text-faint)] focus:outline-none focus:border-[var(--accent-border)] transition-all duration-150"
                     />
                   </div>
                 </div>
@@ -435,13 +435,13 @@ export default function InvoiceDetailClient({
                 <div className="max-h-[calc(100vh-200px)] overflow-y-auto">
                   {sidebarSearching ? (
                     <div className="flex flex-col items-center justify-center gap-2 py-12 text-center">
-                      <div className="w-5 h-5 border-2 border-[#5e6ad2] border-t-transparent rounded-full animate-spin" />
-                      <p className="text-[12px] text-[#555]">Searching...</p>
+                      <div className="w-5 h-5 border-2 border-[var(--accent)] border-t-transparent rounded-full animate-spin" />
+                      <p className="text-[12px] text-[var(--text-faint)]">Searching...</p>
                     </div>
                   ) : filteredInvoices.length === 0 ? (
                     <div className="flex flex-col items-center justify-center gap-2 py-12 text-center">
-                      <Receipt className="h-8 w-8 text-[#3a3a3a]" />
-                      <p className="text-[12px] text-[#555]">No invoices found</p>
+                      <Receipt className="h-8 w-8 text-[var(--text-disabled)]" />
+                      <p className="text-[12px] text-[var(--text-faint)]">No invoices found</p>
                     </div>
                   ) : (
                     filteredInvoices.map((inv) => {
@@ -452,16 +452,16 @@ export default function InvoiceDetailClient({
                           key={inv.id}
                           onClick={() => selectInvoice(inv.id)}
                           className={[
-                            "w-full text-left px-4 py-3 border-b border-[rgba(255,255,255,0.06)] last:border-0 transition-all duration-150",
+                            "w-full text-left px-4 py-3 border-b border-[var(--border-subtle)] last:border-0 transition-all duration-150",
                             isActive
-                              ? "bg-[rgba(94,106,210,0.08)] border-l-2 border-l-[#5e6ad2]"
-                              : "hover:bg-white/5",
+                              ? "bg-[var(--tint-accent)] border-l-2 border-l-[#5e6ad2]"
+                              : "hover:bg-[var(--hover-default)]",
                           ].join(" ")}
                         >
                           <div className="flex items-center justify-between gap-2 mb-1.5">
                             <span className={[
                               "font-mono text-[13px] font-medium truncate",
-                              isActive ? "text-[#5e6ad2]" : "text-[#e8e8e8]"
+                              isActive ? "text-[var(--accent)]" : "text-[var(--text-primary)]"
                             ].join(" ")}>
                               {inv.invoice_number ?? "—"}
                             </span>
@@ -471,15 +471,15 @@ export default function InvoiceDetailClient({
                             </span>
                           </div>
                           <div className="flex items-center justify-between gap-2 text-[11px]">
-                            <span className="text-[#555] truncate">
+                            <span className="text-[var(--text-faint)] truncate">
                               {inv.client_id ? clientMap[inv.client_id] ?? "No client" : "No client"}
                             </span>
-                            <span className="text-[#888] font-medium tabular-nums">
+                            <span className="text-[var(--text-muted)] font-medium tabular-nums">
                               {inv.amount != null ? formatCurrency(inv.amount) : "—"}
                             </span>
                           </div>
                           {inv.due_date && (
-                            <p className="mt-1 text-[11px] text-[#555]">Due {formatDate(inv.due_date)}</p>
+                            <p className="mt-1 text-[11px] text-[var(--text-faint)]">Due {formatDate(inv.due_date)}</p>
                           )}
                         </button>
                       );
@@ -490,22 +490,22 @@ export default function InvoiceDetailClient({
                 {/* Sidebar pagination */}
                 {(sidebarPage > 0 || sidebarHasMore) && (
                   <div className="flex items-center justify-between px-4 py-2
-                    border-t border-[rgba(255,255,255,0.06)] bg-[#111111]">
+                    border-t border-[var(--border-subtle)] bg-[var(--bg-sidebar)]">
                     <button
                       onClick={() => fetchSidebar(sidebarPage - 1)}
                       disabled={sidebarPage === 0 || sidebarSearching}
-                      className="text-[11px] font-medium text-[#888] hover:text-[#e8e8e8]
-                        disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:text-[#888]
+                      className="text-[11px] font-medium text-[var(--text-muted)] hover:text-[var(--text-primary)]
+                        disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:text-[var(--text-muted)]
                         transition-colors duration-150"
                     >
                       ← Previous
                     </button>
-                    <span className="text-[10px] text-[#555]">{sidebarPage + 1}</span>
+                    <span className="text-[10px] text-[var(--text-faint)]">{sidebarPage + 1}</span>
                     <button
                       onClick={() => fetchSidebar(sidebarPage + 1)}
                       disabled={!sidebarHasMore || sidebarSearching}
-                      className="text-[11px] font-medium text-[#888] hover:text-[#e8e8e8]
-                        disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:text-[#888]
+                      className="text-[11px] font-medium text-[var(--text-muted)] hover:text-[var(--text-primary)]
+                        disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:text-[var(--text-muted)]
                         transition-colors duration-150"
                     >
                       Next →
@@ -519,50 +519,50 @@ export default function InvoiceDetailClient({
             <div className="flex-1 min-w-0">
               {loading ? (
                 <div className="space-y-6 animate-pulse">
-                  <div className="rounded-xl border border-[rgba(255,255,255,0.06)] bg-[#111111] overflow-hidden">
-                    <div className="p-6">
-                      <div className="h-8 w-64 bg-white/5 rounded mb-3" />
-                      <div className="h-4 w-32 bg-white/5 rounded" />
+                  <div className="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-sidebar)] overflow-hidden">
+                    <div className="p-4 sm:p-6">
+                      <div className="h-8 w-64 bg-[var(--hover-default)] rounded mb-3" />
+                      <div className="h-4 w-32 bg-[var(--hover-default)] rounded" />
                     </div>
-                    <div className="grid grid-cols-4 gap-4 p-6 border-t border-[rgba(255,255,255,0.06)]">
+                    <div className="grid grid-cols-4 gap-4 p-6 border-t border-[var(--border-subtle)]">
                       {[1,2,3,4].map(i => (
                         <div key={i} className="space-y-2">
-                          <div className="h-3 w-16 bg-white/5 rounded" />
-                          <div className="h-5 w-20 bg-white/5 rounded" />
+                          <div className="h-3 w-16 bg-[var(--hover-default)] rounded" />
+                          <div className="h-5 w-20 bg-[var(--hover-default)] rounded" />
                         </div>
                       ))}
                     </div>
                   </div>
-                  <div className="rounded-xl border border-[rgba(255,255,255,0.06)] bg-[#111111] p-6">
+                  <div className="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-sidebar)] p-6">
                     <div className="flex flex-col items-center gap-4 py-8">
-                      <div className="h-14 w-14 rounded-full bg-white/5" />
-                      <div className="h-4 w-40 bg-white/5 rounded" />
-                      <div className="h-3 w-56 bg-white/5 rounded" />
+                      <div className="h-14 w-14 rounded-full bg-[var(--hover-default)]" />
+                      <div className="h-4 w-40 bg-[var(--hover-default)] rounded" />
+                      <div className="h-3 w-56 bg-[var(--hover-default)] rounded" />
                     </div>
                   </div>
                 </div>
               ) : error || !invoice ? (
-                <div className="rounded-xl bg-[rgba(229,72,77,0.10)] border border-[rgba(229,72,77,0.2)] p-6">
-                  <p className="text-[13px] text-[#e5484d]">{error ?? "Invoice not found."}</p>
+                <div className="rounded-xl bg-[var(--tint-red)] border border-[var(--tint-red-border)] p-6">
+                  <p className="text-[13px] text-[var(--priority-urgent)]">{error ?? "Invoice not found."}</p>
                 </div>
               ) : (
                 <div className="space-y-6">
                   
                   {/* Invoice header card */}
-                  <div className="rounded-xl border border-[rgba(255,255,255,0.06)] bg-[#111111] overflow-hidden">
-                    <div className="p-6">
+                  <div className="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-sidebar)] overflow-hidden">
+                    <div className="p-4 sm:p-6">
                       <div className="flex items-start justify-between gap-4 mb-4">
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-2">
                             <StatusIcon size={16} className={cfg.text} />
-                            <h1 className="text-xl font-semibold text-[#e8e8e8] truncate">
+                            <h1 className="text-xl font-semibold text-[var(--text-primary)] truncate">
                               {invoice.invoice_number ?? "—"}
                             </h1>
                           </div>
                           {client && (
                             <Link 
                               href={`/${slug}/clients/${client.id}`}
-                              className="inline-flex items-center gap-1.5 text-[13px] text-[#555] hover:text-[#5e6ad2] transition-colors"
+                              className="inline-flex items-center gap-1.5 text-[13px] text-[var(--text-faint)] hover:text-[var(--accent)] transition-colors"
                             >
                               <Users size={12} />
                               {client.name}
@@ -577,7 +577,7 @@ export default function InvoiceDetailClient({
                           {isAdmin && !editing && (
                             <button 
                               onClick={() => setEditing(true)} 
-                              className="px-3 py-1.5 rounded-lg text-[12px] font-medium text-[#8a8a8a] hover:text-[#e8e8e8] hover:bg-white/5 border border-[rgba(255,255,255,0.08)] transition-all duration-150 flex items-center gap-1.5"
+                              className="px-3 py-1.5 rounded-lg text-[12px] font-medium text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--hover-default)] border border-[var(--border-default)] transition-all duration-150 flex items-center gap-1.5"
                             >
                               <Pencil className="h-3.5 w-3.5" /> Edit
                             </button>
@@ -597,42 +597,42 @@ export default function InvoiceDetailClient({
                           onCancel={() => setEditing(false)} 
                         />
                       ) : (
-                        <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 pt-4 border-t border-[rgba(255,255,255,0.06)]">
+                        <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 pt-4 border-t border-[var(--border-subtle)]">
                           <div>
-                            <p className="text-[11px] font-medium text-[#555] uppercase tracking-[0.06em] mb-1.5">Client</p>
+                            <p className="text-[11px] font-medium text-[var(--text-faint)] uppercase tracking-[0.06em] mb-1.5">Client</p>
                             <div className="flex items-center gap-1.5">
-                              <Users size={14} className="text-[#555]" />
-                              <span className="text-[13px] font-medium text-[#e8e8e8]">
+                              <Users size={14} className="text-[var(--text-faint)]" />
+                              <span className="text-[13px] font-medium text-[var(--text-primary)]">
                                 {client?.name ?? "—"}
                               </span>
                             </div>
                           </div>
                           
                           <div>
-                            <p className="text-[11px] font-medium text-[#555] uppercase tracking-[0.06em] mb-1.5">Amount</p>
+                            <p className="text-[11px] font-medium text-[var(--text-faint)] uppercase tracking-[0.06em] mb-1.5">Amount</p>
                             <div className="flex items-center gap-1.5">
-                              <DollarSign size={14} className="text-[#555]" />
-                              <span className="text-[13px] font-medium text-[#e8e8e8]">
+                              <DollarSign size={14} className="text-[var(--text-faint)]" />
+                              <span className="text-[13px] font-medium text-[var(--text-primary)]">
                                 {invoice.amount != null ? formatCurrency(invoice.amount) : "—"}
                               </span>
                             </div>
                           </div>
                           
                           <div>
-                            <p className="text-[11px] font-medium text-[#555] uppercase tracking-[0.06em] mb-1.5">Due Date</p>
+                            <p className="text-[11px] font-medium text-[var(--text-faint)] uppercase tracking-[0.06em] mb-1.5">Due Date</p>
                             <div className="flex items-center gap-1.5">
-                              <CalendarDays size={14} className="text-[#555]" />
-                              <span className="text-[13px] font-medium text-[#e8e8e8]">
+                              <CalendarDays size={14} className="text-[var(--text-faint)]" />
+                              <span className="text-[13px] font-medium text-[var(--text-primary)]">
                                 {invoice.due_date ? formatDate(invoice.due_date) : "No due date"}
                               </span>
                             </div>
                           </div>
                           
                           <div>
-                            <p className="text-[11px] font-medium text-[#555] uppercase tracking-[0.06em] mb-1.5">Invoice #</p>
+                            <p className="text-[11px] font-medium text-[var(--text-faint)] uppercase tracking-[0.06em] mb-1.5">Invoice #</p>
                             <div className="flex items-center gap-1.5">
-                              <Hash size={14} className="text-[#555]" />
-                              <span className="text-[13px] font-medium text-[#e8e8e8] font-mono">
+                              <Hash size={14} className="text-[var(--text-faint)]" />
+                              <span className="text-[13px] font-medium text-[var(--text-primary)] font-mono">
                                 {invoice.invoice_number ?? "—"}
                               </span>
                             </div>
@@ -642,27 +642,27 @@ export default function InvoiceDetailClient({
 
                       {/* Actions */}
                       {!editing && (
-                        <div className="flex items-center justify-between gap-2 mt-6 pt-4 border-t border-[rgba(255,255,255,0.06)]">
+                        <div className="flex items-center justify-between gap-2 mt-6 pt-4 border-t border-[var(--border-subtle)]">
                           <div className="flex gap-2">
                             {invoice.status !== "paid" && isAdmin && (
                               <button 
                                 onClick={markAsPaid} 
                                 disabled={markingPaid} 
-                                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-[#26c97f] hover:bg-[#2ed98a] text-white transition-all duration-150 disabled:opacity-50"
+                                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-[var(--status-done)] hover:bg-[var(--status-done)] text-white transition-all duration-150 disabled:opacity-50"
                               >
                                 <CheckCircle className="h-3.5 w-3.5" />
                                 {markingPaid ? "Updating..." : "Mark as Paid"}
                               </button>
                             )}
                             {invoice.pdf_url ? (
-                              <a href={invoice.pdf_url} download className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-[#888] hover:text-[#e8e8e8] hover:bg-white/5 border border-[rgba(255,255,255,0.08)] transition-all duration-150">
+                              <a href={invoice.pdf_url} download className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--hover-default)] border border-[var(--border-default)] transition-all duration-150">
                                 <Download className="h-3.5 w-3.5" /> Download PDF
                               </a>
                             ) : (
                               <button 
                                 onClick={generatePdf} 
                                 disabled={generatingPdf} 
-                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-[#888] hover:text-[#e8e8e8] hover:bg-white/5 border border-[rgba(255,255,255,0.08)] transition-all duration-150 disabled:opacity-50"
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--hover-default)] border border-[var(--border-default)] transition-all duration-150 disabled:opacity-50"
                               >
                                 <RefreshCw className={`h-3.5 w-3.5 ${generatingPdf ? "animate-spin" : ""}`} />
                                 {generatingPdf ? "Generating..." : "Generate PDF"}
@@ -672,7 +672,7 @@ export default function InvoiceDetailClient({
                           {invoice.pdf_url && (
                             <button 
                               onClick={() => setShowPdf(!showPdf)} 
-                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-[#5e6ad2] hover:bg-[#6872e5] text-white transition-all duration-150"
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white transition-all duration-150"
                             >
                               <FileText className="h-3.5 w-3.5" /> {showPdf ? "Hide PDF" : "View PDF"}
                             </button>
@@ -684,8 +684,8 @@ export default function InvoiceDetailClient({
 
                   {/* PDF section */}
                   {invoice.pdf_url && showPdf && (
-                    <div className="rounded-xl border border-[rgba(255,255,255,0.06)] bg-[#111111] overflow-hidden">
-                      <iframe src={`${invoice.pdf_url}?t=${pdfCacheBust}#toolbar=0`} className="h-[500px] w-full" title={`Invoice ${invoice.invoice_number}`} />
+                    <div className="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-sidebar)] overflow-hidden">
+                      <iframe src={`${invoice.pdf_url}?t=${pdfCacheBust}#toolbar=0`} className="h-[360px] sm:h-[500px] w-full" title={`Invoice ${invoice.invoice_number}`} />
                     </div>
                   )}
                 </div>

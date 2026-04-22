@@ -129,16 +129,16 @@ function CommentItem({ comment }: { comment: CommentWithAuthor }) {
 
   return (
     <div className="flex gap-3">
-      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[rgba(94,106,210,0.15)]">
-        <span className="text-xs font-medium text-[#5e6ad2]">{initials}</span>
+      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--tint-accent-strong)]">
+        <span className="text-xs font-medium text-[var(--accent)]">{initials}</span>
       </div>
       <div className="flex-1">
-        <div className="rounded-lg border border-[rgba(255,255,255,0.06)] bg-[#1a1a1a] px-4 py-3">
+        <div className="rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-input)] px-4 py-3">
           <div className="flex items-center justify-between gap-2 mb-1.5">
-            <span className="text-xs font-medium text-[#8a8a8a]">{authorName}</span>
-            <span className="text-[11px] text-[#555]">{date}</span>
+            <span className="text-xs font-medium text-[var(--text-muted)]">{authorName}</span>
+            <span className="text-[11px] text-[var(--text-faint)]">{date}</span>
           </div>
-          <p className="text-sm text-[#888] leading-relaxed whitespace-pre-wrap">{comment.content}</p>
+          <p className="text-sm text-[var(--text-muted)] leading-relaxed whitespace-pre-wrap">{comment.content}</p>
         </div>
       </div>
     </div>
@@ -151,20 +151,20 @@ function FileItem({ file }: { file: ProjectFile }) {
       href={file.file_url ?? "#"}
       target="_blank"
       rel="noopener noreferrer"
-      className="flex items-center gap-3 rounded-lg border border-[rgba(255,255,255,0.06)] bg-[#1a1a1a] px-4 py-3 hover:border-[rgba(255,255,255,0.12)] hover:bg-[#1c1c1c] transition-all duration-150 group"
+      className="flex items-center gap-3 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-input)] px-4 py-3 hover:border-[var(--border-hover)] hover:bg-[var(--bg-elevated)] transition-all duration-150 group"
     >
-      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[rgba(94,106,210,0.12)]">
-        <FileText className="h-5 w-5 text-[#5e6ad2]" />
+      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[var(--tint-accent)]">
+        <FileText className="h-5 w-5 text-[var(--accent)]" />
       </div>
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium text-[#e8e8e8] truncate">{file.filename ?? "Unnamed file"}</p>
+        <p className="text-sm font-medium text-[var(--text-primary)] truncate">{file.filename ?? "Unnamed file"}</p>
         {file.created_at && (
-          <p className="text-[11px] text-[#555] mt-0.5">
+          <p className="text-[11px] text-[var(--text-faint)] mt-0.5">
             Added {new Date(file.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
           </p>
         )}
       </div>
-      <ExternalLink className="h-4 w-4 text-[#555] group-hover:text-[#5e6ad2] transition-colors duration-150 shrink-0" />
+      <ExternalLink className="h-4 w-4 text-[var(--text-faint)] group-hover:text-[var(--accent)] transition-colors duration-150 shrink-0" />
     </a>
   );
 }
@@ -309,51 +309,51 @@ export default function TaskDetailClient({
   };
 
   return (
-    <div className="flex flex-col h-full bg-[#0d0d0d]">
+    <div className="flex flex-col h-full bg-[var(--bg-page)]">
       
       {/* Header toolbar */}
-      <div className="flex items-center justify-between px-6 h-[60px] border-b border-[rgba(255,255,255,0.06)] shrink-0">
+      <div className="flex items-center justify-between px-4 sm:px-6 h-[60px] border-b border-[var(--border-subtle)] shrink-0 gap-3">
         <div className="flex items-center gap-3">
           <button
             onClick={() => router.push(`/${slug}/tasks`)}
-            className="p-1.5 rounded-lg text-[#555] hover:text-[#e8e8e8] hover:bg-white/5 transition-all duration-150"
+            className="p-1.5 rounded-lg text-[var(--text-faint)] hover:text-[var(--text-primary)] hover:bg-[var(--hover-default)] transition-all duration-150"
             title="Back to Tasks"
           >
             <ArrowLeft size={16} />
           </button>
-          <div className="w-px h-5 bg-[rgba(255,255,255,0.06)]" />
+          <div className="w-px h-5 bg-[var(--border-subtle)]" />
           <div className="flex items-center gap-2">
-            <ListTodo size={16} className="text-[#5e6ad2]" />
-            <h1 className="text-[15px] font-medium text-[#e8e8e8]">Task Details</h1>
+            <ListTodo size={16} className="text-[var(--accent)]" />
+            <h1 className="text-[15px] font-medium text-[var(--text-primary)]">Task Details</h1>
           </div>
         </div>
       </div>
 
       {/* Main content */}
       <div className="flex-1 overflow-y-auto">
-        <div className="p-6">
+        <div className="p-4 sm:p-6">
           
           {/* Task sidebar and content - 2 column layout */}
           <div className="flex gap-6 items-start">
             
             {/* Left sidebar - Task list */}
             <aside className="hidden lg:block w-[320px] shrink-0">
-              <div className="rounded-xl border border-[rgba(255,255,255,0.06)] bg-[#111111] overflow-hidden sticky top-6">
-                <div className="p-4 border-b border-[rgba(255,255,255,0.06)]">
+              <div className="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-sidebar)] overflow-hidden sticky top-6">
+                <div className="p-4 border-b border-[var(--border-subtle)]">
                   <div className="flex items-center gap-2 mb-3">
-                    <Layers size={14} className="text-[#5e6ad2]" />
-                    <h2 className="text-[13px] font-medium text-[#e8e8e8]">
+                    <Layers size={14} className="text-[var(--accent)]" />
+                    <h2 className="text-[13px] font-medium text-[var(--text-primary)]">
                       {task.assignee ? `${task.assignee.name.split(" ")[0]}'s Tasks` : "All Tasks"}
                     </h2>
                   </div>
                   <div className="relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-[#555]" />
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-[var(--text-faint)]" />
                     <input
                       type="text"
                       value={search}
                       onChange={(e) => setSearch(e.target.value)}
                       placeholder="Search tasks..."
-                      className="w-full pl-9 pr-3 py-2 rounded-lg bg-[#1a1a1a] border border-[rgba(255,255,255,0.08)] text-[#f0f0f0] text-[13px] placeholder:text-[#555] focus:outline-none focus:border-[rgba(94,106,210,0.5)] transition-all duration-150"
+                      className="w-full pl-9 pr-3 py-2 rounded-lg bg-[var(--bg-input)] border border-[var(--border-default)] text-[var(--text-primary)] text-[13px] placeholder:text-[var(--text-faint)] focus:outline-none focus:border-[var(--accent-border)] transition-all duration-150"
                     />
                   </div>
                 </div>
@@ -361,8 +361,8 @@ export default function TaskDetailClient({
                 <div className="max-h-[calc(100vh-200px)] overflow-y-auto">
                   {filteredSidebarTasks.length === 0 ? (
                     <div className="flex flex-col items-center justify-center gap-2 py-12 text-center">
-                      <ListTodo className="h-8 w-8 text-[#3a3a3a]" />
-                      <p className="text-[12px] text-[#555]">No tasks found</p>
+                      <ListTodo className="h-8 w-8 text-[var(--text-disabled)]" />
+                      <p className="text-[12px] text-[var(--text-faint)]">No tasks found</p>
                     </div>
                   ) : (
                     filteredSidebarTasks.map((t) => {
@@ -376,16 +376,16 @@ export default function TaskDetailClient({
                           key={t.id}
                           onClick={() => selectTask(t.id)}
                           className={[
-                            "w-full text-left px-4 py-3 border-b border-[rgba(255,255,255,0.06)] last:border-0 transition-all duration-150",
+                            "w-full text-left px-4 py-3 border-b border-[var(--border-subtle)] last:border-0 transition-all duration-150",
                             isActive
-                              ? "bg-[rgba(94,106,210,0.08)] border-l-2 border-l-[#5e6ad2]"
-                              : "hover:bg-white/5",
+                              ? "bg-[var(--tint-accent)] border-l-2 border-l-[#5e6ad2]"
+                              : "hover:bg-[var(--hover-default)]",
                           ].join(" ")}
                         >
                           <div className="flex items-center justify-between gap-2 mb-1.5">
                             <span className={[
                               "text-[13px] font-medium truncate",
-                              isActive ? "text-[#5e6ad2]" : "text-[#e8e8e8]"
+                              isActive ? "text-[var(--accent)]" : "text-[var(--text-primary)]"
                             ].join(" ")}>
                               {t.title}
                             </span>
@@ -396,17 +396,17 @@ export default function TaskDetailClient({
                           </div>
                           <div className="flex items-center justify-between gap-2 text-[11px]">
                             <div className="flex items-center gap-2">
-                              <span className="text-[#555]">
+                              <span className="text-[var(--text-faint)]">
                                 {priorityConfig.label}
                               </span>
                               {t.due_date && (
-                                <span className={`${isTaskOverdue ? 'text-[#e5484d]' : 'text-[#555]'}`}>
+                                <span className={`${isTaskOverdue ? 'text-[var(--priority-urgent)]' : 'text-[var(--text-faint)]'}`}>
                                   {formatDate(t.due_date)}
                                 </span>
                               )}
                             </div>
                             {'project_name' in t && (t as any).project_name && (
-                              <span className="text-[#555] truncate max-w-[120px]">
+                              <span className="text-[var(--text-faint)] truncate max-w-[120px]">
                                 {(t as any).project_name}
                               </span>
                             )}
@@ -423,57 +423,57 @@ export default function TaskDetailClient({
             <div className="flex-1 min-w-0">
               {loading ? (
                 <div className="space-y-6 animate-pulse">
-                  <div className="rounded-xl border border-[rgba(255,255,255,0.06)] bg-[#111111] overflow-hidden">
-                    <div className="p-6">
-                      <div className="h-8 w-64 bg-white/5 rounded mb-3" />
-                      <div className="h-4 w-32 bg-white/5 rounded" />
+                  <div className="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-sidebar)] overflow-hidden">
+                    <div className="p-4 sm:p-6">
+                      <div className="h-8 w-64 bg-[var(--hover-default)] rounded mb-3" />
+                      <div className="h-4 w-32 bg-[var(--hover-default)] rounded" />
                     </div>
-                    <div className="grid grid-cols-4 gap-4 p-6 border-t border-[rgba(255,255,255,0.06)]">
+                    <div className="grid grid-cols-4 gap-4 p-6 border-t border-[var(--border-subtle)]">
                       {[1,2,3,4].map(i => (
                         <div key={i} className="space-y-2">
-                          <div className="h-3 w-16 bg-white/5 rounded" />
-                          <div className="h-5 w-20 bg-white/5 rounded" />
+                          <div className="h-3 w-16 bg-[var(--hover-default)] rounded" />
+                          <div className="h-5 w-20 bg-[var(--hover-default)] rounded" />
                         </div>
                       ))}
                     </div>
                   </div>
-                  <div className="rounded-xl border border-[rgba(255,255,255,0.06)] bg-[#111111] p-6">
-                    <div className="h-6 w-32 bg-white/5 rounded mb-4" />
+                  <div className="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-sidebar)] p-6">
+                    <div className="h-6 w-32 bg-[var(--hover-default)] rounded mb-4" />
                     <div className="space-y-3">
                       {[1,2,3].map(i => (
-                        <div key={i} className="h-12 bg-white/5 rounded" />
+                        <div key={i} className="h-12 bg-[var(--hover-default)] rounded" />
                       ))}
                     </div>
                   </div>
                 </div>
               ) : error ? (
-                <div className="rounded-xl bg-[rgba(229,72,77,0.10)] border border-[rgba(229,72,77,0.2)] p-6">
-                  <p className="text-[13px] text-[#e5484d]">{error}</p>
+                <div className="rounded-xl bg-[var(--tint-red)] border border-[var(--tint-red-border)] p-6">
+                  <p className="text-[13px] text-[var(--priority-urgent)]">{error}</p>
                 </div>
               ) : (
                 <div className="space-y-6">
                   
                   {/* Task Header Card */}
-                  <div className="rounded-xl border border-[rgba(255,255,255,0.06)] bg-[#111111] overflow-hidden">
-                    <div className="p-6">
+                  <div className="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-sidebar)] overflow-hidden">
+                    <div className="p-4 sm:p-6">
                       <div className="flex items-start justify-between gap-4 mb-4">
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-2">
                             <StatusBadge status={task.status as TaskStatus} />
                             <PriorityBadge priority={task.priority as TaskPriority} />
                             {isOverdue && (
-                              <span className="text-xs text-[#e5484d] bg-[rgba(229,72,77,0.1)] px-2 py-0.5 rounded-md">
+                              <span className="text-xs text-[var(--priority-urgent)] bg-[var(--tint-red)] px-2 py-0.5 rounded-md">
                                 Overdue
                               </span>
                             )}
                           </div>
-                          <h1 className="text-xl font-semibold text-[#e8e8e8] mb-2">
+                          <h1 className="text-xl font-semibold text-[var(--text-primary)] mb-2">
                             {task.title}
                           </h1>
                           {projectName && task.project_id && (
                             <Link 
                               href={`/${slug}/projects/${task.project_id}`}
-                              className="inline-flex items-center gap-1.5 text-[13px] text-[#555] hover:text-[#5e6ad2] transition-colors"
+                              className="inline-flex items-center gap-1.5 text-[13px] text-[var(--text-faint)] hover:text-[var(--accent)] transition-colors"
                             >
                               <FolderKanban size={12} />
                               {projectName}
@@ -483,59 +483,59 @@ export default function TaskDetailClient({
                         {isAdmin && (
                           <button 
                             onClick={() => setEditOpen(true)} 
-                            className="px-3 py-1.5 rounded-lg text-[12px] font-medium text-[#8a8a8a] hover:text-[#e8e8e8] hover:bg-white/5 border border-[rgba(255,255,255,0.08)] transition-all duration-150 flex items-center gap-1.5 shrink-0"
+                            className="px-3 py-1.5 rounded-lg text-[12px] font-medium text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--hover-default)] border border-[var(--border-default)] transition-all duration-150 flex items-center gap-1.5 shrink-0"
                           >
                             <Pencil className="h-3.5 w-3.5" /> Edit
                           </button>
                         )}
                       </div>
 
-                      <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 pt-4 border-t border-[rgba(255,255,255,0.06)]">
+                      <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 pt-4 border-t border-[var(--border-subtle)]">
                         <div>
-                          <p className="text-[11px] font-medium text-[#555] uppercase tracking-[0.06em] mb-1.5">
+                          <p className="text-[11px] font-medium text-[var(--text-faint)] uppercase tracking-[0.06em] mb-1.5">
                             Assignee
                           </p>
                           {task.assignee ? (
                             <div className="flex items-center gap-2">
-                              <div className="w-6 h-6 rounded-full bg-[rgba(94,106,210,0.15)] flex items-center justify-center">
-                                <span className="text-[10px] font-medium text-[#5e6ad2]">
+                              <div className="w-6 h-6 rounded-full bg-[var(--tint-accent-strong)] flex items-center justify-center">
+                                <span className="text-[10px] font-medium text-[var(--accent)]">
                                   {task.assignee.name.slice(0, 2).toUpperCase()}
                                 </span>
                               </div>
-                              <span className="text-sm text-[#888]">{task.assignee.name}</span>
+                              <span className="text-sm text-[var(--text-muted)]">{task.assignee.name}</span>
                             </div>
                           ) : (
-                            <span className="text-sm text-[#555]">Unassigned</span>
+                            <span className="text-sm text-[var(--text-faint)]">Unassigned</span>
                           )}
                         </div>
 
                         <div>
-                          <p className="text-[11px] font-medium text-[#555] uppercase tracking-[0.06em] mb-1.5">
+                          <p className="text-[11px] font-medium text-[var(--text-faint)] uppercase tracking-[0.06em] mb-1.5">
                             Due Date
                           </p>
                           {task.due_date ? (
                             <div className="flex items-center gap-1.5">
-                              <CalendarDays size={14} className={isOverdue ? "text-[#e5484d]" : "text-[#555]"} />
-                              <span className={`text-sm ${isOverdue ? 'text-[#e5484d]' : 'text-[#888]'}`}>
+                              <CalendarDays size={14} className={isOverdue ? "text-[var(--priority-urgent)]" : "text-[var(--text-faint)]"} />
+                              <span className={`text-sm ${isOverdue ? 'text-[var(--priority-urgent)]' : 'text-[var(--text-muted)]'}`}>
                                 {formatDate(task.due_date)}
                               </span>
                             </div>
                           ) : (
-                            <span className="text-sm text-[#555]">No due date</span>
+                            <span className="text-sm text-[var(--text-faint)]">No due date</span>
                           )}
                         </div>
 
                         <div>
-                          <p className="text-[11px] font-medium text-[#555] uppercase tracking-[0.06em] mb-1.5">
+                          <p className="text-[11px] font-medium text-[var(--text-faint)] uppercase tracking-[0.06em] mb-1.5">
                             Created
                           </p>
-                          <span className="text-sm text-[#888]">
+                          <span className="text-sm text-[var(--text-muted)]">
                             {task.created_at ? formatDate(task.created_at) : "—"}
                           </span>
                         </div>
 
                         <div>
-                          <p className="text-[11px] font-medium text-[#555] uppercase tracking-[0.06em] mb-1.5">
+                          <p className="text-[11px] font-medium text-[var(--text-faint)] uppercase tracking-[0.06em] mb-1.5">
                             Priority
                           </p>
                           <PriorityBadge priority={task.priority as TaskPriority} />
@@ -543,11 +543,11 @@ export default function TaskDetailClient({
                       </div>
 
                       {task.description && (
-                        <div className="mt-6 pt-4 border-t border-[rgba(255,255,255,0.06)]">
-                          <p className="text-[11px] font-medium text-[#555] uppercase tracking-[0.06em] mb-2">
+                        <div className="mt-6 pt-4 border-t border-[var(--border-subtle)]">
+                          <p className="text-[11px] font-medium text-[var(--text-faint)] uppercase tracking-[0.06em] mb-2">
                             Description
                           </p>
-                          <p className="text-sm text-[#888] leading-relaxed whitespace-pre-wrap">
+                          <p className="text-sm text-[var(--text-muted)] leading-relaxed whitespace-pre-wrap">
                             {task.description}
                           </p>
                         </div>
@@ -556,13 +556,13 @@ export default function TaskDetailClient({
                   </div>
 
                   {/* Attachments Section */}
-                  <div className="rounded-xl border border-[rgba(255,255,255,0.06)] bg-[#111111] p-6">
+                  <div className="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-sidebar)] p-6">
                     <div className="flex items-center justify-between mb-4">
                       <div className="flex items-center gap-2">
-                        <Paperclip size={14} className="text-[#555]" />
-                        <h2 className="text-sm font-medium text-[#e8e8e8]">Attachments</h2>
+                        <Paperclip size={14} className="text-[var(--text-faint)]" />
+                        <h2 className="text-sm font-medium text-[var(--text-primary)]">Attachments</h2>
                         {files.length > 0 && (
-                          <span className="px-1.5 py-0.5 rounded text-[11px] bg-[rgba(255,255,255,0.06)] text-[#555]">
+                          <span className="px-1.5 py-0.5 rounded text-[11px] bg-[var(--border-subtle)] text-[var(--text-faint)]">
                             {files.length}
                           </span>
                         )}
@@ -572,7 +572,7 @@ export default function TaskDetailClient({
                         onClick={() => fileInputRef.current?.click()}
                         disabled={uploading}
                         className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium
-                          bg-[#1a1a1a] text-[#888] hover:text-[#5e6ad2] border border-[rgba(255,255,255,0.08)] transition-all"
+                          bg-[var(--bg-input)] text-[var(--text-muted)] hover:text-[var(--accent)] border border-[var(--border-default)] transition-all"
                       >
                         <Upload size={12} />
                         {uploading ? "Uploading..." : "Upload File"}
@@ -580,7 +580,7 @@ export default function TaskDetailClient({
                     </div>
 
                     {uploadError && (
-                      <p className="mb-3 text-sm text-[#e5484d] bg-[rgba(229,72,77,0.1)] px-3 py-2 rounded-lg">
+                      <p className="mb-3 text-sm text-[var(--priority-urgent)] bg-[var(--tint-red)] px-3 py-2 rounded-lg">
                         {uploadError}
                       </p>
                     )}
@@ -588,11 +588,11 @@ export default function TaskDetailClient({
                     {files.length === 0 ? (
                       <div
                         onClick={() => fileInputRef.current?.click()}
-                        className="rounded-lg border border-dashed border-[rgba(255,255,255,0.08)] bg-[#1a1a1a] px-6 py-8 text-center cursor-pointer hover:border-[rgba(94,106,210,0.3)] transition-all"
+                        className="rounded-lg border border-dashed border-[var(--border-default)] bg-[var(--bg-input)] px-6 py-8 text-center cursor-pointer hover:border-[var(--accent-border)] transition-all"
                       >
-                        <Upload className="mx-auto h-8 w-8 text-[#555] mb-2" />
-                        <p className="text-sm text-[#555]">Click to upload a file</p>
-                        <p className="text-xs text-[#3a3a3a] mt-1">Any file type supported</p>
+                        <Upload className="mx-auto h-8 w-8 text-[var(--text-faint)] mb-2" />
+                        <p className="text-sm text-[var(--text-faint)]">Click to upload a file</p>
+                        <p className="text-xs text-[var(--text-disabled)] mt-1">Any file type supported</p>
                       </div>
                     ) : (
                       <div className="grid gap-2">
@@ -602,12 +602,12 @@ export default function TaskDetailClient({
                   </div>
 
                   {/* Comments Section */}
-                  <div className="rounded-xl border border-[rgba(255,255,255,0.06)] bg-[#111111] p-6">
+                  <div className="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-sidebar)] p-6">
                     <div className="flex items-center gap-2 mb-5">
-                      <MessageSquare size={14} className="text-[#555]" />
-                      <h2 className="text-sm font-medium text-[#e8e8e8]">Comments</h2>
+                      <MessageSquare size={14} className="text-[var(--text-faint)]" />
+                      <h2 className="text-sm font-medium text-[var(--text-primary)]">Comments</h2>
                       {comments.length > 0 && (
-                        <span className="px-1.5 py-0.5 rounded text-[11px] bg-[rgba(255,255,255,0.06)] text-[#555]">
+                        <span className="px-1.5 py-0.5 rounded text-[11px] bg-[var(--border-subtle)] text-[var(--text-faint)]">
                           {comments.length}
                         </span>
                       )}
@@ -616,20 +616,20 @@ export default function TaskDetailClient({
                     <div className="space-y-4 mb-5">
                       {comments.map((comment) => <CommentItem key={comment.id} comment={comment} />)}
                       {comments.length === 0 && (
-                        <p className="text-sm text-[#555] text-center py-4">No comments yet. Start the conversation.</p>
+                        <p className="text-sm text-[var(--text-faint)] text-center py-4">No comments yet. Start the conversation.</p>
                       )}
                     </div>
 
                     {commentError && (
-                      <p className="mb-3 text-sm text-[#e5484d] bg-[rgba(229,72,77,0.1)] px-3 py-2 rounded-lg">
+                      <p className="mb-3 text-sm text-[var(--priority-urgent)] bg-[var(--tint-red)] px-3 py-2 rounded-lg">
                         {commentError}
                       </p>
                     )}
 
                     {/* Comment Form */}
                     <form onSubmit={handleSubmitComment} className="flex gap-3">
-                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[rgba(94,106,210,0.15)]">
-                        <User size={14} className="text-[#5e6ad2]" />
+                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--tint-accent-strong)]">
+                        <User size={14} className="text-[var(--accent)]" />
                       </div>
                       <div className="flex-1">
                         <textarea
@@ -639,15 +639,15 @@ export default function TaskDetailClient({
                           onKeyDown={(e) => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) handleSubmitComment(e); }}
                           placeholder="Add a comment..."
                           rows={3}
-                          className="w-full resize-none rounded-lg bg-[#1a1a1a] border border-[rgba(255,255,255,0.08)] 
-                            px-4 py-2.5 text-sm text-[#888] placeholder:text-[#555] focus:outline-none focus:border-[rgba(94,106,210,0.5)]"
+                          className="w-full resize-none rounded-lg bg-[var(--bg-input)] border border-[var(--border-default)] 
+                            px-4 py-2.5 text-sm text-[var(--text-muted)] placeholder:text-[var(--text-faint)] focus:outline-none focus:border-[var(--accent-border)]"
                         />
                         <div className="flex justify-end mt-2">
                           <button
                             type="submit"
                             disabled={!commentText.trim() || submitting}
                             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium
-                              bg-[#5e6ad2] hover:bg-[#6872e5] text-white transition-all
+                              bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white transition-all
                               disabled:opacity-50 disabled:cursor-not-allowed"
                           >
                             <Send size={12} />

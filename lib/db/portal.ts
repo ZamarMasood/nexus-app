@@ -1,9 +1,11 @@
 'use server';
 import { supabaseAdmin as supabase } from '../supabase-admin';
 import type { Task, Invoice, Comment, ProjectFile, TeamMember } from '../types';
+import { getTaskStatuses, type TaskStatusRow } from './task-statuses';
 
 export type PortalTask = Task & {
   assignee?: Pick<TeamMember, 'name' | 'avatar_url'> | null;
+  comment_count?: number;
 };
 
 // ─── Tasks ────────────────────────────────────────────────────────────────────
@@ -15,14 +17,16 @@ export type PortalTask = Task & {
 export async function getPortalTasks(clientId: string): Promise<PortalTask[]> {
   const { data, error } = await supabase
     .from('tasks')
-    .select('*, assignee:team_members(name, avatar_url), project:projects!inner(id)')
+    .select('*, assignee:team_members(name, avatar_url), project:projects!inner(id), comments(count)')
     .eq('project.client_id', clientId)
     .order('created_at', { ascending: false });
 
   if (error) throw new Error(`Failed to fetch portal tasks: ${error.message}`);
 
-  // Strip the joined project field from results
-  return (data ?? []).map(({ project, ...rest }) => rest) as PortalTask[];
+  return (data ?? []).map(({ project, comments, ...rest }: any) => ({
+    ...rest,
+    comment_count: comments?.[0]?.count ?? 0,
+  })) as PortalTask[];
 }
 
 /**
@@ -66,6 +70,23 @@ export async function getPortalTaskByIdWithProject(
 
   const { project, ...rest } = data;
   return { ...rest, projectName: (project as { id: string; name: string } | null)?.name ?? null } as PortalTask & { projectName: string | null };
+}
+
+/**
+ * Fetch task statuses (including custom boards) for the client's org.
+ * Falls back to an empty array if the client has no org.
+ */
+export async function getPortalTaskStatuses(clientId: string): Promise<TaskStatusRow[]> {
+  const { data: client, error } = await supabase
+    .from('clients')
+    .select('org_id')
+    .eq('id', clientId)
+    .maybeSingle();
+
+  if (error) throw new Error(`Failed to resolve client org: ${error.message}`);
+  if (!client?.org_id) return [];
+
+  return getTaskStatuses(client.org_id);
 }
 
 // ─── Comments ─────────────────────────────────────────────────────────────────
