@@ -551,24 +551,25 @@ export default function ProjectsClient({
 
               {/* Pagination controls */}
               {totalPages > 1 && (
-                <div className="flex items-center justify-between px-5 py-3.5
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 px-4 sm:px-5 py-3.5
                   border-t border-[var(--border-subtle)] bg-[var(--bg-input)]">
-                  <span className="text-[12px] text-[var(--text-faint)]">
+                  <span className="text-[12px] text-[var(--text-faint)] text-center sm:text-left">
                     Page {currentPage + 1} of {totalPages}
                   </span>
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center justify-center gap-1.5 sm:gap-3">
                     <button
                       onClick={() => fetchPage(currentPage - 1)}
                       disabled={currentPage === 0 || loading}
-                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-medium
+                      aria-label="Previous page"
+                      className="flex items-center gap-1.5 px-2 sm:px-3 py-1.5 rounded-lg text-[12px] font-medium
                         text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--hover-default)]
                         disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent
-                        transition-all duration-150"
+                        transition-colors duration-150"
                     >
                       <ChevronLeft size={14} />
-                      Previous
+                      <span className="hidden sm:inline">Previous</span>
                     </button>
-                    <div className="flex items-center gap-1">
+                    <div className="flex items-center gap-1 flex-wrap justify-center">
                       {Array.from({ length: Math.min(totalPages, 7) }, (_, i) => {
                         let pageNum = i;
                         // Show pages around current page
@@ -587,7 +588,7 @@ export default function ProjectsClient({
                               key={pageNum}
                               onClick={() => fetchPage(pageNum)}
                               disabled={loading}
-                              className={`w-8 h-8 rounded-lg text-[12px] font-medium transition-all duration-150
+                              className={`w-8 h-8 rounded-lg text-[12px] font-medium transition-colors duration-150
                                 ${pageNum === currentPage
                                   ? 'bg-[var(--accent)] text-white shadow-sm'
                                   : 'text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--hover-default)]'
@@ -604,12 +605,13 @@ export default function ProjectsClient({
                     <button
                       onClick={() => fetchPage(currentPage + 1)}
                       disabled={currentPage >= totalPages - 1 || loading}
-                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-medium
+                      aria-label="Next page"
+                      className="flex items-center gap-1.5 px-2 sm:px-3 py-1.5 rounded-lg text-[12px] font-medium
                         text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--hover-default)]
                         disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent
-                        transition-all duration-150"
+                        transition-colors duration-150"
                     >
-                      Next
+                      <span className="hidden sm:inline">Next</span>
                       <ChevronRight size={14} />
                     </button>
                   </div>

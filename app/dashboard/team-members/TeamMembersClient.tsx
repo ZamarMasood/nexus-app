@@ -750,19 +750,19 @@ export default function TeamMembersClient({
                 <table className="w-full">
                   <thead>
                     <tr className="border-b border-[var(--border-subtle)] bg-[var(--bg-sidebar)]">
-                      <th className="px-5 py-3 text-left text-[11px] font-medium text-[var(--text-faint)] uppercase tracking-[0.06em]">
+                      <th className="px-3 sm:px-5 py-3 text-left text-[11px] font-medium text-[var(--text-faint)] uppercase tracking-[0.06em]">
                         Member
                       </th>
-                      <th className="px-5 py-3 text-left text-[11px] font-medium text-[var(--text-faint)] uppercase tracking-[0.06em] hidden sm:table-cell">
+                      <th className="px-3 sm:px-5 py-3 text-left text-[11px] font-medium text-[var(--text-faint)] uppercase tracking-[0.06em] hidden sm:table-cell">
                         Contact
                       </th>
-                      <th className="px-5 py-3 text-left text-[11px] font-medium text-[var(--text-faint)] uppercase tracking-[0.06em]">
+                      <th className="px-3 sm:px-5 py-3 text-left text-[11px] font-medium text-[var(--text-faint)] uppercase tracking-[0.06em]">
                         Role
                       </th>
-                      <th className="px-5 py-3 text-left text-[11px] font-medium text-[var(--text-faint)] uppercase tracking-[0.06em] hidden lg:table-cell">
+                      <th className="px-3 sm:px-5 py-3 text-left text-[11px] font-medium text-[var(--text-faint)] uppercase tracking-[0.06em] hidden lg:table-cell">
                         Projects
                       </th>
-                      <th className="px-5 py-3 text-right text-[11px] font-medium text-[var(--text-faint)] uppercase tracking-[0.06em]">
+                      <th className="px-3 sm:px-5 py-3 text-right text-[11px] font-medium text-[var(--text-faint)] uppercase tracking-[0.06em]">
                         Actions
                       </th>
                     </tr>
@@ -774,7 +774,7 @@ export default function TeamMembersClient({
                         className="group border-b border-[var(--border-subtle)] last:border-0
                           hover:bg-[var(--bg-elevated)] transition-colors duration-[120ms]"
                       >
-                        <td className="px-5 py-3.5">
+                        <td className="px-3 sm:px-5 py-3.5">
                           <div className="flex items-center gap-3">
                             <div
                               className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[11px] font-medium ${getAvatarColor(member.name)}`}
@@ -792,7 +792,7 @@ export default function TeamMembersClient({
                           </div>
                         </td>
 
-                        <td className="px-5 py-3.5 hidden sm:table-cell">
+                        <td className="px-3 sm:px-5 py-3.5 hidden sm:table-cell">
                           <div className="flex items-center gap-1.5">
                             <Mail size={12} className="text-[var(--text-faint)]" />
                             <span className="text-[12px] text-[var(--text-muted)] truncate">
@@ -801,15 +801,15 @@ export default function TeamMembersClient({
                           </div>
                         </td>
 
-                        <td className="px-5 py-3.5">
+                        <td className="px-3 sm:px-5 py-3.5">
                           <RoleBadge userRole={member.user_role} isOwner={member.is_owner} />
                         </td>
 
-                        <td className="px-5 py-3.5 hidden lg:table-cell">
+                        <td className="px-3 sm:px-5 py-3.5 hidden lg:table-cell">
                           <ProjectPills member={member} />
                         </td>
 
-                        <td className="px-5 py-3.5">
+                        <td className="px-3 sm:px-5 py-3.5">
                           <div className="flex items-center justify-end gap-1.5">
                             {(!member.is_owner || isOwner) && (
                               <button
@@ -843,24 +843,25 @@ export default function TeamMembersClient({
 
               {/* Pagination controls */}
               {totalPages > 1 && (
-                <div className="flex items-center justify-between px-5 py-3
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 px-4 sm:px-5 py-3
                   border-t border-[var(--border-subtle)] bg-[var(--bg-sidebar)]">
-                  <span className="text-[12px] text-[var(--text-faint)]">
+                  <span className="text-[12px] text-[var(--text-faint)] text-center sm:text-left">
                     Page {currentPage + 1} of {totalPages}
                   </span>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center justify-center gap-1.5 sm:gap-2">
                     <button
                       onClick={() => fetchPage(currentPage - 1)}
                       disabled={currentPage === 0 || loading}
-                      className="flex items-center gap-1 px-3 py-1.5 rounded-md text-[12px] font-medium
+                      aria-label="Previous page"
+                      className="flex items-center gap-1 px-2 sm:px-3 py-1.5 rounded-md text-[12px] font-medium
                         text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--hover-default)]
                         disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-[var(--text-muted)]
                         transition-colors duration-150"
                     >
                       <ChevronLeft size={14} />
-                      Previous
+                      <span className="hidden sm:inline">Previous</span>
                     </button>
-                    <div className="flex items-center gap-1">
+                    <div className="flex items-center gap-1 flex-wrap justify-center">
                       {Array.from({ length: totalPages }, (_, i) => (
                         <button
                           key={i}
@@ -880,12 +881,13 @@ export default function TeamMembersClient({
                     <button
                       onClick={() => fetchPage(currentPage + 1)}
                       disabled={currentPage >= totalPages - 1 || loading}
-                      className="flex items-center gap-1 px-3 py-1.5 rounded-md text-[12px] font-medium
+                      aria-label="Next page"
+                      className="flex items-center gap-1 px-2 sm:px-3 py-1.5 rounded-md text-[12px] font-medium
                         text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--hover-default)]
                         disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-[var(--text-muted)]
                         transition-colors duration-150"
                     >
-                      Next
+                      <span className="hidden sm:inline">Next</span>
                       <ChevronRight size={14} />
                     </button>
                   </div>

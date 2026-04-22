@@ -259,22 +259,22 @@ export default function ClientsClient({ initialClients, totalClients, projects: 
                 <table className="w-full">
                   <thead>
                     <tr className="border-b border-[var(--border-subtle)] bg-[var(--bg-sidebar)]">
-                      <th className="px-5 py-3 text-left text-[11px] font-medium text-[var(--text-faint)] uppercase tracking-[0.06em]">
+                      <th className="px-3 sm:px-5 py-3 text-left text-[11px] font-medium text-[var(--text-faint)] uppercase tracking-[0.06em]">
                         Client
                       </th>
-                      <th className="px-5 py-3 text-left text-[11px] font-medium text-[var(--text-faint)] uppercase tracking-[0.06em] hidden sm:table-cell">
+                      <th className="px-3 sm:px-5 py-3 text-left text-[11px] font-medium text-[var(--text-faint)] uppercase tracking-[0.06em] hidden sm:table-cell">
                         Contact
                       </th>
-                      <th className="px-5 py-3 text-left text-[11px] font-medium text-[var(--text-faint)] uppercase tracking-[0.06em]">
+                      <th className="px-3 sm:px-5 py-3 text-left text-[11px] font-medium text-[var(--text-faint)] uppercase tracking-[0.06em]">
                         Status
                       </th>
-                      <th className="px-5 py-3 text-left text-[11px] font-medium text-[var(--text-faint)] uppercase tracking-[0.06em] hidden md:table-cell">
+                      <th className="px-3 sm:px-5 py-3 text-left text-[11px] font-medium text-[var(--text-faint)] uppercase tracking-[0.06em] hidden md:table-cell">
                         Monthly Rate
                       </th>
-                      <th className="px-5 py-3 text-left text-[11px] font-medium text-[var(--text-faint)] uppercase tracking-[0.06em] hidden lg:table-cell">
+                      <th className="px-3 sm:px-5 py-3 text-left text-[11px] font-medium text-[var(--text-faint)] uppercase tracking-[0.06em] hidden lg:table-cell">
                         Active Projects
                       </th>
-                      <th className="px-5 py-3 w-8" />
+                      <th className="px-3 sm:px-5 py-3 w-8" />
                     </tr>
                   </thead>
                   <tbody className={loading ? 'opacity-50 pointer-events-none' : ''}>
@@ -289,7 +289,7 @@ export default function ClientsClient({ initialClients, totalClients, projects: 
                           className="group border-b border-[var(--border-subtle)] last:border-0
                             hover:bg-[var(--bg-elevated)] cursor-pointer transition-colors duration-[120ms]"
                         >
-                          <td className="px-5 py-3.5">
+                          <td className="px-3 sm:px-5 py-3.5">
                             <div className="flex items-center gap-3">
                               <div className="w-8 h-8 rounded-lg bg-[var(--tint-accent)]
                                 flex items-center justify-center flex-shrink-0">
@@ -308,7 +308,7 @@ export default function ClientsClient({ initialClients, totalClients, projects: 
                             </div>
                           </td>
 
-                          <td className="px-5 py-3.5 hidden sm:table-cell">
+                          <td className="px-3 sm:px-5 py-3.5 hidden sm:table-cell">
                             <div className="min-w-0">
                               {client.email ? (
                                 <div className="flex items-center gap-1.5">
@@ -323,11 +323,11 @@ export default function ClientsClient({ initialClients, totalClients, projects: 
                             </div>
                           </td>
 
-                          <td className="px-5 py-3.5">
+                          <td className="px-3 sm:px-5 py-3.5">
                             <StatusBadge status={status} />
                           </td>
 
-                          <td className="px-5 py-3.5 hidden md:table-cell">
+                          <td className="px-3 sm:px-5 py-3.5 hidden md:table-cell">
                             {client.monthly_rate != null ? (
                               <span className="text-[13px] text-[var(--text-primary)] font-medium tabular-nums">
                                 {formatCurrency(client.monthly_rate)}
@@ -337,7 +337,7 @@ export default function ClientsClient({ initialClients, totalClients, projects: 
                             )}
                           </td>
 
-                          <td className="px-5 py-3.5 hidden lg:table-cell">
+                          <td className="px-3 sm:px-5 py-3.5 hidden lg:table-cell">
                             {projectCount > 0 ? (
                               <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-xs font-medium"
                                 style={{ background: 'rgba(94,106,210,0.12)', color: '#5e6ad2' }}>
@@ -349,7 +349,7 @@ export default function ClientsClient({ initialClients, totalClients, projects: 
                             )}
                           </td>
 
-                          <td className="px-5 py-3.5 text-right">
+                          <td className="px-3 sm:px-5 py-3.5 text-right">
                             <ChevronRight size={14} className="text-[var(--text-disabled)] group-hover:text-[var(--text-faint)]
                               transition-colors duration-150 ml-auto" />
                           </td>
@@ -362,24 +362,25 @@ export default function ClientsClient({ initialClients, totalClients, projects: 
 
               {/* Pagination controls */}
               {totalPages > 1 && (
-                <div className="flex items-center justify-between px-5 py-3
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 px-4 sm:px-5 py-3
                   border-t border-[var(--border-subtle)] bg-[var(--bg-sidebar)]">
-                  <span className="text-[12px] text-[var(--text-faint)]">
+                  <span className="text-[12px] text-[var(--text-faint)] text-center sm:text-left">
                     Page {currentPage + 1} of {totalPages}
                   </span>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center justify-center gap-1.5 sm:gap-2">
                     <button
                       onClick={() => fetchPage(currentPage - 1)}
                       disabled={currentPage === 0 || loading}
-                      className="flex items-center gap-1 px-3 py-1.5 rounded-md text-[12px] font-medium
+                      aria-label="Previous page"
+                      className="flex items-center gap-1 px-2 sm:px-3 py-1.5 rounded-md text-[12px] font-medium
                         text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--hover-default)]
                         disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-[var(--text-muted)]
                         transition-colors duration-150"
                     >
                       <ChevronLeft size={14} />
-                      Previous
+                      <span className="hidden sm:inline">Previous</span>
                     </button>
-                    <div className="flex items-center gap-1">
+                    <div className="flex items-center gap-1 flex-wrap justify-center">
                       {Array.from({ length: totalPages }, (_, i) => (
                         <button
                           key={i}
@@ -399,12 +400,13 @@ export default function ClientsClient({ initialClients, totalClients, projects: 
                     <button
                       onClick={() => fetchPage(currentPage + 1)}
                       disabled={currentPage >= totalPages - 1 || loading}
-                      className="flex items-center gap-1 px-3 py-1.5 rounded-md text-[12px] font-medium
+                      aria-label="Next page"
+                      className="flex items-center gap-1 px-2 sm:px-3 py-1.5 rounded-md text-[12px] font-medium
                         text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--hover-default)]
                         disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-[var(--text-muted)]
                         transition-colors duration-150"
                     >
-                      Next
+                      <span className="hidden sm:inline">Next</span>
                       <ChevronRight size={14} />
                     </button>
                   </div>

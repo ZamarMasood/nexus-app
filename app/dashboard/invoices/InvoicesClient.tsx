@@ -283,22 +283,22 @@ export default function InvoicesClient({ initialInvoices, totalInvoices, clients
                 <table className="w-full">
                   <thead>
                     <tr className="border-b border-[var(--border-subtle)] bg-[var(--bg-sidebar)]">
-                      <th className="px-5 py-3 text-left text-[11px] font-medium text-[var(--text-faint)] uppercase tracking-[0.06em]">
+                      <th className="px-3 sm:px-5 py-3 text-left text-[11px] font-medium text-[var(--text-faint)] uppercase tracking-[0.06em]">
                         Invoice #
                       </th>
-                      <th className="px-5 py-3 text-left text-[11px] font-medium text-[var(--text-faint)] uppercase tracking-[0.06em] hidden sm:table-cell">
+                      <th className="px-3 sm:px-5 py-3 text-left text-[11px] font-medium text-[var(--text-faint)] uppercase tracking-[0.06em] hidden sm:table-cell">
                         Client
                       </th>
-                      <th className="px-5 py-3 text-left text-[11px] font-medium text-[var(--text-faint)] uppercase tracking-[0.06em]">
+                      <th className="px-3 sm:px-5 py-3 text-left text-[11px] font-medium text-[var(--text-faint)] uppercase tracking-[0.06em]">
                         Amount
                       </th>
-                      <th className="px-5 py-3 text-left text-[11px] font-medium text-[var(--text-faint)] uppercase tracking-[0.06em]">
+                      <th className="px-3 sm:px-5 py-3 text-left text-[11px] font-medium text-[var(--text-faint)] uppercase tracking-[0.06em]">
                         Status
                       </th>
-                      <th className="px-5 py-3 text-left text-[11px] font-medium text-[var(--text-faint)] uppercase tracking-[0.06em] hidden md:table-cell">
+                      <th className="px-3 sm:px-5 py-3 text-left text-[11px] font-medium text-[var(--text-faint)] uppercase tracking-[0.06em] hidden md:table-cell">
                         Due Date
                       </th>
-                      <th className="px-5 py-3 w-8" />
+                      <th className="px-3 sm:px-5 py-3 w-8" />
                      </tr>
                   </thead>
                   <tbody className={loading ? 'opacity-50 pointer-events-none' : ''}>
@@ -317,7 +317,7 @@ export default function InvoicesClient({ initialInvoices, totalInvoices, clients
                           className="group border-b border-[var(--border-subtle)] last:border-0
                             hover:bg-[var(--bg-elevated)] cursor-pointer transition-colors duration-[120ms]"
                         >
-                          <td className="px-5 py-3.5">
+                          <td className="px-3 sm:px-5 py-3.5">
                             <div>
                               <span className="text-[13px] font-medium text-[var(--text-primary)] font-mono">
                                 {inv.invoice_number ?? "—"}
@@ -330,23 +330,23 @@ export default function InvoicesClient({ initialInvoices, totalInvoices, clients
                             </div>
                           </td>
 
-                          <td className="px-5 py-3.5 hidden sm:table-cell">
+                          <td className="px-3 sm:px-5 py-3.5 hidden sm:table-cell">
                             <span className="text-[13px] text-[var(--text-muted)]">
                               {inv.client_id ? (clientMap[inv.client_id] ?? "—") : "—"}
                             </span>
                           </td>
 
-                          <td className="px-5 py-3.5">
+                          <td className="px-3 sm:px-5 py-3.5">
                             <span className="text-[13px] font-medium text-[var(--text-primary)] tabular-nums">
                               {inv.amount != null ? formatCurrency(inv.amount) : "—"}
                             </span>
                           </td>
 
-                          <td className="px-5 py-3.5">
+                          <td className="px-3 sm:px-5 py-3.5">
                             <StatusBadge status={status} />
                           </td>
 
-                          <td className="px-5 py-3.5 hidden md:table-cell">
+                          <td className="px-3 sm:px-5 py-3.5 hidden md:table-cell">
                             {inv.due_date ? (
                               <div className="flex items-center gap-1.5">
                                 <Calendar size={12} className={`flex-shrink-0 ${isOverdue ? 'text-[var(--priority-urgent)]' : isDueSoon ? 'text-[var(--priority-high)]' : 'text-[var(--text-faint)]'}`} />
@@ -360,7 +360,7 @@ export default function InvoicesClient({ initialInvoices, totalInvoices, clients
                             )}
                           </td>
 
-                          <td className="px-5 py-3.5 text-right">
+                          <td className="px-3 sm:px-5 py-3.5 text-right">
                             <ChevronRight size={14} className="text-[var(--text-disabled)] group-hover:text-[var(--text-faint)]
                               transition-colors duration-150 ml-auto" />
                           </td>
@@ -373,24 +373,25 @@ export default function InvoicesClient({ initialInvoices, totalInvoices, clients
 
               {/* Pagination controls */}
               {totalPages > 1 && (
-                <div className="flex items-center justify-between px-5 py-3
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 px-4 sm:px-5 py-3
                   border-t border-[var(--border-subtle)] bg-[var(--bg-sidebar)]">
-                  <span className="text-[12px] text-[var(--text-faint)]">
+                  <span className="text-[12px] text-[var(--text-faint)] text-center sm:text-left">
                     Page {currentPage + 1} of {totalPages}
                   </span>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center justify-center gap-1.5 sm:gap-2">
                     <button
                       onClick={() => fetchPage(currentPage - 1)}
                       disabled={currentPage === 0 || loading}
-                      className="flex items-center gap-1 px-3 py-1.5 rounded-md text-[12px] font-medium
+                      aria-label="Previous page"
+                      className="flex items-center gap-1 px-2 sm:px-3 py-1.5 rounded-md text-[12px] font-medium
                         text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--hover-default)]
                         disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-[var(--text-muted)]
                         transition-colors duration-150"
                     >
                       <ChevronLeft size={14} />
-                      Previous
+                      <span className="hidden sm:inline">Previous</span>
                     </button>
-                    <div className="flex items-center gap-1">
+                    <div className="flex items-center gap-1 flex-wrap justify-center">
                       {Array.from({ length: totalPages }, (_, i) => (
                         <button
                           key={i}
@@ -410,12 +411,13 @@ export default function InvoicesClient({ initialInvoices, totalInvoices, clients
                     <button
                       onClick={() => fetchPage(currentPage + 1)}
                       disabled={currentPage >= totalPages - 1 || loading}
-                      className="flex items-center gap-1 px-3 py-1.5 rounded-md text-[12px] font-medium
+                      aria-label="Next page"
+                      className="flex items-center gap-1 px-2 sm:px-3 py-1.5 rounded-md text-[12px] font-medium
                         text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--hover-default)]
                         disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-[var(--text-muted)]
                         transition-colors duration-150"
                     >
-                      Next
+                      <span className="hidden sm:inline">Next</span>
                       <ChevronRight size={14} />
                     </button>
                   </div>
