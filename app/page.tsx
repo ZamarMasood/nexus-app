@@ -591,19 +591,25 @@ export default function LandingPage() {
           className={`mx-auto max-w-6xl grid grid-cols-2 sm:grid-cols-4
             border-y border-[var(--border-subtle)]
             ${metricsIV.inView ? 'fade-up' : 'opacity-0'}`}>
-          {METRICS.map(({ value, label }, i) => (
-            <div key={label}
-              className="py-8 px-4 sm:px-6"
-              style={{
-                borderRight: i < METRICS.length - 1 ? '1px solid rgba(255,255,255,0.06)' : 'none',
-                borderBottom: i < 2 ? '1px solid rgba(255,255,255,0.06)' : 'none',
-              }}>
-              <p className="text-[clamp(24px,3vw,32px)] font-medium text-[var(--text-primary)] tracking-[-0.02em]">
-                {value}
-              </p>
-              <p className="mt-1 text-[12px] text-[var(--text-muted)]">{label}</p>
-            </div>
-          ))}
+          {METRICS.map(({ value, label }, i) => {
+            const isRightCol = i % 2 === 1;          // index 1, 3 — right column on 2-col
+            const isTopRow   = i < 2;                // index 0, 1 — top row on 2-col
+            return (
+              <div key={label}
+                className={[
+                  'py-6 sm:py-8 px-4 sm:px-6 text-center sm:text-left',
+                  // Vertical divider between columns (always on sm+, only between col 0/1 and 2/3 on mobile)
+                  !isRightCol ? 'border-r border-[var(--border-subtle)]' : '',
+                  // Horizontal divider between rows on mobile only
+                  isTopRow ? 'border-b border-[var(--border-subtle)] sm:border-b-0' : '',
+                ].join(' ')}>
+                <p className="text-[clamp(22px,3vw,32px)] font-medium text-[var(--text-primary)] tracking-[-0.02em]">
+                  {value}
+                </p>
+                <p className="mt-1 text-[12px] text-[var(--text-muted)]">{label}</p>
+              </div>
+            );
+          })}
         </div>
       </section>
 

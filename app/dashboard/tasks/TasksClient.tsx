@@ -465,7 +465,7 @@ export default function TasksClient({
                         {...provided.droppableProps}
                         className={[
                           "flex-1 overflow-y-auto scrollbar-orchestra",
-                          "px-7 pt-2 pb-4",
+                          "px-3 sm:px-7 pt-2 pb-4",
                           "flex flex-col gap-3",
                           snapshot.isDraggingOver
                             ? "bg-[var(--hover-subtle)]"

@@ -356,13 +356,13 @@ export function TaskFormDialog({
             </div>
           )}
 
-          <div className="flex items-center justify-end gap-3 px-4 sm:px-6 py-4
-            border-t border-[var(--border-subtle)] flex-shrink-0">
+          <div className="flex flex-col-reverse sm:flex-row sm:items-center sm:justify-end gap-2 sm:gap-3
+            px-4 sm:px-6 py-4 border-t border-[var(--border-subtle)] flex-shrink-0">
             <button
               type="button"
               onClick={() => onOpenChange(false)}
-              className="px-4 py-2 rounded-lg text-[13px] font-medium text-[var(--text-muted)]
-                hover:text-[var(--text-primary)] hover:bg-[var(--hover-default)] 
+              className="w-full sm:w-auto px-4 py-2 rounded-lg text-[13px] font-medium text-[var(--text-muted)]
+                hover:text-[var(--text-primary)] hover:bg-[var(--hover-default)]
                 transition-all duration-150"
             >
               Cancel
@@ -370,7 +370,7 @@ export function TaskFormDialog({
             <button
               type="submit"
               disabled={submitting}
-              className="flex items-center gap-2 px-4 py-2 rounded-lg text-[13px] font-medium
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-[13px] font-medium
                 bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white
                 active:scale-[0.98] transition-all duration-150
                 disabled:opacity-50 disabled:cursor-not-allowed"

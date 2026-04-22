@@ -30,9 +30,12 @@ export default function TasksLoading() {
       {/* Kanban board */}
       <div className="flex-1 overflow-x-auto overflow-y-hidden">
         <div className="flex h-full min-w-full">
-          {[0, 1, 2].map((col) => (
+          {[0, 1, 2].map((col, colIdx, arr) => (
             <div key={col}
-              className="flex flex-col flex-1 min-w-[280px] h-full border-r border-[var(--border-subtle)] last:border-0">
+              className={[
+                'flex flex-col flex-1 min-w-[260px] sm:min-w-[280px] h-full',
+                colIdx < arr.length - 1 ? 'border-r border-[var(--border-subtle)]' : '',
+              ].join(' ')}>
               {/* Column header */}
               <div className="flex items-center justify-between px-4 h-[42px] shrink-0">
                 <div className="flex items-center gap-2">
@@ -43,7 +46,7 @@ export default function TasksLoading() {
                 <div className={`h-4 w-4 ${BAR}`} />
               </div>
               {/* Cards */}
-              <div className="flex-1 overflow-y-auto px-4 pt-2 pb-4 flex flex-col gap-2.5">
+              <div className="flex-1 overflow-y-auto px-3 sm:px-7 pt-2 pb-4 flex flex-col gap-3">
                 {Array.from({ length: col === 1 ? 4 : 3 }).map((_, i) => (
                   <div key={i}
                     className="rounded-[10px] bg-[var(--bg-card)] border border-[var(--border-default)] p-3 space-y-2.5">

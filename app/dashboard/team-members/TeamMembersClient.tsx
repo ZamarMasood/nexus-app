@@ -308,7 +308,7 @@ function AddMemberModal({
           </div>
         </div>
 
-        <div className="px-6 py-5">
+        <div className="px-4 sm:px-6 py-5">
           <form action={formAction} className="space-y-4">
             <div>
               <label htmlFor="add-name" className={labelCls}>Full Name <span className="text-[var(--priority-urgent)]">*</span></label>
@@ -338,11 +338,11 @@ function AddMemberModal({
               </div>
             )}
 
-            <div className="flex justify-end gap-2 pt-2">
+            <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2 pt-2">
               <button
                 type="button"
                 onClick={onClose}
-                className="px-3 py-1.5 rounded-lg text-[12px] font-medium text-[var(--text-muted)]
+                className="w-full sm:w-auto px-3 py-1.5 rounded-lg text-[12px] font-medium text-[var(--text-muted)]
                   hover:bg-[var(--hover-default)] hover:text-[var(--text-primary)] transition-all duration-150"
               >
                 Cancel
@@ -350,7 +350,7 @@ function AddMemberModal({
               <SubmitButton
                 label="Send Invite"
                 pendingLabel="Sending..."
-                className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-[12px] font-medium
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-3 py-1.5 rounded-lg text-[12px] font-medium
                   bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white
                   active:scale-[0.98] transition-all duration-150
                   disabled:opacity-50 disabled:cursor-not-allowed"
@@ -417,7 +417,7 @@ function EditMemberModal({
           </div>
         </div>
 
-        <div className="px-6 py-5">
+        <div className="px-4 sm:px-6 py-5">
           <form action={formAction} className="space-y-4">
             <input type="hidden" name="id" value={member.id} />
 
@@ -483,11 +483,11 @@ function EditMemberModal({
               </div>
             )}
 
-            <div className="flex justify-end gap-2 pt-2">
+            <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2 pt-2">
               <button
                 type="button"
                 onClick={onClose}
-                className="px-3 py-1.5 rounded-lg text-[12px] font-medium text-[var(--text-muted)]
+                className="w-full sm:w-auto px-3 py-1.5 rounded-lg text-[12px] font-medium text-[var(--text-muted)]
                   hover:bg-[var(--hover-default)] hover:text-[var(--text-primary)] transition-all duration-150"
               >
                 Cancel
@@ -495,7 +495,7 @@ function EditMemberModal({
               <SubmitButton
                 label="Save Changes"
                 pendingLabel="Saving..."
-                className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-[12px] font-medium
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-3 py-1.5 rounded-lg text-[12px] font-medium
                   bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white
                   active:scale-[0.98] transition-all duration-150
                   disabled:opacity-50 disabled:cursor-not-allowed"
@@ -546,7 +546,7 @@ function DeleteMemberModal({
           </div>
         </div>
 
-        <div className="px-6 py-5">
+        <div className="px-4 sm:px-6 py-5">
           <form action={formAction} className="space-y-4">
             <input type="hidden" name="id" value={member.id} />
 
@@ -562,11 +562,11 @@ function DeleteMemberModal({
               </div>
             )}
 
-            <div className="flex justify-end gap-2 pt-2">
+            <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2 pt-2">
               <button
                 type="button"
                 onClick={onClose}
-                className="px-3 py-1.5 rounded-lg text-[12px] font-medium text-[var(--text-muted)]
+                className="w-full sm:w-auto px-3 py-1.5 rounded-lg text-[12px] font-medium text-[var(--text-muted)]
                   hover:bg-[var(--hover-default)] hover:text-[var(--text-primary)] transition-all duration-150"
               >
                 Cancel
@@ -574,7 +574,7 @@ function DeleteMemberModal({
               <SubmitButton
                 label="Remove Member"
                 pendingLabel="Removing..."
-                className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-[12px] font-medium
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-3 py-1.5 rounded-lg text-[12px] font-medium
                   bg-[var(--priority-urgent)] hover:bg-[var(--priority-urgent)]/90 text-white
                   active:scale-[0.98] transition-all duration-150
                   disabled:opacity-50 disabled:cursor-not-allowed"
