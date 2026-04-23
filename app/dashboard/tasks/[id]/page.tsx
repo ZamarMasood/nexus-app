@@ -1,6 +1,7 @@
 import { getTaskByIdWithAssignee, getCommentsByTaskId, getFilesByTaskId, getTasksByAssignee } from "@/lib/db/tasks";
 import { getProjectById } from "@/lib/db/projects";
 import { getTeamMemberByEmail } from "@/lib/db/team-members";
+import { getTagsForTask } from "@/lib/db/tags";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import TaskDetailClient from "./TaskDetailClient";
 
@@ -18,10 +19,11 @@ export default async function TaskDetailPage({ params }: TaskDetailPageProps) {
   const member = user?.email ? await getTeamMemberByEmail(user.email) : null;
   const isAdmin = member?.user_role === 'admin';
 
-  const [task, comments, files] = await Promise.all([
+  const [task, comments, files, taskTags] = await Promise.all([
     getTaskByIdWithAssignee(id),
     getCommentsByTaskId(id),
     getFilesByTaskId(id),
+    getTagsForTask(id).catch(() => []),
   ]);
 
   // Fetch sidebar tasks for the same assignee + project name in parallel
@@ -39,6 +41,7 @@ export default async function TaskDetailPage({ params }: TaskDetailPageProps) {
       projectName={project?.name ?? null}
       isAdmin={isAdmin}
       currentMemberId={member?.id}
+      initialTags={taskTags}
     />
   );
 }

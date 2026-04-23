@@ -88,7 +88,11 @@ export async function getClientsForSidebar(pageSize: number = 5, search?: string
     .range(from, to);
 
   if (search && search.trim()) {
-    query = query.or(`name.ilike.%${search.trim()}%,email.ilike.%${search.trim()}%`);
+    // Strip PostgREST filter specials so user input can't inject extra filter clauses.
+    const safe = search.trim().replace(/[,()\\*]/g, '');
+    if (safe) {
+      query = query.or(`name.ilike.%${safe}%,email.ilike.%${safe}%`);
+    }
   }
 
   const { data, error } = await query;

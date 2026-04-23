@@ -24,6 +24,13 @@ import {
   Dialog,
   DialogContent,
 } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import type { Project, Client } from "@/lib/types";
 
 const PAGE_SIZE = 5;
@@ -124,6 +131,13 @@ function NewProjectDialog({ open, onOpenChange, clients, onSuccess }: NewProject
     focus:ring-1 focus:ring-[var(--accent-ring)]
     transition-all duration-150`;
 
+  const selectTriggerClass = `w-full rounded-lg border border-[var(--border-default)] bg-[var(--bg-input)]
+    h-[42px] text-[13px] text-[var(--text-primary)]
+    focus:ring-1 focus:ring-[var(--accent-ring)] focus:border-[var(--accent-border)]
+    data-[placeholder]:text-[var(--text-faint)]`;
+  const selectContentClass = "bg-[var(--bg-sidebar)] border-[var(--border-default)] text-[var(--text-primary)]";
+  const selectItemClass = "text-[13px] text-[var(--text-muted)] focus:bg-[var(--tint-accent)] focus:text-[var(--accent)] cursor-pointer";
+
   const labelClass = "block text-[11px] font-medium text-[var(--text-muted)] mb-1.5";
 
   return (
@@ -162,20 +176,55 @@ function NewProjectDialog({ open, onOpenChange, clients, onSuccess }: NewProject
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className={labelClass}>Client</label>
-                <select value={clientId} onChange={(e) => setClientId(e.target.value)} className={inputClass}>
-                  <option value="">Select a client</option>
-                  {clients.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-                </select>
+                <label className={labelClass}>
+                  <span className="flex items-center gap-1">
+                    <Briefcase size={12} className="text-[var(--accent)]" />
+                    Client
+                  </span>
+                </label>
+                <Select value={clientId} onValueChange={setClientId}>
+                  <SelectTrigger className={selectTriggerClass}>
+                    <SelectValue placeholder="Select a client" />
+                  </SelectTrigger>
+                  <SelectContent className={selectContentClass}>
+                    {clients.map((c) => (
+                      <SelectItem key={c.id} value={c.id} className={selectItemClass}>
+                        <div className="flex items-center gap-2">
+                          <div className="w-5 h-5 rounded bg-[var(--tint-accent)] flex items-center justify-center">
+                            <Briefcase className="h-3 w-3 text-[var(--accent)]" />
+                          </div>
+                          {c.name}
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div>
-                <label className={labelClass}>Status</label>
-                <select value={status} onChange={(e) => setStatus(e.target.value)} className={inputClass}>
-                  <option value="active">Active</option>
-                  <option value="in_progress">In Progress</option>
-                  <option value="paused">Paused</option>
-                  <option value="completed">Completed</option>
-                </select>
+                <label className={labelClass}>
+                  <span className="flex items-center gap-1">
+                    <Layers size={12} className="text-[var(--accent)]" />
+                    Status
+                  </span>
+                </label>
+                <Select value={status} onValueChange={setStatus}>
+                  <SelectTrigger className={selectTriggerClass}>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className={selectContentClass}>
+                    {(["active", "in_progress", "paused", "completed"] as const).map((s) => {
+                      const cfg = STATUS_CONFIG[s];
+                      return (
+                        <SelectItem key={s} value={s} className={selectItemClass}>
+                          <div className="flex items-center gap-2">
+                            <span className="h-1.5 w-1.5 rounded-full" style={{ background: cfg.dot }} />
+                            <span style={{ color: cfg.text }}>{cfg.label}</span>
+                          </div>
+                        </SelectItem>
+                      );
+                    })}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
 
@@ -337,8 +386,6 @@ export default function ProjectsClient({
         <div className="flex items-center gap-3">
           <FolderKanban size={16} className="text-[var(--accent)]" />
           <h1 className="text-[15px] font-medium text-[var(--text-primary)]">Projects</h1>
-          <div className="h-4 w-px bg-[var(--border-subtle)]" />
-          <span className="text-[12px] text-[var(--text-faint)]">{total} total</span>
         </div>
         {isAdmin && (
           <button

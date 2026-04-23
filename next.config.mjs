@@ -4,14 +4,11 @@ const nextConfig = {
     serverComponentsExternalPackages: ['@react-pdf/renderer'],
     optimizePackageImports: [
       'lucide-react',
-      '@radix-ui/react-dialog',
-      '@radix-ui/react-select',
-      '@radix-ui/react-dropdown-menu',
-      '@radix-ui/react-popover',
-      '@radix-ui/react-tooltip',
-      '@radix-ui/react-tabs',
-      '@radix-ui/react-label',
       '@supabase/supabase-js',
+      // @radix-ui/* entries removed — Next.js' experimental package
+      // optimization has caused ref-composition loops in Radix Dialog /
+      // Presence when combined with dev Fast Refresh. The infinite
+      // setNode/setRef update cycle we saw was triggered by this.
     ],
     // staleTimes removed — it caused stale data after mutations (e.g. task
     // board drag-and-drop) because the client-side router served cached pages

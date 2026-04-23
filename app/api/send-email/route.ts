@@ -6,6 +6,8 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createSupabaseServerClient } from '@/lib/supabase-server';
+import { supabaseAdmin } from '@/lib/supabase-admin';
+import { getTeamMemberByEmail } from '@/lib/db/team-members';
 import { checkRateLimit, formatResetTime } from '@/lib/rate-limit';
 
 export async function POST(req: NextRequest) {
@@ -45,6 +47,40 @@ export async function POST(req: NextRequest) {
 
   if (typeof html !== 'string' || html.length > 512_000) {
     return NextResponse.json({ error: 'Email body too large' }, { status: 400 });
+  }
+
+  // Prevent the open-mailer: the `to` address must belong to the caller's own org —
+  // either a team_member or a client within the same org_id.
+  if (!user.email) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+  const callerMember = await getTeamMemberByEmail(user.email);
+  if (!callerMember?.org_id) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+  const toLower = to.toLowerCase();
+  const callerOrgId = callerMember.org_id;
+
+  const [{ data: memberMatch }, { data: clientMatch }] = await Promise.all([
+    supabaseAdmin
+      .from('team_members')
+      .select('id')
+      .eq('org_id', callerOrgId)
+      .eq('email', toLower)
+      .maybeSingle(),
+    supabaseAdmin
+      .from('clients')
+      .select('id')
+      .eq('org_id', callerOrgId)
+      .eq('email', toLower)
+      .maybeSingle(),
+  ]);
+
+  if (!memberMatch && !clientMatch) {
+    return NextResponse.json(
+      { error: 'Recipient must be a member or client of your workspace.' },
+      { status: 400 }
+    );
   }
 
   // Development: log summary (no PII)

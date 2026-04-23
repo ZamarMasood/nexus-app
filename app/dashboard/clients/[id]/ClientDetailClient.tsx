@@ -22,8 +22,7 @@ import {
   AlertCircle,
   X,
   Pencil,
-  ChevronRight,
-  Plus
+  ChevronRight
 } from "lucide-react";
 import { getClientById } from "@/lib/db/clients";
 import type { ClientListItem } from "@/lib/db/clients";
@@ -39,71 +38,71 @@ import type { Client, ClientStatus, InvoiceStatus } from "@/lib/types";
 
 // Status configuration matching project detail style
 const CLIENT_STATUS_CONFIG: Record<ClientStatus, { label: string; bg: string; text: string; dot: string; icon: any }> = {
-  active: { 
-    label: "Active", 
-    bg: "rgba(38,201,127,0.12)", 
-    text: "#26c97f", 
-    dot: "#26c97f",
+  active: {
+    label: "Active",
+    bg: "var(--tint-green)",
+    text: "var(--status-done)",
+    dot: "var(--status-done)",
     icon: Check
   },
-  paused: { 
-    label: "Paused", 
-    bg: "rgba(231,157,19,0.12)", 
-    text: "#e79d13", 
-    dot: "#e79d13",
+  paused: {
+    label: "Paused",
+    bg: "var(--tint-orange)",
+    text: "var(--priority-high)",
+    dot: "var(--priority-high)",
     icon: AlertCircle
   },
-  inactive: { 
-    label: "Inactive", 
-    bg: "rgba(136,136,136,0.12)", 
-    text: "#888", 
-    dot: "#888",
+  inactive: {
+    label: "Inactive",
+    bg: "var(--border-subtle)",
+    text: "var(--text-muted)",
+    dot: "var(--text-muted)",
     icon: X
   },
 };
 
 const PROJECT_STATUS_CONFIG: Record<string, { label: string; bg: string; text: string; dot: string }> = {
-  active: { 
-    label: "Active", 
-    bg: "rgba(38,201,127,0.12)", 
-    text: "#26c97f", 
-    dot: "#26c97f" 
+  active: {
+    label: "Active",
+    bg: "var(--tint-green)",
+    text: "var(--status-done)",
+    dot: "var(--status-done)"
   },
-  in_progress: { 
-    label: "In Progress", 
-    bg: "rgba(94,106,210,0.12)", 
-    text: "#5e6ad2", 
-    dot: "#5e6ad2" 
+  in_progress: {
+    label: "In Progress",
+    bg: "var(--tint-accent-strong)",
+    text: "var(--accent)",
+    dot: "var(--accent)"
   },
-  completed: { 
-    label: "Completed", 
-    bg: "rgba(136,136,136,0.12)", 
-    text: "#888", 
-    dot: "#888" 
+  completed: {
+    label: "Completed",
+    bg: "var(--border-subtle)",
+    text: "var(--text-muted)",
+    dot: "var(--text-muted)"
   },
-  paused: { 
-    label: "Paused", 
-    bg: "rgba(231,157,19,0.12)", 
-    text: "#e79d13", 
-    dot: "#e79d13" 
+  paused: {
+    label: "Paused",
+    bg: "var(--tint-orange)",
+    text: "var(--priority-high)",
+    dot: "var(--priority-high)"
   },
 };
 
 const INVOICE_STATUS_CONFIG: Record<InvoiceStatus, { label: string; bg: string; text: string }> = {
-  paid: { 
-    label: "Paid", 
-    bg: "rgba(38,201,127,0.12)", 
-    text: "#26c97f" 
+  paid: {
+    label: "Paid",
+    bg: "var(--tint-green)",
+    text: "var(--status-done)"
   },
-  pending: { 
-    label: "Pending", 
-    bg: "rgba(231,157,19,0.12)", 
-    text: "#e79d13" 
+  pending: {
+    label: "Pending",
+    bg: "var(--tint-orange)",
+    text: "var(--priority-high)"
   },
-  overdue: { 
-    label: "Overdue", 
-    bg: "rgba(229,72,77,0.12)", 
-    text: "#e5484d" 
+  overdue: {
+    label: "Overdue",
+    bg: "var(--tint-red)",
+    text: "var(--priority-urgent)"
   },
 };
 
@@ -183,6 +182,7 @@ export default function ClientDetailClient({
   const [copied, setCopied] = useState(false);
   const [resetting, setResetting] = useState(false);
   const [newPlainPassword, setNewPlainPassword] = useState<string | null>(null);
+  const [resetError, setResetError] = useState<string | null>(null);
 
   // Fetch sidebar page (search + pagination)
   async function fetchSidebar(page: number, query?: string) {
@@ -221,6 +221,7 @@ export default function ClientDetailClient({
       setError(null);
       setIsEditing(false);
       setNewPlainPassword(null);
+      setResetError(null);
       try {
         const [c, p, inv] = await Promise.all([
           getClientById(selectedId),
@@ -250,12 +251,14 @@ export default function ClientDetailClient({
   async function handlePasswordReset() {
     if (!client) return;
     setResetting(true);
+    setResetError(null);
     try {
       const { client: updated, plainPassword } = await resetPortalPasswordAction(client.id);
       setClient(updated);
       setNewPlainPassword(plainPassword);
     } catch (err) {
       console.error("Failed to reset password:", err);
+      setResetError(err instanceof Error ? err.message : "Failed to reset password. Please try again.");
     } finally {
       setResetting(false);
     }
@@ -279,12 +282,15 @@ export default function ClientDetailClient({
       {/* Header toolbar */}
       <div className="flex items-center justify-between px-4 sm:px-6 h-[60px] border-b border-[var(--border-subtle)] shrink-0 gap-3">
         <div className="flex items-center gap-3">
-          <button
-            onClick={() => router.push(`/${slug}/clients`)}
-            className="flex items-center justify-center h-8 w-8 rounded-lg text-[var(--text-faint)] hover:text-[var(--text-primary)] hover:bg-[var(--hover-default)] transition-all duration-150"
+          {/* Native anchor — sidebar's replaceState() breaks Next.js client nav.
+              See TaskDetailClient back button for details. */}
+          <a
+            href={`/${slug}/clients`}
+            className="flex items-center justify-center h-8 w-8 rounded-lg text-[var(--text-faint)] hover:text-[var(--text-primary)] hover:bg-[var(--hover-default)] transition-colors duration-150"
+            title="Back to Clients"
           >
             <ArrowLeft size={16} />
-          </button>
+          </a>
           <div className="w-px h-5 bg-[var(--border-subtle)]" />
           <div className="flex items-center gap-2">
             <Users size={16} className="text-[var(--accent)]" />
@@ -316,7 +322,7 @@ export default function ClientDetailClient({
                       value={search}
                       onChange={(e) => setSearch(e.target.value)}
                       placeholder="Search clients..."
-                      className="w-full pl-9 pr-3 py-2 rounded-lg bg-[var(--bg-input)] border border-[var(--border-default)] text-[var(--text-primary)] text-[13px] placeholder:text-[var(--text-faint)] focus:outline-none focus:border-[var(--accent-border)] transition-all duration-150"
+                      className="w-full pl-9 pr-3 py-2 rounded-lg bg-[var(--bg-input)] border border-[var(--border-default)] text-[var(--text-primary)] text-[13px] placeholder:text-[var(--text-faint)] focus:outline-none focus:border-[var(--accent-border)] transition-colors duration-150"
                     />
                   </div>
                 </div>
@@ -341,9 +347,9 @@ export default function ClientDetailClient({
                           key={c.id}
                           onClick={() => selectClient(c.id)}
                           className={[
-                            "w-full text-left px-4 py-3 border-b border-[var(--border-subtle)] last:border-0 transition-all duration-150",
+                            "w-full text-left px-4 py-3 border-b border-[var(--border-subtle)] last:border-0 transition-colors duration-150",
                             isActive
-                              ? "bg-[var(--tint-accent)] border-l-2 border-l-[#5e6ad2]"
+                              ? "bg-[var(--tint-accent)] border-l-2 border-l-[var(--accent)]"
                               : "hover:bg-[var(--hover-default)]",
                           ].join(" ")}
                         >
@@ -440,7 +446,7 @@ export default function ClientDetailClient({
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-2">
                             <Building2 size={16} className="text-[var(--accent)]" />
-                            <h1 className="text-xl font-semibold text-[var(--text-primary)] truncate">
+                            <h1 className="text-xl font-medium text-[var(--text-primary)] truncate">
                               {client.name}
                             </h1>
                           </div>
@@ -454,9 +460,9 @@ export default function ClientDetailClient({
                         <div className="flex items-center gap-2 shrink-0">
                           <ClientStatusBadge status={status} />
                           {isAdmin && !isEditing && (
-                            <button 
-                              onClick={() => setIsEditing(true)} 
-                              className="px-3 py-1.5 rounded-lg text-[12px] font-medium text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--hover-default)] border border-[var(--border-default)] transition-all duration-150 flex items-center gap-1.5"
+                            <button
+                              onClick={() => setIsEditing(true)}
+                              className="px-3 py-1.5 rounded-lg text-[12px] font-medium text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--hover-default)] border border-[var(--border-default)] transition-colors duration-150 flex items-center gap-1.5"
                             >
                               <Pencil className="h-3.5 w-3.5" /> Edit
                             </button>
@@ -523,7 +529,7 @@ export default function ClientDetailClient({
                         <Briefcase size={14} className="text-[var(--accent)]" />
                         <span className="text-[11px] text-[var(--text-faint)]">Active Projects</span>
                       </div>
-                      <p className="text-2xl font-semibold text-[var(--text-primary)]">
+                      <p className="text-2xl font-medium text-[var(--text-primary)]">
                         {projects.filter(p => p.status === "active" || p.status === "in_progress").length}
                       </p>
                       <p className="text-[11px] text-[var(--text-faint)] mt-1">Out of {projects.length} total</p>
@@ -534,7 +540,7 @@ export default function ClientDetailClient({
                         <DollarSign size={14} className="text-[var(--status-done)]" />
                         <span className="text-[11px] text-[var(--text-faint)]">Total Project Value</span>
                       </div>
-                      <p className="text-2xl font-semibold text-[var(--text-primary)]">
+                      <p className="text-2xl font-medium text-[var(--text-primary)]">
                         {formatCurrency(totalProjectsValue)}
                       </p>
                     </div>
@@ -544,7 +550,7 @@ export default function ClientDetailClient({
                         <CreditCard size={14} className="text-[var(--priority-high)]" />
                         <span className="text-[11px] text-[var(--text-faint)]">Total Invoices</span>
                       </div>
-                      <p className="text-2xl font-semibold text-[var(--text-primary)]">
+                      <p className="text-2xl font-medium text-[var(--text-primary)]">
                         {formatCurrency(totalInvoicesAmount)}
                       </p>
                     </div>
@@ -684,16 +690,16 @@ export default function ClientDetailClient({
                           <div className="flex-1 rounded-lg bg-[var(--bg-input)] px-3 py-2 font-mono text-sm tracking-wide text-[var(--status-done)] border border-[var(--tint-green-border)]">
                             {newPlainPassword}
                           </div>
-                          <button 
-                            onClick={copyPassword} 
-                            title="Copy password" 
-                            className="p-2 rounded-lg text-[var(--status-done)] hover:bg-[var(--tint-green)] transition-all duration-150"
+                          <button
+                            onClick={copyPassword}
+                            title="Copy password"
+                            className="p-2 rounded-lg text-[var(--status-done)] hover:bg-[var(--tint-green)] transition-colors duration-150"
                           >
                             {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
                           </button>
-                          <button 
-                            onClick={() => setNewPlainPassword(null)} 
-                            className="px-3 py-2 rounded-lg text-xs font-medium text-[var(--status-done)] hover:bg-[var(--tint-green)] transition-all duration-150"
+                          <button
+                            onClick={() => setNewPlainPassword(null)}
+                            className="px-3 py-2 rounded-lg text-xs font-medium text-[var(--status-done)] hover:bg-[var(--tint-green)] transition-colors duration-150"
                           >
                             Done
                           </button>
@@ -708,11 +714,16 @@ export default function ClientDetailClient({
                     )}
                     
                     {isAdmin && (
-                      <div className="flex justify-end">
-                        <button 
-                          onClick={handlePasswordReset} 
-                          disabled={resetting} 
-                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-medium text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--hover-default)] border border-[var(--border-default)] transition-all duration-150 disabled:opacity-50"
+                      <div className="flex flex-col items-end gap-2">
+                        {resetError && (
+                          <p className="text-[12px] text-[var(--priority-urgent)] self-stretch sm:self-end">
+                            {resetError}
+                          </p>
+                        )}
+                        <button
+                          onClick={handlePasswordReset}
+                          disabled={resetting}
+                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-medium text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--hover-default)] border border-[var(--border-default)] transition-colors duration-150 disabled:opacity-50"
                         >
                           <RefreshCw className={`h-3.5 w-3.5 ${resetting ? "animate-spin" : ""}`} />
                           {client.portal_password ? "Reset Password" : "Set Password"}

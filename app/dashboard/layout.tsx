@@ -1,10 +1,16 @@
 import { createSupabaseServerClient } from "@/lib/supabase-server";
-import { getIsAdminByEmail, getTeamMemberByEmail } from "@/lib/db/team-members";
+import { getIsAdminByEmail, getTeamMemberByEmail, getTeamMembers } from "@/lib/db/team-members";
+import { getProjects } from "@/lib/db/projects";
+import { getTaskStatuses, type TaskStatusRow } from "@/lib/db/task-statuses";
+import { getTags, type TagRow } from "@/lib/db/tags";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import DashboardShell from "./DashboardShell";
 import { WorkspaceSlugProvider } from "./workspace-context";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+import type { Project, TeamMember } from "@/lib/types";
+
+export const dynamic = "force-dynamic";
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   let isAdmin = false;
@@ -13,6 +19,10 @@ export default async function DashboardLayout({ children }: { children: React.Re
   let orgSlug: string = '';
   let memberName: string | undefined;
   let memberAvatarUrl: string | undefined;
+  let formProjects: Project[] = [];
+  let formTeamMembers: TeamMember[] = [];
+  let formTaskStatuses: TaskStatusRow[] = [];
+  let formTags: TagRow[] = [];
 
   try {
     const supabase = createSupabaseServerClient();
@@ -27,13 +37,24 @@ export default async function DashboardLayout({ children }: { children: React.Re
       memberName = member?.name;
       memberAvatarUrl = member?.avatar_url ?? undefined;
       if (member?.org_id) {
-        const { data: org } = await supabaseAdmin
-          .from('organisations')
-          .select('name, slug')
-          .eq('id', member.org_id)
-          .maybeSingle();
-        orgName = (org as { name: string; slug: string } | null)?.name ?? undefined;
-        orgSlug = (org as { name: string; slug: string } | null)?.slug ?? '';
+        const [orgResult, projectsResult, membersResult, statusesResult, tagsResult] = await Promise.all([
+          supabaseAdmin
+            .from('organisations')
+            .select('name, slug')
+            .eq('id', member.org_id)
+            .maybeSingle(),
+          getProjects().catch(() => [] as Project[]),
+          getTeamMembers().catch(() => [] as TeamMember[]),
+          getTaskStatuses(member.org_id).catch(() => [] as TaskStatusRow[]),
+          getTags(member.org_id).catch(() => [] as TagRow[]),
+        ]);
+        const org = orgResult.data as { name: string; slug: string } | null;
+        orgName = org?.name ?? undefined;
+        orgSlug = org?.slug ?? '';
+        formProjects = projectsResult;
+        formTeamMembers = membersResult;
+        formTaskStatuses = statusesResult;
+        formTags = tagsResult;
       }
     }
   } catch {
@@ -53,15 +74,27 @@ export default async function DashboardLayout({ children }: { children: React.Re
     redirect(`/${orgSlug}${rest}`);
   }
 
+  // If neither header slug nor DB org slug resolved, the user has no
+  // associated organisation. Rendering the shell would produce links like
+  // `//tasks` that break the app, so redirect them to set up an org first.
+  const resolvedSlug = wsSlug || orgSlug;
+  if (!resolvedSlug) {
+    redirect('/setup-org');
+  }
+
   return (
-    <WorkspaceSlugProvider slug={wsSlug || orgSlug}>
+    <WorkspaceSlugProvider slug={resolvedSlug}>
       <DashboardShell
         isAdmin={isAdmin}
         currentMemberId={currentMemberId}
         orgName={orgName}
         memberName={memberName}
         memberAvatarUrl={memberAvatarUrl}
-        slug={wsSlug || orgSlug}
+        slug={resolvedSlug}
+        formProjects={formProjects}
+        formTeamMembers={formTeamMembers}
+        formTaskStatuses={formTaskStatuses}
+        formTags={formTags}
       >
         {children}
       </DashboardShell>

@@ -50,14 +50,15 @@ export default function SearchCommandPalette({ slug, isAdmin, memberId, onClose 
     return () => window.removeEventListener("keydown", handleEsc);
   }, [onClose]);
 
-  // Focus input + fetch data on mount
+  // Focus input + fetch data on mount.
+  // No args passed — the server action derives isAdmin/memberId from the session.
   useEffect(() => {
     inputRef.current?.focus();
-    fetchSearchData(isAdmin, memberId)
+    fetchSearchData()
       .then(setData)
       .catch(() => {})
       .finally(() => setLoading(false));
-  }, [isAdmin, memberId]);
+  }, []);
 
   // Lock body scroll
   useEffect(() => {

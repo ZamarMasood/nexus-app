@@ -1,18 +1,16 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import Link from "next/link";
-import { 
-  Plus, 
-  Layers, 
-  CheckCircle, 
+import {
+  Plus,
+  Layers,
+  CheckCircle,
   AlertCircle,
   Calendar,
   Briefcase,
   Clock,
   ArrowRight,
   MessageSquare,
-  Copy
 } from "lucide-react";
 import { formatDate } from "@/lib/utils";
 import { useTaskForm } from "./task-form-context";
@@ -21,16 +19,16 @@ import type { TaskWithAssignee } from "@/lib/db/tasks";
 import type { Project } from "@/lib/types";
 
 const STATUS_COLORS: Record<string, { bg: string; text: string; dot: string }> = {
-  todo:        { bg: 'rgba(136,136,136,0.12)', text: '#888', dot: '#888' },
-  in_progress: { bg: 'rgba(94,106,210,0.12)', text: '#5e6ad2', dot: '#5e6ad2' },
-  done:        { bg: 'rgba(38,201,127,0.12)', text: '#26c97f', dot: '#26c97f' },
+  todo:        { bg: 'var(--border-subtle)',       text: 'var(--text-muted)',  dot: 'var(--text-muted)' },
+  in_progress: { bg: 'var(--tint-accent-strong)',  text: 'var(--accent)',      dot: 'var(--accent)' },
+  done:        { bg: 'var(--tint-green)',          text: 'var(--status-done)', dot: 'var(--status-done)' },
 };
 
 const PRIORITY_DOT: Record<string, string> = {
-  urgent: '#e5484d',
-  high:   '#e79d13',
-  normal: '#5e6ad2',
-  low:    '#8a8a8a',
+  urgent: 'var(--priority-urgent)',
+  high:   'var(--priority-high)',
+  normal: 'var(--accent)',
+  low:    'var(--text-muted)',
 };
 
 function StatusBadge({ status }: { status: string }) {
@@ -79,15 +77,15 @@ export default function DashboardClient({
       <div className="flex items-center justify-between px-4 sm:px-6 h-[60px] border-b border-[var(--border-subtle)] shrink-0 gap-3">
         <div className="flex items-center gap-3">
           <Layers size={16} className="text-[var(--text-faint)]" />
-          <div>
-            <h1 className="text-[15px] font-medium text-[var(--text-primary)]">Dashboard</h1>
-            <p className="text-[11px] text-[var(--text-faint)] mt-0.5">{dateLabel}</p>
+          <div className="leading-none">
+            <h1 className="text-[15px] font-medium text-[var(--text-primary)] leading-tight">Dashboard</h1>
+            <p className="text-[11px] text-[var(--text-faint)] mt-1 leading-none">{dateLabel}</p>
           </div>
         </div>
         <button
           onClick={() => openTaskForm()}
-          className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium
-            bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white transition-all duration-150"
+          className="flex items-center gap-2 px-3 py-2 sm:py-1.5 rounded-lg text-sm font-medium
+            bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white transition-colors duration-150"
         >
           <Plus size={14} />
           New Task
@@ -100,7 +98,7 @@ export default function DashboardClient({
           
           {/* Welcome section */}
           <div className="mb-8">
-            <h2 className="text-[20px] font-semibold text-[var(--text-primary)] tracking-tight">
+            <h2 className="text-[20px] font-medium text-[var(--text-primary)] tracking-tight">
               Welcome back{userName ? `, ${userName}!` : ''}
             </h2>
           </div>
@@ -115,7 +113,7 @@ export default function DashboardClient({
                 </div>
                 <span className="text-[11px] text-[var(--text-faint)]">Total</span>
               </div>
-              <p className="text-[24px] font-semibold text-[var(--text-primary)] mb-1">{taskStats.total}</p>
+              <p className="text-[24px] font-medium text-[var(--text-primary)] mb-1">{taskStats.total}</p>
               <p className="text-[11px] text-[var(--text-faint)]">Tasks</p>
             </div>
 
@@ -127,12 +125,12 @@ export default function DashboardClient({
                 </div>
                 <span className="text-[11px] text-[var(--text-faint)]">Progress</span>
               </div>
-              <p className="text-[24px] font-semibold text-[var(--text-primary)] mb-1">{completionPct}%</p>
+              <p className="text-[24px] font-medium text-[var(--text-primary)] mb-1">{completionPct}%</p>
               <p className="text-[11px] text-[var(--text-faint)]">Complete</p>
               <div className="mt-2 h-1 rounded-full bg-[var(--border-subtle)] overflow-hidden">
-                <div 
-                  className="h-full rounded-full transition-all"
-                  style={{ width: `${completionPct}%`, background: '#5e6ad2' }}
+                <div
+                  className="h-full rounded-full bg-[var(--accent)] transition-[width] duration-500"
+                  style={{ width: `${completionPct}%` }}
                 />
               </div>
             </div>
@@ -145,7 +143,7 @@ export default function DashboardClient({
                 </div>
                 <span className="text-[11px] text-[var(--text-faint)]">Active</span>
               </div>
-              <p className="text-[24px] font-semibold text-[var(--text-primary)] mb-1">{activeProjects.length}</p>
+              <p className="text-[24px] font-medium text-[var(--text-primary)] mb-1">{activeProjects.length}</p>
               <p className="text-[11px] text-[var(--text-faint)]">Projects</p>
             </div>
 
@@ -157,7 +155,7 @@ export default function DashboardClient({
                 </div>
                 <span className="text-[11px] text-[var(--text-faint)]">Attention</span>
               </div>
-              <p className="text-[24px] font-semibold text-[var(--priority-urgent)] mb-1">{taskStats.overdue}</p>
+              <p className="text-[24px] font-medium text-[var(--priority-urgent)] mb-1">{taskStats.overdue}</p>
               <p className="text-[11px] text-[var(--text-faint)]">Overdue tasks</p>
             </div>
           </div>
@@ -258,7 +256,7 @@ export default function DashboardClient({
                     onClick={() => openTaskForm()}
                     className="w-full flex items-center gap-2 px-3 py-2 rounded-lg
                       text-[12px] text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--hover-default)]
-                      transition-all duration-150"
+                      transition-colors duration-150"
                   >
                     <Plus size={12} className="text-[var(--accent)]" />
                     Create New Task
@@ -267,7 +265,7 @@ export default function DashboardClient({
                     href={`/${slug}/projects`}
                     className="w-full flex items-center gap-2 px-3 py-2 rounded-lg
                       text-[12px] text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--hover-default)]
-                      transition-all duration-150"
+                      transition-colors duration-150"
                   >
                     <Briefcase size={12} className="text-[var(--accent)]" />
                     View All Projects
@@ -314,7 +312,7 @@ export default function DashboardClient({
                     <AlertCircle size={12} className="text-[var(--priority-high)]" />
                     <h3 className="text-[13px] font-medium text-[var(--text-primary)]">Due This Week</h3>
                   </div>
-                  <p className="text-[20px] font-semibold text-[var(--priority-high)] mb-1">{taskStats.dueSoon}</p>
+                  <p className="text-[20px] font-medium text-[var(--priority-high)] mb-1">{taskStats.dueSoon}</p>
                   <p className="text-[11px] text-[var(--text-faint)]">Tasks need attention</p>
                 </div>
               )}

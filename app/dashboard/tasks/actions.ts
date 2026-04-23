@@ -11,6 +11,31 @@ export async function createTaskAction(
   payload: Omit<TaskInsert, "org_id">
 ): Promise<Task> {
   const org_id = await getCallerOrgId();
+
+  // Validate foreign keys belong to the caller's org before inserting —
+  // clients can send any UUID, RLS on supabaseAdmin is bypassed.
+  if (payload.project_id) {
+    const { data: project, error: projErr } = await supabaseAdmin
+      .from("projects")
+      .select("id")
+      .eq("id", payload.project_id)
+      .eq("org_id", org_id)
+      .maybeSingle();
+    if (projErr) throw new Error(`Failed to verify project: ${projErr.message}`);
+    if (!project) throw new Error("Invalid project");
+  }
+
+  if (payload.assignee_id) {
+    const { data: member, error: memberErr } = await supabaseAdmin
+      .from("team_members")
+      .select("id")
+      .eq("id", payload.assignee_id)
+      .eq("org_id", org_id)
+      .maybeSingle();
+    if (memberErr) throw new Error(`Failed to verify assignee: ${memberErr.message}`);
+    if (!member) throw new Error("Invalid assignee");
+  }
+
   const task = await createTask({ ...payload, org_id });
 
   // Auto-add assignee to project_members so they can see this task
@@ -33,6 +58,44 @@ export async function updateTaskStatusAction(
 ): Promise<{ error: string } | null> {
   try {
     const orgId = await getCallerOrgId();
+
+    // Load the task so we know which project it belongs to.
+    const { data: task, error: taskErr } = await supabaseAdmin
+      .from("tasks")
+      .select("id, project_id")
+      .eq("id", taskId)
+      .eq("org_id", orgId)
+      .maybeSingle();
+
+    if (taskErr) {
+      return { error: `Failed to load task: ${taskErr.message}` };
+    }
+    if (!task) {
+      return { error: "Task not found" };
+    }
+
+    // Verify the target status is in-scope for the task's project: either
+    // an org-wide status (project_id IS NULL) or scoped to the same project.
+    const { data: targetStatus, error: statusErr } = await (supabaseAdmin as any)
+      .from("task_statuses")
+      .select("project_id")
+      .eq("org_id", orgId)
+      .eq("slug", status)
+      .maybeSingle();
+
+    if (statusErr) {
+      return { error: `Failed to load status: ${statusErr.message}` };
+    }
+    if (!targetStatus) {
+      return { error: "Status not found" };
+    }
+    if (
+      targetStatus.project_id !== null &&
+      targetStatus.project_id !== task.project_id
+    ) {
+      return { error: "Status is not valid for this task's project" };
+    }
+
     const { data, error } = await supabaseAdmin
       .from("tasks")
       .update({ status })
@@ -57,10 +120,15 @@ export async function updateTaskStatusAction(
   }
 }
 
-/** Create a custom board column. Inserts before "Done". */
+/** Create a custom board column. Inserts before "Done".
+ *
+ *  - `projectId` unset or null → org-wide (visible on global /tasks page).
+ *  - `projectId` set           → scoped to that project only.
+ */
 export async function createCustomStatusAction(
   label: string,
-  color: string
+  color: string,
+  projectId: string | null = null,
 ): Promise<{ status?: TaskStatusRow; error?: string }> {
   try {
     const orgId = await getCallerOrgId();
@@ -68,13 +136,27 @@ export async function createCustomStatusAction(
     const slug = label.trim().toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '');
     if (!slug) return { error: 'Invalid status name' };
 
-    // Check for duplicate slug
-    const existing = await getTaskStatuses(orgId);
+    // Verify projectId (if provided) belongs to the caller's org. Clients can
+    // send any UUID and supabaseAdmin bypasses RLS, so we must check here.
+    if (projectId !== null) {
+      const { data: project, error: projErr } = await supabaseAdmin
+        .from('projects')
+        .select('id')
+        .eq('id', projectId)
+        .eq('org_id', orgId)
+        .maybeSingle();
+      if (projErr) return { error: `Failed to verify project: ${projErr.message}` };
+      if (!project) return { error: 'Invalid project' };
+    }
+
+    // Slugs are unique per org so tasks.status remains unambiguous — check
+    // against every row in the org, not just the current scope.
+    const existing = await getTaskStatuses(orgId, "all");
     if (existing.some((s) => s.slug === slug)) {
       return { error: 'A status with this name already exists' };
     }
 
-    const status = await createTaskStatus(orgId, slug, label.trim(), color);
+    const status = await createTaskStatus(orgId, slug, label.trim(), color, projectId);
     revalidatePath("/dashboard", "layout");
     return { status };
   } catch (err) {

@@ -207,7 +207,8 @@ export async function replaceProjectAssignments(
   const { error: deleteError } = await adminAny
     .from('project_members')
     .delete()
-    .eq('member_id', memberId);
+    .eq('member_id', memberId)
+    .eq('org_id', orgId);
 
   if (deleteError) throw new Error(`Failed to clear project assignments: ${deleteError.message}`);
 

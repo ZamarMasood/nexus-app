@@ -20,6 +20,10 @@ import { TaskFormProvider } from "./task-form-context";
 import { signOutAction } from "@/app/(auth)/login/actions";
 import SearchCommandPalette from "@/components/layout/SearchCommandPalette";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { ConfirmProvider } from "@/components/ui/ConfirmDialog";
+import type { Project, TeamMember } from "@/lib/types";
+import type { TaskStatusRow } from "@/lib/db/task-statuses";
+import type { TagRow } from "@/lib/db/tags";
 
 // ── Sidebar collapsed context ─────────────────────────────────────────────
 const SidebarCollapsedContext = createContext(false);
@@ -33,6 +37,10 @@ interface DashboardShellProps {
   memberName?: string;
   memberAvatarUrl?: string;
   slug: string;
+  formProjects?: Project[];
+  formTeamMembers?: TeamMember[];
+  formTaskStatuses?: TaskStatusRow[];
+  formTags?: TagRow[];
 }
 
 /** Nav item paths are relative to the workspace root */
@@ -95,7 +103,19 @@ function SidebarSection({ label, children }: { label: string; children: React.Re
   );
 }
 
-export default function DashboardShell({ children, isAdmin, currentMemberId, orgName, memberName, memberAvatarUrl, slug }: DashboardShellProps) {
+export default function DashboardShell({
+  children,
+  isAdmin,
+  currentMemberId,
+  orgName,
+  memberName,
+  memberAvatarUrl,
+  slug,
+  formProjects = [],
+  formTeamMembers = [],
+  formTaskStatuses = [],
+  formTags = [],
+}: DashboardShellProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
@@ -118,19 +138,24 @@ export default function DashboardShell({ children, isAdmin, currentMemberId, org
     return pathname === fullPath || pathname.startsWith(fullPath + '/');
   }
 
-  const isTasksPage = pathname === `${base}/tasks` || pathname.startsWith(`${base}/tasks/`);
+  // Only board pages (the global kanban at /{slug}/tasks and each project's
+  // /{slug}/projects/<id>/board) have the sidebar-collapse toggle. Task/project
+  // detail pages do not.
+  const isGlobalTasksBoard = pathname === `${base}/tasks`;
+  const isProjectBoardPage = new RegExp(`^${base}/projects/[^/]+/board$`).test(pathname);
+  const isBoardPage = isGlobalTasksBoard || isProjectBoardPage;
 
-  // Reset sidebar when navigating away from tasks
+  // Reset sidebar when navigating away from a board page
   useEffect(() => {
     setMobileMenuOpen(false);
     setSearchOpen(false);
-    if (!isTasksPage) setSidebarCollapsed(false);
-  }, [pathname, isTasksPage]);
+    if (!isBoardPage) setSidebarCollapsed(false);
+  }, [pathname, isBoardPage]);
 
-  // Ctrl+K / Cmd+K to open search
+  // Ctrl+K / Cmd+K to open search (case-insensitive — caps lock safe)
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
-      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
+      if ((e.metaKey || e.ctrlKey) && e.key?.toLowerCase() === "k") {
         e.preventDefault();
         setSearchOpen((v) => !v);
       }
@@ -159,7 +184,7 @@ export default function DashboardShell({ children, isAdmin, currentMemberId, org
   const sidebarContent = (
     <>
       {/* Workspace header */}
-      <div className="flex items-center gap-2 px-3 py-3 border-b border-[var(--border-subtle)]">
+      <div className="flex items-center gap-2 px-3 h-[60px] shrink-0 border-b border-[var(--border-subtle)]">
         <div className="w-6 h-6 rounded-md bg-[var(--accent)] flex items-center justify-center shrink-0">
           <span className="text-white text-[11px] font-medium">
             {orgName ? orgName[0].toUpperCase() : 'N'}
@@ -254,7 +279,15 @@ export default function DashboardShell({ children, isAdmin, currentMemberId, org
   );
 
   return (
-    <TaskFormProvider currentMemberId={currentMemberId} isAdmin={isAdmin}>
+    <ConfirmProvider>
+    <TaskFormProvider
+      currentMemberId={currentMemberId}
+      isAdmin={isAdmin}
+      projects={formProjects}
+      teamMembers={formTeamMembers}
+      taskStatuses={formTaskStatuses}
+      tags={formTags}
+    >
       <SidebarCollapsedContext.Provider value={sidebarCollapsed}>
       <div className="flex h-screen bg-[var(--bg-page)] overflow-hidden">
 
@@ -265,7 +298,7 @@ export default function DashboardShell({ children, isAdmin, currentMemberId, org
             type="button"
             onClick={toggleMenu}
             aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
-            className="p-1.5 rounded-md text-[var(--text-faint)] hover:text-[var(--text-muted)] hover:bg-[var(--hover-default)]
+            className="p-2 sm:p-1.5 rounded-md text-[var(--text-faint)] hover:text-[var(--text-muted)] hover:bg-[var(--hover-default)]
               transition-colors duration-150"
           >
             {mobileMenuOpen ? <X size={18} /> : <Menu size={18} />}
@@ -310,13 +343,13 @@ export default function DashboardShell({ children, isAdmin, currentMemberId, org
 
         {/* ── Main content ───────────────────────────────────────────── */}
         <main className="flex-1 flex flex-col overflow-hidden pt-12 lg:pt-0 relative">
-          {/* Sidebar collapse toggle — stuck to left edge of content, tasks page only */}
-          {isTasksPage && (
+          {/* Sidebar collapse toggle — stuck to left edge of content, board pages only */}
+          {isBoardPage && (
             <button
               onClick={() => setSidebarCollapsed((v) => !v)}
               className="group hidden lg:flex items-center justify-center
                 absolute left-0 z-20 w-[14px] h-[56px]
-                transition-all duration-200 ease-out"
+                transition-opacity duration-200 ease-out"
               style={{
                 top: '50%',
                 transform: 'translateY(-50%)',
@@ -325,7 +358,7 @@ export default function DashboardShell({ children, isAdmin, currentMemberId, org
             >
               <svg
                 width="6" height="48" viewBox="0 0 6 48" fill="none"
-                className="transition-all duration-200 ease-out"
+                className="transition-opacity duration-200 ease-out"
                 style={{ color: 'var(--text-faint)' }}
               >
                 <rect
@@ -364,5 +397,6 @@ export default function DashboardShell({ children, isAdmin, currentMemberId, org
       </div>
       </SidebarCollapsedContext.Provider>
     </TaskFormProvider>
+    </ConfirmProvider>
   );
 }

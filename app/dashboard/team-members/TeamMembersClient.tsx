@@ -298,17 +298,17 @@ function AddMemberModal({
       <DialogContent className="
         bg-[var(--bg-sidebar)] border border-[var(--border-default)] rounded-xl
         shadow-[var(--shadow-modal)] p-0 gap-0 w-[calc(100vw-24px)] max-w-[520px]
-        max-h-[92vh] sm:max-h-[90vh] overflow-y-auto">
+        max-h-[calc(100vh-32px)] flex flex-col overflow-hidden">
 
         <div className="flex items-center justify-between px-4 sm:px-6 pt-5 pb-4
-          border-b border-[var(--border-subtle)]">
+          border-b border-[var(--border-subtle)] shrink-0">
           <div>
             <h3 className="text-[15px] font-semibold text-[var(--text-primary)]">Invite Team Member</h3>
             <p className="text-[11px] text-[var(--text-faint)] mt-1">Send an invitation to join your workspace</p>
           </div>
         </div>
 
-        <div className="px-4 sm:px-6 py-5">
+        <div className="flex-1 min-h-0 overflow-y-auto px-4 sm:px-6 py-5">
           <form action={formAction} className="space-y-4">
             <div>
               <label htmlFor="add-name" className={labelCls}>Full Name <span className="text-[var(--priority-urgent)]">*</span></label>
@@ -407,17 +407,17 @@ function EditMemberModal({
       <DialogContent className="
         bg-[var(--bg-sidebar)] border border-[var(--border-default)] rounded-xl
         shadow-[var(--shadow-modal)] p-0 gap-0 w-[calc(100vw-24px)] max-w-[520px]
-        max-h-[92vh] sm:max-h-[90vh] overflow-y-auto">
+        max-h-[calc(100vh-32px)] flex flex-col overflow-hidden">
 
         <div className="flex items-center justify-between px-4 sm:px-6 pt-5 pb-4
-          border-b border-[var(--border-subtle)]">
+          border-b border-[var(--border-subtle)] shrink-0">
           <div>
             <h3 className="text-[15px] font-semibold text-[var(--text-primary)]">Edit Member</h3>
             <p className="text-[11px] text-[var(--text-faint)] mt-1">Update member information and permissions</p>
           </div>
         </div>
 
-        <div className="px-4 sm:px-6 py-5">
+        <div className="flex-1 min-h-0 overflow-y-auto px-4 sm:px-6 py-5">
           <form action={formAction} className="space-y-4">
             <input type="hidden" name="id" value={member.id} />
 
@@ -666,7 +666,6 @@ export default function TeamMembersClient({
         <div className="flex items-center gap-3">
           <Layers size={16} className="text-[var(--text-faint)]" />
           <h1 className="text-[15px] font-medium text-[var(--text-primary)]">Team Members</h1>
-          <span className="text-[12px] text-[var(--text-faint)]">{total} total</span>
         </div>
         {isOwner && (
           <button

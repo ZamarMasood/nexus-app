@@ -5,12 +5,27 @@ import { createInvoice, updateInvoice, getInvoicesPaginated, getInvoicesByMember
 import { getCallerOrgId, getTeamMemberByEmail } from '@/lib/db/team-members';
 import { getClientsForList, getClientsForListByMember, type ClientListItem } from '@/lib/db/clients';
 import { createSupabaseServerClient } from '@/lib/supabase-server';
+import { supabaseAdmin } from '@/lib/supabase-admin';
 import type { Invoice, InvoiceInsert, InvoiceUpdate } from '@/lib/types';
 
 export async function createInvoiceAction(
   payload: Omit<InvoiceInsert, 'org_id'>
 ): Promise<Invoice> {
   const org_id = await getCallerOrgId();
+
+  // Verify the referenced client_id belongs to the caller's org — never trust client input.
+  if (payload.client_id) {
+    const { data: clientRow, error: clientErr } = await supabaseAdmin
+      .from('clients')
+      .select('id')
+      .eq('id', payload.client_id)
+      .eq('org_id', org_id)
+      .maybeSingle();
+    if (clientErr || !clientRow) {
+      throw new Error('Invalid client');
+    }
+  }
+
   const invoice = await createInvoice({ ...payload, org_id });
   revalidatePath('/dashboard', 'layout');
   return invoice;

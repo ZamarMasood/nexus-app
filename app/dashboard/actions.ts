@@ -5,7 +5,8 @@ import { getProjectsForList, getProjectsForListByMember } from '@/lib/db/project
 import { getClientsForList, getClientsForListByMember } from '@/lib/db/clients';
 import { getInvoicesForList, getInvoicesForListByMember } from '@/lib/db/invoices';
 import { getTasksWithAssignees, getTasksWithAssigneesByMember } from '@/lib/db/tasks';
-import { getTeamMembers } from '@/lib/db/team-members';
+import { getTeamMembers, getTeamMemberByEmail } from '@/lib/db/team-members';
+import { createSupabaseServerClient } from '@/lib/supabase-server';
 
 /**
  * Revalidate all dashboard pages (including detail pages like /dashboard/invoices/[id])
@@ -27,11 +28,20 @@ export interface SearchResult {
 /**
  * Fetch all searchable entities for the current user's org.
  * Returns lightweight items for client-side filtering.
+ *
+ * Role and member id are derived server-side from the authenticated session —
+ * never from client-supplied input.
  */
-export async function fetchSearchData(
-  isAdmin: boolean,
-  memberId?: string,
-): Promise<SearchResult[]> {
+export async function fetchSearchData(): Promise<SearchResult[]> {
+  // Derive caller identity server-side — never trust client input.
+  const supabase = createSupabaseServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user?.email) return [];
+  const member = await getTeamMemberByEmail(user.email);
+  if (!member?.org_id) return [];
+  const isAdmin = member.user_role === 'admin';
+  const memberId = member.id;
+
   const [projects, clients, invoices, tasks, members] = await Promise.all([
     isAdmin ? getProjectsForList() : memberId ? getProjectsForListByMember(memberId) : [],
     isAdmin ? getClientsForList() : memberId ? getClientsForListByMember(memberId) : [],

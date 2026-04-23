@@ -12,17 +12,24 @@ import {
 import { createInvoiceAction } from "@/app/dashboard/invoices/actions";
 import { getClients } from "@/lib/db/clients";
 import { revalidateDashboard } from "@/app/dashboard/actions";
-import type { Client, Invoice, InvoiceStatus } from "@/lib/types";
+import type { Invoice, InvoiceStatus } from "@/lib/types";
+
+interface ClientOption {
+  id:   string;
+  name: string;
+}
 
 interface InvoiceFormProps {
   onSuccess: (invoice: Invoice) => void;
   onCancel:  () => void;
+  /** Preloaded clients — skips the in-dialog fetch delay. Shape only needs `id` + `name`. */
+  initialClients?: ClientOption[];
 }
 
 const STATUS_OPTIONS: { value: InvoiceStatus; label: string; color: string; dot: string }[] = [
-  { value: "pending", label: "Pending", color: "#e79d13", dot: "bg-[var(--priority-high)]" },
-  { value: "paid",    label: "Paid",    color: "#26c97f", dot: "bg-[var(--status-done)]" },
-  { value: "overdue", label: "Overdue", color: "#e5484d", dot: "bg-[var(--priority-urgent)]" },
+  { value: "pending", label: "Pending", color: "var(--priority-high)",   dot: "bg-[var(--priority-high)]" },
+  { value: "paid",    label: "Paid",    color: "var(--status-done)",     dot: "bg-[var(--status-done)]" },
+  { value: "overdue", label: "Overdue", color: "var(--priority-urgent)", dot: "bg-[var(--priority-urgent)]" },
 ];
 
 const LABEL = "block text-[11px] font-medium text-[var(--text-faint)] uppercase tracking-[0.06em] mb-1.5";
@@ -30,7 +37,7 @@ const FIELD = `w-full px-3 py-2 rounded-lg bg-[var(--bg-input)] border border-[v
   text-[var(--text-primary)] text-[13px] placeholder:text-[var(--text-faint)]
   focus:outline-none focus:border-[var(--accent-border)]
   focus:ring-1 focus:ring-[var(--accent-ring)]
-  transition-all duration-150`;
+  transition-colors duration-150`;
 const SELECT_TRIGGER = `w-full rounded-lg border border-[var(--border-default)] bg-[var(--bg-input)]
   h-[42px] text-[13px] text-[var(--text-primary)]
   focus:ring-1 focus:ring-[var(--accent-ring)] focus:border-[var(--accent-border)]
@@ -45,9 +52,9 @@ function generateInvoiceNumber(): string {
   return `INV-${ym}-${seq}`;
 }
 
-export function InvoiceForm({ onSuccess, onCancel }: InvoiceFormProps) {
-  const [clients, setClients]               = useState<Client[]>([]);
-  const [loadingClients, setLoadingClients] = useState(true);
+export function InvoiceForm({ onSuccess, onCancel, initialClients = [] }: InvoiceFormProps) {
+  const [clients, setClients]               = useState<ClientOption[]>(initialClients);
+  const [loadingClients, setLoadingClients] = useState(initialClients.length === 0);
   const [form, setForm] = useState({
     client_id:      "",
     invoice_number: generateInvoiceNumber(),
@@ -60,10 +67,15 @@ export function InvoiceForm({ onSuccess, onCancel }: InvoiceFormProps) {
   const [step, setStep]     = useState<"idle" | "saving" | "generating">("idle");
 
   useEffect(() => {
+    // Silent background refresh so newly-added clients appear.
+    // If preloaded clients were provided, dropdown is already populated — never blocks UI.
     getClients()
-      .then(setClients)
-      .catch(() => setError("Failed to load clients."))
+      .then((c) => { setClients(c); })
+      .catch(() => {
+        if (initialClients.length === 0) setError("Failed to load clients.");
+      })
       .finally(() => setLoadingClients(false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   function field(key: keyof typeof form) {
@@ -248,7 +260,7 @@ export function InvoiceForm({ onSuccess, onCancel }: InvoiceFormProps) {
           disabled={loading}
           className="w-full sm:w-auto px-4 py-2 rounded-lg text-[13px] font-medium text-[var(--text-muted)]
             hover:text-[var(--text-primary)] hover:bg-[var(--hover-default)]
-            transition-all duration-150 disabled:opacity-50"
+            transition-colors duration-150 disabled:opacity-50"
         >
           Cancel
         </button>
@@ -257,7 +269,7 @@ export function InvoiceForm({ onSuccess, onCancel }: InvoiceFormProps) {
           disabled={loading}
           className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-[13px] font-medium
             bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white
-            active:scale-[0.98] transition-all duration-150
+            active:scale-[0.98] transition-colors duration-150
             disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {loading && <Loader2 className="h-3.5 w-3.5 animate-spin" />}

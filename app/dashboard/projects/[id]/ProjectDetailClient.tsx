@@ -32,6 +32,13 @@ import { useWorkspaceSlug } from "@/app/dashboard/workspace-context";
 import type { Project } from "@/lib/types";
 import type { TaskWithAssignee } from "@/lib/db/tasks";
 import { useTaskForm } from "../../task-form-context";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 // Status configuration
 const STATUS_CONFIG: Record<string, { label: string; dot: string; text: string; badge: string; icon: any }> = {
@@ -103,6 +110,7 @@ interface EditFormProps {
 }
 
 function EditForm({ project, clients, onSave, onCancel }: EditFormProps) {
+  const router = useRouter();
   const [name, setName] = useState(project.name);
   const [clientId, setClientId] = useState(project.client_id ?? "");
   const [status, setStatus] = useState(project.status ?? "active");
@@ -112,7 +120,12 @@ function EditForm({ project, clients, onSave, onCancel }: EditFormProps) {
   const [error, setError] = useState<string | null>(null);
 
   const fieldClass =
-    "w-full px-3 py-2 rounded-lg bg-[var(--bg-input)] border border-[var(--border-default)] text-[var(--text-primary)] text-[13px] placeholder:text-[var(--text-faint)] focus:outline-none focus:border-[var(--accent-border)] focus:ring-1 focus:ring-[var(--accent-ring)] transition-all duration-150";
+    "w-full px-3 py-2 rounded-lg bg-[var(--bg-input)] border border-[var(--border-default)] text-[var(--text-primary)] text-[13px] placeholder:text-[var(--text-faint)] focus:outline-none focus:border-[var(--accent-border)] focus:ring-1 focus:ring-[var(--accent-ring)] transition-colors duration-150";
+
+  const selectTriggerClass =
+    "w-full rounded-lg border border-[var(--border-default)] bg-[var(--bg-input)] h-[42px] text-[13px] text-[var(--text-primary)] focus:ring-1 focus:ring-[var(--accent-ring)] focus:border-[var(--accent-border)] data-[placeholder]:text-[var(--text-faint)]";
+  const selectContentClass = "bg-[var(--bg-sidebar)] border-[var(--border-default)] text-[var(--text-primary)]";
+  const selectItemClass = "text-[13px] text-[var(--text-muted)] focus:bg-[var(--tint-accent)] focus:text-[var(--accent)] cursor-pointer";
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
@@ -129,6 +142,7 @@ function EditForm({ project, clients, onSave, onCancel }: EditFormProps) {
       });
       onSave(updated);
       await revalidateDashboard();
+      router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to save");
     } finally {
@@ -154,21 +168,45 @@ function EditForm({ project, clients, onSave, onCancel }: EditFormProps) {
       <div className="grid grid-cols-2 gap-3">
         <div>
           <label className="block text-[11px] font-medium text-[var(--text-muted)] mb-1.5">Client</label>
-          <select value={clientId} onChange={(e) => setClientId(e.target.value)} className={fieldClass}>
-            <option value="">No client</option>
-            {clients.map((c) => (
-              <option key={c.id} value={c.id}>{c.name}</option>
-            ))}
-          </select>
+          <Select value={clientId || "__none__"} onValueChange={(v) => setClientId(v === "__none__" ? "" : v)}>
+            <SelectTrigger className={selectTriggerClass}>
+              <SelectValue placeholder="No client" />
+            </SelectTrigger>
+            <SelectContent className={selectContentClass}>
+              <SelectItem value="__none__" className={selectItemClass}>No client</SelectItem>
+              {clients.map((c) => (
+                <SelectItem key={c.id} value={c.id} className={selectItemClass}>
+                  <div className="flex items-center gap-2">
+                    <div className="w-5 h-5 rounded bg-[var(--tint-accent)] flex items-center justify-center">
+                      <Briefcase className="h-3 w-3 text-[var(--accent)]" />
+                    </div>
+                    {c.name}
+                  </div>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
         <div>
           <label className="block text-[11px] font-medium text-[var(--text-muted)] mb-1.5">Status</label>
-          <select value={status} onChange={(e) => setStatus(e.target.value)} className={fieldClass}>
-            <option value="active">Active</option>
-            <option value="in_progress">In Progress</option>
-            <option value="paused">Paused</option>
-            <option value="completed">Completed</option>
-          </select>
+          <Select value={status} onValueChange={setStatus}>
+            <SelectTrigger className={selectTriggerClass}>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent className={selectContentClass}>
+              {(["active", "in_progress", "paused", "completed"] as const).map((s) => {
+                const cfg = STATUS_CONFIG[s];
+                return (
+                  <SelectItem key={s} value={s} className={selectItemClass}>
+                    <div className="flex items-center gap-2">
+                      <span className={`h-1.5 w-1.5 rounded-full ${cfg.dot}`} />
+                      <span className={cfg.text}>{cfg.label}</span>
+                    </div>
+                  </SelectItem>
+                );
+              })}
+            </SelectContent>
+          </Select>
         </div>
       </div>
       
@@ -203,17 +241,17 @@ function EditForm({ project, clients, onSave, onCancel }: EditFormProps) {
       )}
       
       <div className="flex justify-end gap-2 pt-2">
-        <button 
-          type="button" 
-          onClick={onCancel} 
-          className="px-3 py-1.5 rounded-lg text-[12px] font-medium text-[var(--text-muted)] hover:bg-[var(--hover-default)] hover:text-[var(--text-primary)] transition-all duration-150 flex items-center gap-1.5"
+        <button
+          type="button"
+          onClick={onCancel}
+          className="px-3 py-1.5 rounded-lg text-[12px] font-medium text-[var(--text-muted)] hover:bg-[var(--hover-default)] hover:text-[var(--text-primary)] transition-colors duration-150 flex items-center gap-1.5"
         >
           <X className="h-3.5 w-3.5" /> Cancel
         </button>
-        <button 
-          type="submit" 
-          disabled={saving} 
-          className="px-3 py-1.5 rounded-lg text-[12px] font-medium bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white active:scale-[0.98] transition-all duration-150 flex items-center gap-1.5 disabled:opacity-50"
+        <button
+          type="submit"
+          disabled={saving}
+          className="px-3 py-1.5 rounded-lg text-[12px] font-medium bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white active:scale-[0.98] transition-colors duration-150 flex items-center gap-1.5 disabled:opacity-50"
         >
           <Check className="h-3.5 w-3.5" /> {saving ? "Saving..." : "Save Changes"}
         </button>
@@ -349,19 +387,34 @@ export default function ProjectDetailClient({
       {/* Header toolbar */}
       <div className="flex items-center justify-between px-4 sm:px-6 h-[60px] border-b border-[var(--border-subtle)] shrink-0 gap-3">
         <div className="flex items-center gap-3">
-          <button
-            onClick={() => router.push(`/${slug}/projects`)}
-            className="p-1.5 rounded-lg text-[var(--text-faint)] hover:text-[var(--text-primary)] hover:bg-[var(--hover-default)] transition-all duration-150"
+          {/* Native anchor — sidebar's replaceState() breaks Next.js client nav.
+              See TaskDetailClient back button for details. */}
+          <a
+            href={`/${slug}/projects`}
+            className="p-2 sm:p-1.5 rounded-lg text-[var(--text-faint)] hover:text-[var(--text-primary)] hover:bg-[var(--hover-default)] transition-colors duration-150"
             title="Back to Projects"
           >
             <ArrowLeft size={16} />
-          </button>
+          </a>
           <div className="w-px h-5 bg-[var(--border-subtle)]" />
           <div className="flex items-center gap-2">
             <FolderKanban size={16} className="text-[var(--accent)]" />
             <h1 className="text-[15px] font-medium text-[var(--text-primary)]">Project Details</h1>
           </div>
         </div>
+        {selectedId && (
+          <Link
+            href={`/${slug}/projects/${selectedId}/board`}
+            className="inline-flex items-center gap-1.5 px-3 py-2 sm:py-1.5 rounded-lg text-[13px] font-medium
+              text-[var(--text-muted)] hover:text-[var(--text-primary)]
+              border border-[var(--border-default)] hover:bg-[var(--hover-default)]
+              transition-colors duration-150"
+            title="Open project board"
+          >
+            <Layers size={14} />
+            <span className="hidden sm:inline">Board</span>
+          </Link>
+        )}
       </div>
 
       {/* Main content */}
@@ -386,7 +439,7 @@ export default function ProjectDetailClient({
                       value={search}
                       onChange={(e) => setSearch(e.target.value)}
                       placeholder="Search projects..."
-                      className="w-full pl-9 pr-3 py-2 rounded-lg bg-[var(--bg-input)] border border-[var(--border-default)] text-[var(--text-primary)] text-[13px] placeholder:text-[var(--text-faint)] focus:outline-none focus:border-[var(--accent-border)] transition-all duration-150"
+                      className="w-full pl-9 pr-3 py-2 rounded-lg bg-[var(--bg-input)] border border-[var(--border-default)] text-[var(--text-primary)] text-[13px] placeholder:text-[var(--text-faint)] focus:outline-none focus:border-[var(--accent-border)] transition-colors duration-150"
                     />
                   </div>
                 </div>
@@ -411,9 +464,9 @@ export default function ProjectDetailClient({
                           key={p.id}
                           onClick={() => selectProject(p.id)}
                           className={[
-                            "w-full text-left px-4 py-3 border-b border-[var(--border-subtle)] last:border-0 transition-all duration-150",
+                            "w-full text-left px-4 py-3 border-b border-[var(--border-subtle)] last:border-0 transition-colors duration-150",
                             isActive
-                              ? "bg-[var(--tint-accent)] border-l-2 border-l-[#5e6ad2]"
+                              ? "bg-[var(--tint-accent)] border-l-2 border-l-[var(--accent)]"
                               : "hover:bg-[var(--hover-default)]",
                           ].join(" ")}
                         >
@@ -482,7 +535,7 @@ export default function ProjectDetailClient({
                       <div className="h-8 w-64 bg-[var(--hover-default)] rounded mb-3" />
                       <div className="h-4 w-32 bg-[var(--hover-default)] rounded" />
                     </div>
-                    <div className="grid grid-cols-4 gap-4 p-6 border-t border-[var(--border-subtle)]">
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 p-6 border-t border-[var(--border-subtle)]">
                       {[1,2,3,4].map(i => (
                         <div key={i} className="space-y-2">
                           <div className="h-3 w-16 bg-[var(--hover-default)] rounded" />
@@ -514,7 +567,7 @@ export default function ProjectDetailClient({
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-2">
                             <StatusIcon size={16} className={cfg.text} />
-                            <h1 className="text-xl font-semibold text-[var(--text-primary)] truncate">
+                            <h1 className="text-xl font-medium text-[var(--text-primary)] truncate">
                               {project.name}
                             </h1>
                           </div>
@@ -534,9 +587,9 @@ export default function ProjectDetailClient({
                             {cfg.label}
                           </span>
                           {isAdmin && !editing && (
-                            <button 
-                              onClick={() => setEditing(true)} 
-                              className="px-3 py-1.5 rounded-lg text-[12px] font-medium text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--hover-default)] border border-[var(--border-default)] transition-all duration-150 flex items-center gap-1.5"
+                            <button
+                              onClick={() => setEditing(true)}
+                              className="px-3 py-1.5 rounded-lg text-[12px] font-medium text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--hover-default)] border border-[var(--border-default)] transition-colors duration-150 flex items-center gap-1.5"
                             >
                               <Pencil className="h-3.5 w-3.5" /> Edit
                             </button>
@@ -594,9 +647,9 @@ export default function ProjectDetailClient({
                                 <span className="text-[11px] text-[var(--text-faint)]">{progressPercent}%</span>
                               </div>
                               <div className="h-1.5 rounded-full bg-[var(--border-subtle)] overflow-hidden">
-                                <div 
-                                  className="h-full rounded-full transition-all duration-500"
-                                  style={{ width: `${progressPercent}%`, background: '#5e6ad2' }}
+                                <div
+                                  className="h-full rounded-full bg-[var(--accent)] transition-[width] duration-500"
+                                  style={{ width: `${progressPercent}%` }}
                                 />
                               </div>
                             </div>
@@ -608,7 +661,7 @@ export default function ProjectDetailClient({
 
                   {/* Tasks section */}
                   <div className="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-sidebar)] overflow-hidden">
-                    <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--border-subtle)]">
+                    <div className="flex items-center justify-between px-4 sm:px-6 py-4 border-b border-[var(--border-subtle)]">
                       <div className="flex items-center gap-2">
                         <CheckSquare size={14} className="text-[var(--accent)]" />
                         <h2 className="text-[13px] font-medium text-[var(--text-primary)]">Tasks</h2>
@@ -619,7 +672,7 @@ export default function ProjectDetailClient({
                       {isAdmin && (
                         <button
                           onClick={() => openTaskForm(selectedId)}
-                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-medium bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white transition-all duration-150"
+                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-medium bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white transition-colors duration-150"
                         >
                           <Plus size={12} /> Add Task
                         </button>
@@ -648,7 +701,7 @@ export default function ProjectDetailClient({
                             <div key={task.id}>
                               <button
                                 onClick={() => router.push(`/${slug}/tasks/${task.id}`)}
-                                className="flex w-full items-center gap-3 px-6 py-4 text-left transition-colors duration-150 hover:bg-[var(--bg-elevated)]"
+                                className="flex w-full items-center gap-3 px-4 sm:px-6 py-3.5 text-left transition-colors duration-150 hover:bg-[var(--bg-elevated)]"
                               >
                                 <div className="flex-1 min-w-0">
                                   <p className="text-[13px] font-medium text-[var(--text-primary)] truncate mb-1">
@@ -663,7 +716,7 @@ export default function ProjectDetailClient({
                                     </div>
                                   )}
                                 </div>
-                                <span className={`shrink-0 inline-flex rounded-md px-2 py-0.5 text-[11px] font-medium ${PRIORITY_STYLES[tpriority]}`}>
+                                <span className={`shrink-0 hidden sm:inline-flex rounded-md px-2 py-0.5 text-[11px] font-medium ${PRIORITY_STYLES[tpriority]}`}>
                                   {task.priority ? task.priority.charAt(0).toUpperCase() + task.priority.slice(1) : "Normal"}
                                 </span>
                                 <span className={`shrink-0 inline-flex rounded-md px-2 py-0.5 text-[11px] font-medium ${TASK_STATUS_STYLES[tstatus]}`}>

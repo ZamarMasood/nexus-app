@@ -125,8 +125,18 @@ export async function editTeamMemberAction(
       return { error: 'The owner\'s role cannot be changed.', success: null };
     }
 
-    // Only the owner can change roles
-    const currentRole = (formData.get('original_user_role') as string)?.trim();
+    // Only the owner can change roles — read current role from DB, never trust form input
+    const orgId = await getCallerOrgId();
+    const { data: currentRow, error: currentErr } = await supabaseAdmin
+      .from('team_members')
+      .select('user_role')
+      .eq('id', id)
+      .eq('org_id', orgId)
+      .single();
+    if (currentErr || !currentRow) {
+      return { error: 'Team member not found.', success: null };
+    }
+    const currentRole = (currentRow as { user_role: string }).user_role;
     if (user_role !== currentRole && !callerIsOwner) {
       return { error: 'Only the workspace owner can change roles.', success: null };
     }
@@ -168,6 +178,21 @@ export async function deleteTeamMemberAction(
       return { error: 'The workspace owner cannot be removed.', success: null };
     }
 
+    // Guard: confirm the target member belongs to the caller's org BEFORE any destructive call
+    const orgId = await getCallerOrgId();
+    const { data: targetRow, error: targetErr } = await supabaseAdmin
+      .from('team_members')
+      .select('id')
+      .eq('id', id)
+      .eq('org_id', orgId)
+      .maybeSingle();
+    if (targetErr) {
+      return { error: 'Failed to verify team member.', success: null };
+    }
+    if (!targetRow) {
+      return { error: 'Team member not found in your workspace.', success: null };
+    }
+
     // Delete Auth user first (cascade not automatic for auth.users).
     // If the auth user doesn't exist (e.g. manually-inserted member), proceed anyway.
     const { error: authDeleteError } = await supabaseAdmin.auth.admin.deleteUser(id);
@@ -175,11 +200,12 @@ export async function deleteTeamMemberAction(
       return { error: authDeleteError.message, success: null };
     }
 
-    // Unassign from tasks (FK tasks.assignee_id → team_members.id, no cascade)
+    // Unassign from tasks (FK tasks.assignee_id → team_members.id, no cascade) — scoped to org
     await supabaseAdmin
       .from('tasks')
       .update({ assignee_id: null })
-      .eq('assignee_id', id);
+      .eq('assignee_id', id)
+      .eq('org_id', orgId);
 
     // Delete from team_members (cascade handles project_members)
     await deleteTeamMember(id);

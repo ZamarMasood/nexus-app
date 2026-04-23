@@ -6,11 +6,14 @@ import { submitPortalComment } from "./actions";
 
 interface CommentFormProps {
   taskId: string;
-  clientId: string;
+  // Accepted for backwards compatibility with the parent component, but
+  // intentionally ignored — the server action derives the portal client id
+  // from the session cookie and cannot be impersonated by the caller.
+  clientId?: string;
   csrfToken: string;
 }
 
-export function CommentForm({ taskId, clientId, csrfToken }: CommentFormProps) {
+export function CommentForm({ taskId, csrfToken }: CommentFormProps) {
   const [content, setContent] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -22,7 +25,7 @@ export function CommentForm({ taskId, clientId, csrfToken }: CommentFormProps) {
 
     setError(null);
     startTransition(async () => {
-      const result = await submitPortalComment(taskId, trimmed, clientId, csrfToken);
+      const result = await submitPortalComment(taskId, trimmed, csrfToken);
       if (result?.error) {
         setError(result.error);
       } else {

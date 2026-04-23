@@ -1,15 +1,21 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { cookies } from "next/headers";
 import { createPortalComment, getPortalTaskById } from "@/lib/db/portal";
 import { getCsrfToken } from "@/lib/csrf";
 
 export async function submitPortalComment(
   taskId: string,
   content: string,
-  clientId: string,
   csrfToken: string
 ): Promise<{ error: string } | null> {
+  // Resolve the portal client id from the cookie — never accept it from the caller.
+  const clientId = cookies().get("portal_client_id")?.value;
+  if (!clientId) {
+    return { error: "Not authenticated." };
+  }
+
   // Verify CSRF token
   const cookieToken = getCsrfToken();
   if (!csrfToken || !cookieToken || csrfToken.length !== cookieToken.length) {

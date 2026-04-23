@@ -20,9 +20,7 @@ import {
   CheckCircle,
   AlertCircle,
   Layers,
-  Loader2
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import {
   Select,
   SelectContent,
@@ -30,7 +28,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { getInvoiceById, updateInvoice } from "@/lib/db/invoices";
+import { getInvoiceById } from "@/lib/db/invoices";
 import { updateInvoiceAction, searchInvoicesForSidebarAction } from "@/app/dashboard/invoices/actions";
 import { revalidateDashboard } from "@/app/dashboard/actions";
 import type { InvoiceListItem } from "@/lib/db/invoices";
@@ -98,7 +96,12 @@ function EditForm({ invoice, clients, onSave, onCancel }: EditFormProps) {
   const [error, setError] = useState<string | null>(null);
 
   const fieldClass =
-    "w-full px-3 py-2 rounded-lg bg-[var(--bg-input)] border border-[var(--border-default)] text-[var(--text-primary)] text-[13px] placeholder:text-[var(--text-faint)] focus:outline-none focus:border-[var(--accent-border)] focus:ring-1 focus:ring-[var(--accent-ring)] transition-all duration-150";
+    "w-full px-3 py-2 rounded-lg bg-[var(--bg-input)] border border-[var(--border-default)] text-[var(--text-primary)] text-[13px] placeholder:text-[var(--text-faint)] focus:outline-none focus:border-[var(--accent-border)] focus:ring-1 focus:ring-[var(--accent-ring)] transition-colors duration-150";
+
+  const selectTriggerClass =
+    "w-full rounded-lg border border-[var(--border-default)] bg-[var(--bg-input)] h-[42px] text-[13px] text-[var(--text-primary)] focus:ring-1 focus:ring-[var(--accent-ring)] focus:border-[var(--accent-border)] data-[placeholder]:text-[var(--text-faint)]";
+  const selectContentClass = "bg-[var(--bg-sidebar)] border-[var(--border-default)] text-[var(--text-primary)]";
+  const selectItemClass = "text-[13px] text-[var(--text-muted)] focus:bg-[var(--tint-accent)] focus:text-[var(--accent)] cursor-pointer";
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
@@ -133,12 +136,23 @@ function EditForm({ invoice, clients, onSave, onCancel }: EditFormProps) {
             <Users className="h-3 w-3" /> Client <span className="text-[var(--priority-urgent)]">*</span>
           </span>
         </label>
-        <select value={clientId} onChange={(e) => setClientId(e.target.value)} className={fieldClass} required>
-          <option value="">Select a client</option>
-          {clients.map((c) => (
-            <option key={c.id} value={c.id}>{c.name}</option>
-          ))}
-        </select>
+        <Select value={clientId} onValueChange={setClientId}>
+          <SelectTrigger className={selectTriggerClass}>
+            <SelectValue placeholder="Select a client" />
+          </SelectTrigger>
+          <SelectContent className={selectContentClass}>
+            {clients.map((c) => (
+              <SelectItem key={c.id} value={c.id} className={selectItemClass}>
+                <div className="flex items-center gap-2">
+                  <div className="w-5 h-5 rounded bg-[var(--tint-accent)] flex items-center justify-center">
+                    <Users className="h-3 w-3 text-[var(--accent)]" />
+                  </div>
+                  {c.name}
+                </div>
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
       
       <div className="grid grid-cols-2 gap-3">
@@ -157,11 +171,24 @@ function EditForm({ invoice, clients, onSave, onCancel }: EditFormProps) {
         </div>
         <div>
           <label className="block text-[11px] font-medium text-[var(--text-muted)] mb-1.5">Status</label>
-          <select value={status} onChange={(e) => setStatus(e.target.value as InvoiceStatus)} className={fieldClass}>
-            {EDIT_STATUS_OPTIONS.map((o) => (
-              <option key={o.value} value={o.value}>{o.label}</option>
-            ))}
-          </select>
+          <Select value={status} onValueChange={(v) => setStatus(v as InvoiceStatus)}>
+            <SelectTrigger className={selectTriggerClass}>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent className={selectContentClass}>
+              {EDIT_STATUS_OPTIONS.map((o) => {
+                const cfg = STATUS_CONFIG[o.value];
+                return (
+                  <SelectItem key={o.value} value={o.value} className={selectItemClass}>
+                    <div className="flex items-center gap-2">
+                      <span className={`h-1.5 w-1.5 rounded-full ${cfg?.dot ?? "bg-[var(--text-muted)]"}`} />
+                      <span className={cfg?.text ?? "text-[var(--text-muted)]"}>{o.label}</span>
+                    </div>
+                  </SelectItem>
+                );
+              })}
+            </SelectContent>
+          </Select>
         </div>
       </div>
       
@@ -208,14 +235,14 @@ function EditForm({ invoice, clients, onSave, onCancel }: EditFormProps) {
         <button 
           type="button" 
           onClick={onCancel} 
-          className="px-3 py-1.5 rounded-lg text-[12px] font-medium text-[var(--text-muted)] hover:bg-[var(--hover-default)] hover:text-[var(--text-primary)] transition-all duration-150 flex items-center gap-1.5"
+          className="px-3 py-1.5 rounded-lg text-[12px] font-medium text-[var(--text-muted)] hover:bg-[var(--hover-default)] hover:text-[var(--text-primary)] transition-colors duration-150 flex items-center gap-1.5"
         >
           <X className="h-3.5 w-3.5" /> Cancel
         </button>
         <button 
           type="submit" 
           disabled={saving} 
-          className="px-3 py-1.5 rounded-lg text-[12px] font-medium bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white active:scale-[0.98] transition-all duration-150 flex items-center gap-1.5 disabled:opacity-50"
+          className="px-3 py-1.5 rounded-lg text-[12px] font-medium bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white active:scale-[0.98] transition-colors duration-150 flex items-center gap-1.5 disabled:opacity-50"
         >
           <Check className="h-3.5 w-3.5" /> {saving ? "Saving..." : "Save Changes"}
         </button>
@@ -330,7 +357,7 @@ export default function InvoiceDetailClient({
     if (!invoice) return;
     setMarkingPaid(true);
     try {
-      const updated = await updateInvoice(invoice.id, { status: "paid" });
+      const updated = await updateInvoiceAction(invoice.id, { status: "paid" });
       setInvoice(updated);
       setGeneratingPdf(true);
       const res = await fetch("/api/generate-invoice-pdf", {
@@ -390,13 +417,15 @@ export default function InvoiceDetailClient({
       {/* Header toolbar */}
       <div className="flex items-center justify-between px-4 sm:px-6 h-[60px] border-b border-[var(--border-subtle)] shrink-0 gap-3">
         <div className="flex items-center gap-3">
-          <button
-            onClick={() => router.push(`/${slug}/invoices`)}
-            className="p-1.5 rounded-lg text-[var(--text-faint)] hover:text-[var(--text-primary)] hover:bg-[var(--hover-default)] transition-all duration-150"
+          {/* Native anchor — sidebar's replaceState() breaks Next.js client nav.
+              See TaskDetailClient back button for details. */}
+          <a
+            href={`/${slug}/invoices`}
+            className="p-1.5 rounded-lg text-[var(--text-faint)] hover:text-[var(--text-primary)] hover:bg-[var(--hover-default)] transition-colors duration-150"
             title="Back to Invoices"
           >
             <ArrowLeft size={16} />
-          </button>
+          </a>
           <div className="w-px h-5 bg-[var(--border-subtle)]" />
           <div className="flex items-center gap-2">
             <Receipt size={16} className="text-[var(--accent)]" />
@@ -427,7 +456,7 @@ export default function InvoiceDetailClient({
                       value={search}
                       onChange={(e) => setSearch(e.target.value)}
                       placeholder="Search invoices..."
-                      className="w-full pl-9 pr-3 py-2 rounded-lg bg-[var(--bg-input)] border border-[var(--border-default)] text-[var(--text-primary)] text-[13px] placeholder:text-[var(--text-faint)] focus:outline-none focus:border-[var(--accent-border)] transition-all duration-150"
+                      className="w-full pl-9 pr-3 py-2 rounded-lg bg-[var(--bg-input)] border border-[var(--border-default)] text-[var(--text-primary)] text-[13px] placeholder:text-[var(--text-faint)] focus:outline-none focus:border-[var(--accent-border)] transition-colors duration-150"
                     />
                   </div>
                 </div>
@@ -452,7 +481,7 @@ export default function InvoiceDetailClient({
                           key={inv.id}
                           onClick={() => selectInvoice(inv.id)}
                           className={[
-                            "w-full text-left px-4 py-3 border-b border-[var(--border-subtle)] last:border-0 transition-all duration-150",
+                            "w-full text-left px-4 py-3 border-b border-[var(--border-subtle)] last:border-0 transition-colors duration-150",
                             isActive
                               ? "bg-[var(--tint-accent)] border-l-2 border-l-[#5e6ad2]"
                               : "hover:bg-[var(--hover-default)]",
@@ -555,7 +584,7 @@ export default function InvoiceDetailClient({
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-2">
                             <StatusIcon size={16} className={cfg.text} />
-                            <h1 className="text-xl font-semibold text-[var(--text-primary)] truncate">
+                            <h1 className="text-xl font-medium text-[var(--text-primary)] truncate">
                               {invoice.invoice_number ?? "—"}
                             </h1>
                           </div>
@@ -577,7 +606,7 @@ export default function InvoiceDetailClient({
                           {isAdmin && !editing && (
                             <button 
                               onClick={() => setEditing(true)} 
-                              className="px-3 py-1.5 rounded-lg text-[12px] font-medium text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--hover-default)] border border-[var(--border-default)] transition-all duration-150 flex items-center gap-1.5"
+                              className="px-3 py-1.5 rounded-lg text-[12px] font-medium text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--hover-default)] border border-[var(--border-default)] transition-colors duration-150 flex items-center gap-1.5"
                             >
                               <Pencil className="h-3.5 w-3.5" /> Edit
                             </button>
@@ -645,24 +674,24 @@ export default function InvoiceDetailClient({
                         <div className="flex items-center justify-between gap-2 mt-6 pt-4 border-t border-[var(--border-subtle)]">
                           <div className="flex gap-2">
                             {invoice.status !== "paid" && isAdmin && (
-                              <button 
-                                onClick={markAsPaid} 
-                                disabled={markingPaid} 
-                                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-[var(--status-done)] hover:bg-[var(--status-done)] text-white transition-all duration-150 disabled:opacity-50"
+                              <button
+                                onClick={markAsPaid}
+                                disabled={markingPaid}
+                                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-[var(--status-done)] hover:bg-[var(--status-done)]/90 text-white transition-colors duration-150 disabled:opacity-50"
                               >
                                 <CheckCircle className="h-3.5 w-3.5" />
                                 {markingPaid ? "Updating..." : "Mark as Paid"}
                               </button>
                             )}
                             {invoice.pdf_url ? (
-                              <a href={invoice.pdf_url} download className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--hover-default)] border border-[var(--border-default)] transition-all duration-150">
+                              <a href={invoice.pdf_url} download className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--hover-default)] border border-[var(--border-default)] transition-colors duration-150">
                                 <Download className="h-3.5 w-3.5" /> Download PDF
                               </a>
                             ) : (
                               <button 
                                 onClick={generatePdf} 
                                 disabled={generatingPdf} 
-                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--hover-default)] border border-[var(--border-default)] transition-all duration-150 disabled:opacity-50"
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--hover-default)] border border-[var(--border-default)] transition-colors duration-150 disabled:opacity-50"
                               >
                                 <RefreshCw className={`h-3.5 w-3.5 ${generatingPdf ? "animate-spin" : ""}`} />
                                 {generatingPdf ? "Generating..." : "Generate PDF"}
@@ -672,7 +701,7 @@ export default function InvoiceDetailClient({
                           {invoice.pdf_url && (
                             <button 
                               onClick={() => setShowPdf(!showPdf)} 
-                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white transition-all duration-150"
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white transition-colors duration-150"
                             >
                               <FileText className="h-3.5 w-3.5" /> {showPdf ? "Hide PDF" : "View PDF"}
                             </button>

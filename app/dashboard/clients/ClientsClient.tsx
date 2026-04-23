@@ -152,7 +152,6 @@ export default function ClientsClient({ initialClients, totalClients, projects: 
         <div className="flex items-center gap-3">
           <Layers size={16} className="text-[var(--text-faint)]" />
           <h1 className="text-[15px] font-medium text-[var(--text-primary)]">Clients</h1>
-          <span className="text-[12px] text-[var(--text-faint)]">{total} total</span>
         </div>
         {isAdmin && (
           <button

@@ -156,7 +156,6 @@ export default function InvoicesClient({ initialInvoices, totalInvoices, clients
         <div className="flex items-center gap-3">
           <Layers size={16} className="text-[var(--text-faint)]" />
           <h1 className="text-[15px] font-medium text-[var(--text-primary)]">Invoices</h1>
-          <span className="text-[12px] text-[var(--text-faint)]">{total} total</span>
         </div>
         {isAdmin && (
           <button
@@ -441,7 +440,11 @@ export default function InvoicesClient({ initialInvoices, totalInvoices, clients
             </div>
           </div>
           <div className="p-4 sm:p-6">
-            <InvoiceForm onSuccess={handleInvoiceCreated} onCancel={() => setCreateOpen(false)} />
+            <InvoiceForm
+              onSuccess={handleInvoiceCreated}
+              onCancel={() => setCreateOpen(false)}
+              initialClients={clients}
+            />
           </div>
         </DialogContent>
       </Dialog>
