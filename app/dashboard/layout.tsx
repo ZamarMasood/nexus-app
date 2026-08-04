@@ -1,5 +1,5 @@
 import { createSupabaseServerClient } from "@/lib/supabase-server";
-import { getIsAdminByEmail, getTeamMemberByEmail, getTeamMembers } from "@/lib/db/team-members";
+import { getTeamMemberByEmail, getTeamMembers } from "@/lib/db/team-members";
 import { getProjects } from "@/lib/db/projects";
 import { getTaskStatuses, type TaskStatusRow } from "@/lib/db/task-statuses";
 import { getTags, type TagRow } from "@/lib/db/tags";
@@ -28,11 +28,11 @@ export default async function DashboardLayout({ children }: { children: React.Re
     const supabase = createSupabaseServerClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (user?.email) {
-      const [adminResult, member] = await Promise.all([
-        getIsAdminByEmail(user.email),
-        getTeamMemberByEmail(user.email),
-      ]);
-      isAdmin = adminResult;
+      // One lookup, not two. getTeamMemberByEmail already selects user_role, so
+      // the old parallel getIsAdminByEmail() call was a second round trip to the
+      // same row for a value we already had.
+      const member = await getTeamMemberByEmail(user.email);
+      isAdmin = member?.user_role === 'admin';
       currentMemberId = member?.id;
       memberName = member?.name;
       memberAvatarUrl = member?.avatar_url ?? undefined;

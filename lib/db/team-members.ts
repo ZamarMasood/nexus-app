@@ -1,19 +1,41 @@
 'use server';
+import { cache } from 'react';
 import { supabaseAdmin as supabase } from '../supabase-admin';
 import { createSupabaseServerClient } from '../supabase-server';
 import type { TeamMember, TeamMemberWithProjects } from '../types';
 
 /**
- * Returns the org_id for the currently authenticated user.
- * Throws if not authenticated or member has no org.
+ * Resolve the caller's org_id, deduped for the lifetime of one request.
+ *
+ * Nearly every lib/db helper starts with getCallerOrgId(), and each call used to
+ * cost TWO network round trips: auth.getUser() is an HTTPS request to Supabase
+ * Auth (it validates the JWT server-side, it is not a local decode), plus a
+ * team_members lookup. A single board page load made 8 auth calls and 7 copies
+ * of the same member query.
+ *
+ * react/cache memoises per request, so those collapse to one of each. Outside a
+ * request context React simply calls through without caching, so there is no way
+ * for one user's org_id to be served to another.
+ *
+ * Only the org_id is cached — it cannot change mid-request. Member rows are NOT
+ * cached, because some server actions update a member and re-read it in the same
+ * request and must see the new value.
  */
-export async function getCallerOrgId(): Promise<string> {
+const resolveCallerOrgId = cache(async (): Promise<string> => {
   const serverClient = createSupabaseServerClient();
   const { data: { user } } = await serverClient.auth.getUser();
   if (!user?.email) throw new Error('Not authenticated');
   const member = await getTeamMemberByEmail(user.email);
   if (!member?.org_id) throw new Error('No organisation found for this account. Please set up your workspace at /setup-org.');
   return member.org_id;
+});
+
+/**
+ * Returns the org_id for the currently authenticated user.
+ * Throws if not authenticated or member has no org.
+ */
+export async function getCallerOrgId(): Promise<string> {
+  return resolveCallerOrgId();
 }
 
 export async function getTeamMembers(): Promise<TeamMember[]> {
