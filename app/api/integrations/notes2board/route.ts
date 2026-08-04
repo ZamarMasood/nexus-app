@@ -21,6 +21,10 @@ const MAX_BATCH = 100;
 const MAX_TITLE = 500;
 const MAX_DESCRIPTION = 10_000;
 
+/** Used only when a workspace somehow has zero task statuses. Matches the first
+ *  slug in seedDefaultStatuses(). */
+const FALLBACK_STATUS = 'todo';
+
 const VALID_PRIORITIES: TaskPriority[] = ['urgent', 'high', 'normal', 'low'];
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -90,6 +94,30 @@ function validateTask(raw: IncomingTask, index: number): ValidTask | string {
   return { title, description, priority, due_date };
 }
 
+/** Slug of the first column on this project's board, i.e. where a new task
+ *  belongs. Falls back to 'todo' only if the workspace has no statuses at all,
+ *  which matches how the rest of the app seeds a fresh org. */
+async function resolveLandingStatus(orgId: string, projectId: string): Promise<string> {
+  // Cast: task_statuses postdates the generated Database types, same as in
+  // lib/db/task-statuses.ts.
+  const { data, error } = await (supabaseAdmin as any)
+    .from('task_statuses')
+    .select('slug, position, project_id')
+    .eq('org_id', orgId)
+    .order('position', { ascending: true });
+
+  if (error || !data) return FALLBACK_STATUS;
+
+  // Board columns = org-wide statuses + the ones scoped to this project.
+  // Filtered here rather than with a PostgREST .or() string, which is not
+  // parameterised and would need the id sanitised before interpolation.
+  const onThisBoard = (data as { slug: string; project_id: string | null }[]).find(
+    (s) => s.project_id === null || s.project_id === projectId
+  );
+
+  return onThisBoard?.slug ?? FALLBACK_STATUS;
+}
+
 export async function POST(req: NextRequest) {
   // ── Authenticate + rate limit ─────────────────────────────────────────────
   const auth = await authenticateIntegrationRequest(req);
@@ -157,6 +185,15 @@ export async function POST(req: NextRequest) {
     return json({ error: 'Unknown project for this key' }, 404);
   }
 
+  // ── Pick the landing status ───────────────────────────────────────────────
+  // Statuses are per-workspace and editable, so 'todo' is not guaranteed to
+  // exist. The board builds its columns from task_statuses and silently DROPS
+  // any task whose status matches no column — a hardcoded 'todo' would make
+  // pushed tasks invisible with no error the moment someone renames that
+  // column. Take the workspace's first column instead (org-wide rows plus this
+  // project's own), which is 'todo' wherever the defaults are untouched.
+  const landingStatus = await resolveLandingStatus(keyRow.org_id, targetProjectId);
+
   // ── Insert ────────────────────────────────────────────────────────────────
   // org_id comes from the key row, never the request. assignee_id stays null
   // because notes2board only knows names from a transcript, not member ids.
@@ -167,7 +204,7 @@ export async function POST(req: NextRequest) {
     description: t.description,
     priority: t.priority,
     due_date: t.due_date,
-    status: 'todo',
+    status: landingStatus,
     assignee_id: null,
   }));
 
@@ -177,7 +214,17 @@ export async function POST(req: NextRequest) {
     .select('id');
 
   if (insertError) {
-    return json({ error: `Failed to create tasks: ${insertError.message}` }, 500);
+    // The caller is an external machine holding only a key. Postgres messages
+    // name columns and constraints, so they stay in the server log — the reply
+    // says only that it failed.
+    console.error('[notes2board ingest] insert failed', {
+      keyId: keyRow.id,
+      orgId: keyRow.org_id,
+      projectId: targetProjectId,
+      count: rows.length,
+      message: insertError.message,
+    });
+    return json({ error: 'Failed to create tasks' }, 500);
   }
 
   // Bookkeeping only — a failure here must not fail a successful push.
