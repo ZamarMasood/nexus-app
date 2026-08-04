@@ -20,6 +20,8 @@ import {
   Settings as SettingsIcon
 } from 'lucide-react';
 import { updateProfileAction, updatePasswordAction, deleteWorkspaceAction, type SettingsState, type DeleteWorkspaceState } from './actions';
+import IntegrationsSection from './IntegrationsSection';
+import type { IntegrationKeyWithProject } from '@/lib/db/integration-keys';
 
 interface SettingsClientProps {
   initialName:      string;
@@ -28,6 +30,9 @@ interface SettingsClientProps {
   email:            string;
   isOwner:          boolean;
   orgName:          string;
+  isAdmin:          boolean;
+  projects:         { id: string; name: string }[];
+  integrationKeys:  IntegrationKeyWithProject[];
 }
 
 function StatusBanner({ state, type = 'profile' }: { state: SettingsState; type?: 'profile' | 'password' }) {
@@ -53,7 +58,7 @@ const inputClass = 'w-full px-3 py-2 rounded-lg bg-[var(--bg-input)] border bord
 
 const labelClass = "block text-[11px] font-medium text-[var(--text-muted)] uppercase tracking-[0.06em] mb-1.5";
 
-export default function SettingsClient({ initialName, initialAvatarUrl, userRole, email, isOwner, orgName }: SettingsClientProps) {
+export default function SettingsClient({ initialName, initialAvatarUrl, userRole, email, isOwner, orgName, isAdmin, projects, integrationKeys }: SettingsClientProps) {
   const [name, setName]           = useState(initialName);
   const [avatarUrl, setAvatarUrl] = useState(initialAvatarUrl);
   const roleLabel = isOwner ? 'Owner (Admin)' : userRole === 'admin' ? 'Admin' : 'Member';
@@ -372,6 +377,13 @@ export default function SettingsClient({ initialName, initialAvatarUrl, userRole
               </form>
             </div>
           </div>
+
+          {/* Integrations */}
+          <IntegrationsSection
+            initialKeys={integrationKeys}
+            projects={projects}
+            isAdmin={isAdmin}
+          />
 
           {/* Danger Zone - Workspace Owner Only */}
           {isOwner && (

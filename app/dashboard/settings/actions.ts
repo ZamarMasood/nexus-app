@@ -4,7 +4,14 @@ import { revalidatePath } from 'next/cache';
 import { headers } from 'next/headers';
 import { createSupabaseServerClient } from '@/lib/supabase-server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
-import { getTeamMemberByEmail, updateTeamMember } from '@/lib/db/team-members';
+import { getTeamMemberByEmail, updateTeamMember, getIsAdminByEmail } from '@/lib/db/team-members';
+import {
+  createIntegrationKey,
+  getIntegrationKeys,
+  revokeIntegrationKey,
+  deleteIntegrationKey,
+  type IntegrationKeyWithProject,
+} from '@/lib/db/integration-keys';
 import { checkRateLimit, formatResetTime } from '@/lib/rate-limit';
 
 export interface SettingsState {
@@ -61,6 +68,70 @@ export async function updatePasswordAction(
   if (error) return { error: error.message, success: null };
 
   return { error: null, success: 'Password changed successfully.' };
+}
+
+// ── Integration keys ─────────────────────────────────────────────────────────
+// Creating a key hands an external tool write access to a project, so every
+// mutation here is admin-only. Reading the list is not — it only exposes names
+// and prefixes, never the key itself.
+
+async function requireAdminMember(): Promise<{ id: string }> {
+  const supabase = createSupabaseServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user?.email) throw new Error('Not authenticated');
+  const isAdmin = await getIsAdminByEmail(user.email);
+  if (!isAdmin) throw new Error('Only admins can manage integrations.');
+  return { id: user.id };
+}
+
+export async function fetchIntegrationKeysAction(): Promise<{
+  keys: IntegrationKeyWithProject[];
+  error: string | null;
+}> {
+  try {
+    return { keys: await getIntegrationKeys(), error: null };
+  } catch (err) {
+    return { keys: [], error: err instanceof Error ? err.message : 'Failed to load integrations.' };
+  }
+}
+
+/** Returns the raw key exactly once. It is not stored and cannot be shown again.
+ *  `projectId: null` creates a workspace key — notes2board then picks the
+ *  project on each push and nexus-app checks it belongs to this workspace. */
+export async function createIntegrationKeyAction(
+  name: string,
+  projectId: string | null
+): Promise<{ rawKey?: string; error: string | null }> {
+  try {
+    const admin = await requireAdminMember();
+    const { rawKey } = await createIntegrationKey(name, projectId, admin.id);
+    revalidatePath('/dashboard/settings');
+    return { rawKey, error: null };
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : 'Failed to create key.' };
+  }
+}
+
+export async function revokeIntegrationKeyAction(id: string): Promise<{ error: string | null }> {
+  try {
+    await requireAdminMember();
+    await revokeIntegrationKey(id);
+    revalidatePath('/dashboard/settings');
+    return { error: null };
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : 'Failed to revoke key.' };
+  }
+}
+
+export async function deleteIntegrationKeyAction(id: string): Promise<{ error: string | null }> {
+  try {
+    await requireAdminMember();
+    await deleteIntegrationKey(id);
+    revalidatePath('/dashboard/settings');
+    return { error: null };
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : 'Failed to delete key.' };
+  }
 }
 
 export interface DeleteWorkspaceState {

@@ -52,6 +52,9 @@ const RATE_LIMIT_CONFIGS: Record<string, RateLimitConfig> = {
   'send-email': { maxAttempts: 10, windowMs: 5 * 60 * 1000 },   // 10 per 5 min
   'generate-pdf': { maxAttempts: 10, windowMs: 5 * 60 * 1000 }, // 10 per 5 min
   provision: { maxAttempts: 5, windowMs: 15 * 60 * 1000 },     // 5 per 15 min
+  // Keyed by integration key id, not IP — one noisy integration must not
+  // throttle another workspace pushing from the same egress IP.
+  integration: { maxAttempts: 30, windowMs: 5 * 60 * 1000 },   // 30 per 5 min
 };
 
 export function checkRateLimit(
