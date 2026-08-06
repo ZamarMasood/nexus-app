@@ -2,6 +2,7 @@
 import { cache } from 'react';
 import { supabaseAdmin as supabase } from '../supabase-admin';
 import { createSupabaseServerClient } from '../supabase-server';
+import { getRequestUser, getRequestMemberByEmail } from './session';
 import type { TeamMember, TeamMemberWithProjects } from '../types';
 
 /**
@@ -22,10 +23,11 @@ import type { TeamMember, TeamMemberWithProjects } from '../types';
  * request and must see the new value.
  */
 const resolveCallerOrgId = cache(async (): Promise<string> => {
-  const serverClient = createSupabaseServerClient();
-  const { data: { user } } = await serverClient.auth.getUser();
+  // Goes through the shared cached helpers so the auth call and member query
+  // are the SAME ones the layout and page already made — not a third pair.
+  const user = await getRequestUser();
   if (!user?.email) throw new Error('Not authenticated');
-  const member = await getTeamMemberByEmail(user.email);
+  const member = await getRequestMemberByEmail(user.email);
   if (!member?.org_id) throw new Error('No organisation found for this account. Please set up your workspace at /setup-org.');
   return member.org_id;
 });
@@ -117,15 +119,10 @@ export async function getTeamMembersWithProjectsPaginated(page: number, pageSize
   return { data: (data ?? []) as TeamMemberWithProjects[], total: count ?? 0 };
 }
 
+/** Delegates to the request-cached lookup so repeated calls in one render cost
+ *  a single query. Kept as a named export because ~15 call sites use it. */
 export async function getTeamMemberByEmail(email: string): Promise<TeamMember | null> {
-  const { data, error } = await (supabase as any)
-    .from('team_members')
-    .select('id, name, email, role, avatar_url, user_role, org_id, is_owner')
-    .eq('email', email)
-    .maybeSingle();
-
-  if (error) throw new Error(`Failed to fetch team member: ${error.message}`);
-  return data;
+  return getRequestMemberByEmail(email);
 }
 
 export async function getIsAdminByEmail(email: string): Promise<boolean> {

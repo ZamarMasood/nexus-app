@@ -5,6 +5,7 @@ export const metadata: Metadata = { title: 'Team Members' };
 import { createSupabaseServerClient } from '@/lib/supabase-server';
 import { getIsAdminByEmail, getIsOwnerById, getTeamMembersWithProjectsPaginated, getTeamMemberByEmail } from '@/lib/db/team-members';
 import { getProjects } from '@/lib/db/projects';
+import { getRequestSession } from "@/lib/db/session";
 import TeamMembersClient from './TeamMembersClient';
 
 export const dynamic = 'force-dynamic';
@@ -12,8 +13,7 @@ export const dynamic = 'force-dynamic';
 const PAGE_SIZE = 5;
 
 export default async function TeamMembersPage() {
-  const supabase = createSupabaseServerClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const { user } = await getRequestSession();
 
   if (!user?.email) redirect('/login');
 

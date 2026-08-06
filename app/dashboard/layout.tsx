@@ -1,14 +1,9 @@
-import { createSupabaseServerClient } from "@/lib/supabase-server";
-import { getTeamMemberByEmail, getTeamMembers } from "@/lib/db/team-members";
-import { getProjects } from "@/lib/db/projects";
-import { getTaskStatuses, type TaskStatusRow } from "@/lib/db/task-statuses";
-import { getTags, type TagRow } from "@/lib/db/tags";
+import { getRequestSession } from "@/lib/db/session";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import DashboardShell from "./DashboardShell";
 import { WorkspaceSlugProvider } from "./workspace-context";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import type { Project, TeamMember } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
@@ -19,42 +14,31 @@ export default async function DashboardLayout({ children }: { children: React.Re
   let orgSlug: string = '';
   let memberName: string | undefined;
   let memberAvatarUrl: string | undefined;
-  let formProjects: Project[] = [];
-  let formTeamMembers: TeamMember[] = [];
-  let formTaskStatuses: TaskStatusRow[] = [];
-  let formTags: TagRow[] = [];
 
   try {
-    const supabase = createSupabaseServerClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (user?.email) {
-      // One lookup, not two. getTeamMemberByEmail already selects user_role, so
-      // the old parallel getIsAdminByEmail() call was a second round trip to the
-      // same row for a value we already had.
-      const member = await getTeamMemberByEmail(user.email);
-      isAdmin = member?.user_role === 'admin';
-      currentMemberId = member?.id;
-      memberName = member?.name;
-      memberAvatarUrl = member?.avatar_url ?? undefined;
-      if (member?.org_id) {
-        const [orgResult, projectsResult, membersResult, statusesResult, tagsResult] = await Promise.all([
-          supabaseAdmin
-            .from('organisations')
-            .select('name, slug')
-            .eq('id', member.org_id)
-            .maybeSingle(),
-          getProjects().catch(() => [] as Project[]),
-          getTeamMembers().catch(() => [] as TeamMember[]),
-          getTaskStatuses(member.org_id).catch(() => [] as TaskStatusRow[]),
-          getTags(member.org_id).catch(() => [] as TagRow[]),
-        ]);
-        const org = orgResult.data as { name: string; slug: string } | null;
-        orgName = org?.name ?? undefined;
-        orgSlug = org?.slug ?? '';
-        formProjects = projectsResult;
-        formTeamMembers = membersResult;
-        formTaskStatuses = statusesResult;
-        formTags = tagsResult;
+    // The layout gates EVERY page's loading.tsx — a page skeleton cannot render
+    // until its parent layout has finished. So this must stay minimal.
+    //
+    // It used to also preload projects, team members, task statuses and tags for
+    // the New Task form. Those five queries ran on every navigation and delayed
+    // the skeleton by seconds. They now load inside the form when it opens
+    // (see task-form-context), which costs a moment on first open in exchange
+    // for every page in the app painting immediately.
+    const { member } = await getRequestSession();
+    if (member) {
+      isAdmin = member.user_role === 'admin';
+      currentMemberId = member.id;
+      memberName = member.name;
+      memberAvatarUrl = member.avatar_url ?? undefined;
+
+      if (member.org_id) {
+        const { data: org } = await supabaseAdmin
+          .from('organisations')
+          .select('name, slug')
+          .eq('id', member.org_id)
+          .maybeSingle();
+        orgName = (org as { name: string } | null)?.name ?? undefined;
+        orgSlug = (org as { slug: string } | null)?.slug ?? '';
       }
     }
   } catch {
@@ -91,10 +75,6 @@ export default async function DashboardLayout({ children }: { children: React.Re
         memberName={memberName}
         memberAvatarUrl={memberAvatarUrl}
         slug={resolvedSlug}
-        formProjects={formProjects}
-        formTeamMembers={formTeamMembers}
-        formTaskStatuses={formTaskStatuses}
-        formTags={formTags}
       >
         {children}
       </DashboardShell>

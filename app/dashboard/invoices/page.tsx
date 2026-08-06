@@ -3,8 +3,7 @@ import { getInvoicesPaginated, getInvoicesByMemberPaginated } from "@/lib/db/inv
 
 export const metadata: Metadata = { title: "Invoices" };
 import { getClientsForList, getClientsForListByMember } from "@/lib/db/clients";
-import { getTeamMemberByEmail } from "@/lib/db/team-members";
-import { createSupabaseServerClient } from "@/lib/supabase-server";
+import { getRequestSession } from "@/lib/db/session";
 import InvoicesClient from "./InvoicesClient";
 
 export const dynamic = "force-dynamic";
@@ -12,9 +11,7 @@ export const dynamic = "force-dynamic";
 const PAGE_SIZE = 5;
 
 export default async function InvoicesPage() {
-  const supabase = createSupabaseServerClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  const member = user?.email ? await getTeamMemberByEmail(user.email) : null;
+  const { user, member } = await getRequestSession();
   const isAdmin = member?.user_role === 'admin';
   const memberId = member?.id ?? '';
   const hasMember = Boolean(member);

@@ -1,8 +1,7 @@
 import { getClientsForSidebar, getClientById } from "@/lib/db/clients";
 import { getProjectsForList } from "@/lib/db/projects";
 import { getInvoicesForList } from "@/lib/db/invoices";
-import { getTeamMemberByEmail } from "@/lib/db/team-members";
-import { createSupabaseServerClient } from "@/lib/supabase-server";
+import { getRequestSession } from "@/lib/db/session";
 import ClientDetailClient from "./ClientDetailClient";
 
 export const dynamic = "force-dynamic";
@@ -14,9 +13,7 @@ interface ClientDetailPageProps {
 export default async function ClientDetailPage({ params }: ClientDetailPageProps) {
   const { id } = await params;
 
-  const supabase = createSupabaseServerClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  const member = user?.email ? await getTeamMemberByEmail(user.email) : null;
+  const { user, member } = await getRequestSession();
   const isAdmin = member?.user_role === 'admin';
 
   // Fetch limited sidebar list (20 recent) + specific client + related data in parallel

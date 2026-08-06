@@ -5,7 +5,10 @@ import { getProjectsForList, getProjectsForListByMember } from '@/lib/db/project
 import { getClientsForList, getClientsForListByMember } from '@/lib/db/clients';
 import { getInvoicesForList, getInvoicesForListByMember } from '@/lib/db/invoices';
 import { getTasksWithAssignees, getTasksWithAssigneesByMember } from '@/lib/db/tasks';
-import { getTeamMembers, getTeamMemberByEmail } from '@/lib/db/team-members';
+import { getTeamMembers, getTeamMemberByEmail, getCallerOrgId } from '@/lib/db/team-members';
+import { getProjects } from '@/lib/db/projects';
+import { getTaskStatuses } from '@/lib/db/task-statuses';
+import { getTags } from '@/lib/db/tags';
 import { createSupabaseServerClient } from '@/lib/supabase-server';
 
 /**
@@ -69,4 +72,33 @@ export async function fetchSearchData(): Promise<SearchResult[]> {
   }
 
   return results;
+}
+
+/**
+ * Everything the New Task form needs, fetched when the form first opens.
+ *
+ * This used to run in the dashboard layout on EVERY navigation, which delayed
+ * every page's skeleton by seconds — a layout must finish rendering before any
+ * child loading.tsx can show. Moving it here trades a moment on the first form
+ * open for every page in the app painting immediately.
+ *
+ * The provider caches the result, so it is fetched once per page session.
+ */
+export async function fetchTaskFormDataAction(): Promise<{
+  projects: Awaited<ReturnType<typeof getProjects>>;
+  teamMembers: Awaited<ReturnType<typeof getTeamMembers>>;
+  taskStatuses: Awaited<ReturnType<typeof getTaskStatuses>>;
+  tags: Awaited<ReturnType<typeof getTags>>;
+}> {
+  const orgId = await getCallerOrgId();
+
+  // Independent queries — one round trip of wall-clock, not four.
+  const [projects, teamMembers, taskStatuses, tags] = await Promise.all([
+    getProjects().catch(() => []),
+    getTeamMembers().catch(() => []),
+    getTaskStatuses(orgId).catch(() => []),
+    getTags(orgId).catch(() => []),
+  ]);
+
+  return { projects, teamMembers, taskStatuses, tags };
 }

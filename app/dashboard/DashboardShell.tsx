@@ -15,6 +15,7 @@ import {
   X,
   Search,
   UserCog,
+  Sparkles,
 } from "lucide-react";
 import { TaskFormProvider } from "./task-form-context";
 import { signOutAction } from "@/app/(auth)/login/actions";
@@ -37,10 +38,6 @@ interface DashboardShellProps {
   memberName?: string;
   memberAvatarUrl?: string;
   slug: string;
-  formProjects?: Project[];
-  formTeamMembers?: TeamMember[];
-  formTaskStatuses?: TaskStatusRow[];
-  formTags?: TagRow[];
 }
 
 /** Nav item paths are relative to the workspace root */
@@ -48,6 +45,7 @@ const BASE_NAV = [
   { path: "",          label: "Overview",  icon: Inbox,       exact: true  },
   { path: "/projects", label: "Projects",  icon: Layers,      exact: false },
   { path: "/tasks",    label: "Tasks",     icon: CheckSquare, exact: false },
+  { path: "/notes",    label: "Meeting Notes", icon: Sparkles, exact: false },
   { path: "/clients",  label: "Clients",   icon: Users,       exact: false },
   { path: "/invoices", label: "Invoices",  icon: FileText,    exact: false },
 ];
@@ -111,10 +109,6 @@ export default function DashboardShell({
   memberName,
   memberAvatarUrl,
   slug,
-  formProjects = [],
-  formTeamMembers = [],
-  formTaskStatuses = [],
-  formTags = [],
 }: DashboardShellProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -283,10 +277,6 @@ export default function DashboardShell({
     <TaskFormProvider
       currentMemberId={currentMemberId}
       isAdmin={isAdmin}
-      projects={formProjects}
-      teamMembers={formTeamMembers}
-      taskStatuses={formTaskStatuses}
-      tags={formTags}
     >
       <SidebarCollapsedContext.Provider value={sidebarCollapsed}>
       <div className="flex h-screen bg-[var(--bg-page)] overflow-hidden">

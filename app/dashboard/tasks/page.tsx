@@ -5,16 +5,13 @@ import { getTaskStatuses } from "@/lib/db/task-statuses";
 import { getTagsForTasks } from "@/lib/db/tags";
 
 export const metadata: Metadata = { title: "Tasks" };
-import { getTeamMemberByEmail } from "@/lib/db/team-members";
-import { createSupabaseServerClient } from "@/lib/supabase-server";
+import { getRequestSession } from "@/lib/db/session";
 import TasksClient from "./TasksClient";
 
 export const dynamic = "force-dynamic";
 
 export default async function TasksPage() {
-  const supabase = createSupabaseServerClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  const member = user?.email ? await getTeamMemberByEmail(user.email) : null;
+  const { user, member } = await getRequestSession();
   const isAdmin = member?.user_role === 'admin';
   const memberId = member?.id ?? '';
   const hasMember = Boolean(member);

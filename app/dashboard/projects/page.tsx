@@ -7,8 +7,7 @@ import {
   getTaskCountsByProject,
   getTaskCountsByProjectFiltered,
 } from "@/lib/db/tasks";
-import { getTeamMemberByEmail } from "@/lib/db/team-members";
-import { createSupabaseServerClient } from "@/lib/supabase-server";
+import { getRequestSession } from "@/lib/db/session";
 import ProjectsClient from "./ProjectsClient";
 
 export const dynamic = "force-dynamic";
@@ -16,9 +15,7 @@ export const dynamic = "force-dynamic";
 const PAGE_SIZE = 5;
 
 export default async function ProjectsPage() {
-  const supabase = createSupabaseServerClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  const member = user?.email ? await getTeamMemberByEmail(user.email) : null;
+  const { user, member } = await getRequestSession();
   const isAdmin = member?.user_role === 'admin';
   const memberId = member?.id ?? '';
   const hasMember = Boolean(member);

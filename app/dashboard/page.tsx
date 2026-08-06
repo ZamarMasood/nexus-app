@@ -6,8 +6,7 @@ import {
   getTaskStatsByMember,
 } from "@/lib/db/tasks";
 import { getProjects, getProjectsByMember } from "@/lib/db/projects";
-import { createSupabaseServerClient } from "@/lib/supabase-server";
-import { getTeamMemberByEmail } from "@/lib/db/team-members";
+import { getRequestSession } from "@/lib/db/session";
 import DashboardClient from "./DashboardClient";
 
 export const metadata: Metadata = { title: "Dashboard" };
@@ -23,9 +22,7 @@ export const dynamic = "force-dynamic";
 // }
 
 export default async function DashboardPage() {
-  const supabase = createSupabaseServerClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  const member = user?.email ? await getTeamMemberByEmail(user.email) : null;
+  const { user, member } = await getRequestSession();
   const isAdmin = member?.user_role === 'admin';
   const memberId = member?.id ?? '';
 

@@ -1,8 +1,7 @@
 import { getTaskByIdWithAssignee, getCommentsByTaskId, getFilesByTaskId, getTasksByAssignee } from "@/lib/db/tasks";
 import { getProjectById } from "@/lib/db/projects";
-import { getTeamMemberByEmail } from "@/lib/db/team-members";
 import { getTagsForTask } from "@/lib/db/tags";
-import { createSupabaseServerClient } from "@/lib/supabase-server";
+import { getRequestSession } from "@/lib/db/session";
 import TaskDetailClient from "./TaskDetailClient";
 
 export const dynamic = "force-dynamic";
@@ -14,9 +13,7 @@ interface TaskDetailPageProps {
 export default async function TaskDetailPage({ params }: TaskDetailPageProps) {
   const { id } = await params;
 
-  const supabase = createSupabaseServerClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  const member = user?.email ? await getTeamMemberByEmail(user.email) : null;
+  const { user, member } = await getRequestSession();
   const isAdmin = member?.user_role === 'admin';
 
   const [task, comments, files, taskTags] = await Promise.all([

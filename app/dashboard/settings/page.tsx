@@ -7,14 +7,12 @@ import { supabaseAdmin } from '@/lib/supabase-admin';
 import { getTeamMemberByEmail } from '@/lib/db/team-members';
 import { getProjectsForList } from '@/lib/db/projects';
 import { getIntegrationKeys, type IntegrationKeyWithProject } from '@/lib/db/integration-keys';
+import { getRequestSession } from "@/lib/db/session";
 import SettingsClient from './SettingsClient';
 
 export default async function DashboardSettingsPage() {
-  const supabase = createSupabaseServerClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const { user, member } = await getRequestSession();
   if (!user?.email) redirect('/login');
-
-  const member = await getTeamMemberByEmail(user.email).catch(() => null);
 
   let orgName = '';
   if (member?.org_id) {

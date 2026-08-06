@@ -1,7 +1,6 @@
 import { getInvoicesForSidebar, getInvoiceById } from "@/lib/db/invoices";
 import { getClientsForList } from "@/lib/db/clients";
-import { getTeamMemberByEmail } from "@/lib/db/team-members";
-import { createSupabaseServerClient } from "@/lib/supabase-server";
+import { getRequestSession } from "@/lib/db/session";
 import InvoiceDetailClient from "./InvoiceDetailClient";
 
 export const dynamic = "force-dynamic";
@@ -13,9 +12,7 @@ interface InvoiceDetailPageProps {
 export default async function InvoiceDetailPage({ params }: InvoiceDetailPageProps) {
   const { id } = await params;
 
-  const supabase = createSupabaseServerClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  const member = user?.email ? await getTeamMemberByEmail(user.email) : null;
+  const { user, member } = await getRequestSession();
   const isAdmin = member?.user_role === 'admin';
 
   // Fetch limited sidebar list (20 recent) + specific invoice in parallel
