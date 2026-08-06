@@ -68,6 +68,44 @@ export async function getTaskStatuses(
   return data ?? [];
 }
 
+/** Fallback when a workspace somehow has no statuses at all. Matches the first
+ *  slug in DEFAULT_STATUSES. */
+const FALLBACK_STATUS = 'todo';
+
+/**
+ * Slug of the first column on a project's board — where a newly created task
+ * belongs.
+ *
+ * Statuses are per-workspace and editable, so 'todo' is not guaranteed to
+ * exist. The board builds its columns from task_statuses and silently drops any
+ * task whose status matches no column, so a hardcoded slug makes tasks vanish
+ * with no error the moment someone renames that column.
+ *
+ * Shared by the notes2board ingest endpoint and the meeting-notes action so the
+ * two cannot drift apart.
+ */
+export async function resolveLandingStatus(
+  orgId: string,
+  projectId: string
+): Promise<string> {
+  const { data, error } = await (supabaseAdmin as any)
+    .from('task_statuses')
+    .select('slug, position, project_id')
+    .eq('org_id', orgId)
+    .order('position', { ascending: true });
+
+  if (error || !data) return FALLBACK_STATUS;
+
+  // Board columns = org-wide statuses plus the ones scoped to this project.
+  // Filtered here rather than with a PostgREST .or() string, which is not
+  // parameterised and would need the id sanitised before interpolation.
+  const onThisBoard = (data as { slug: string; project_id: string | null }[]).find(
+    (s) => s.project_id === null || s.project_id === projectId
+  );
+
+  return onThisBoard?.slug ?? FALLBACK_STATUS;
+}
+
 /** Ensure default statuses exist for an org (called during signup). Org-wide. */
 export async function seedDefaultStatuses(orgId: string): Promise<void> {
   const rows = DEFAULT_STATUSES.map((s) => ({ ...s, org_id: orgId, project_id: null }));

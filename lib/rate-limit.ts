@@ -55,6 +55,9 @@ const RATE_LIMIT_CONFIGS: Record<string, RateLimitConfig> = {
   // Keyed by integration key id, not IP — one noisy integration must not
   // throttle another workspace pushing from the same egress IP.
   integration: { maxAttempts: 30, windowMs: 5 * 60 * 1000 },   // 30 per 5 min
+  // Every call here costs real money at OpenAI, so this is a spend cap as much
+  // as an abuse control. Keyed by team member id.
+  'parse-notes': { maxAttempts: 10, windowMs: 10 * 60 * 1000 }, // 10 per 10 min
 };
 
 /** Limits for a bucket prefix, so callers that enforce the same limit through a

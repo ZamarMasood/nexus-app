@@ -14,16 +14,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 import { touchIntegrationKey } from '@/lib/db/integration-keys';
+import { resolveLandingStatus } from '@/lib/db/task-statuses';
 import { authenticateIntegrationRequest } from '@/lib/integration-auth';
 import type { TaskPriority } from '@/lib/types';
 
 const MAX_BATCH = 100;
 const MAX_TITLE = 500;
 const MAX_DESCRIPTION = 10_000;
-
-/** Used only when a workspace somehow has zero task statuses. Matches the first
- *  slug in seedDefaultStatuses(). */
-const FALLBACK_STATUS = 'todo';
 
 const VALID_PRIORITIES: TaskPriority[] = ['urgent', 'high', 'normal', 'low'];
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
@@ -92,30 +89,6 @@ function validateTask(raw: IncomingTask, index: number): ValidTask | string {
   }
 
   return { title, description, priority, due_date };
-}
-
-/** Slug of the first column on this project's board, i.e. where a new task
- *  belongs. Falls back to 'todo' only if the workspace has no statuses at all,
- *  which matches how the rest of the app seeds a fresh org. */
-async function resolveLandingStatus(orgId: string, projectId: string): Promise<string> {
-  // Cast: task_statuses postdates the generated Database types, same as in
-  // lib/db/task-statuses.ts.
-  const { data, error } = await (supabaseAdmin as any)
-    .from('task_statuses')
-    .select('slug, position, project_id')
-    .eq('org_id', orgId)
-    .order('position', { ascending: true });
-
-  if (error || !data) return FALLBACK_STATUS;
-
-  // Board columns = org-wide statuses + the ones scoped to this project.
-  // Filtered here rather than with a PostgREST .or() string, which is not
-  // parameterised and would need the id sanitised before interpolation.
-  const onThisBoard = (data as { slug: string; project_id: string | null }[]).find(
-    (s) => s.project_id === null || s.project_id === projectId
-  );
-
-  return onThisBoard?.slug ?? FALLBACK_STATUS;
 }
 
 export async function POST(req: NextRequest) {
