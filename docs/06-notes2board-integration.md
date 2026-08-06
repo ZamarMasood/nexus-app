@@ -1,9 +1,30 @@
-# 06 — notes2board Integration (proposed, not built)
+# 06 — notes2board Integration (built, then removed)
 
-> **Status: design only.** Nothing in this document exists in the codebase yet.
-> No `integration_keys` table, no `/api/integrations/notes2board` route, no
-> Integrations section in Settings. This is the design that came out of a
-> brainstorming session on the nexus-app project and was left awaiting a go-ahead.
+> **Status: removed from the codebase on 2026-08-06.** Kept as a record of what
+> existed and why it went.
+>
+> **Timeline**
+> 1. Designed in an earlier session, left unbuilt (this document's original state)
+> 2. Built 2026-08-04 — `integration_keys` table, `/api/integrations/notes2board`
+>    (POST ingest + GET projects), `lib/db/integration-keys.ts`,
+>    `lib/integration-auth.ts`, and an Integrations section in Settings
+> 3. **Removed 2026-08-06.** The requirement was always to merge notes2board's
+>    features *into* nexus-app, not to connect two separate apps. An API key only
+>    exists because the apps are separate — a merged app has nothing to connect.
+>
+> **Replaced by:** the in-app Meeting Notes feature — upload a transcript at
+> `/{slug}/notes`, AI extracts the tasks, they are created in a project directly.
+> See [07-merge-notes2board-plan.md](07-merge-notes2board-plan.md).
+>
+> **Consequence:** notes2board's "send to nexus-app" now fails with a 404. That app
+> was deliberately left untouched. Its `nexus-push` function and connection
+> settings still exist and still point at the deleted endpoint.
+>
+> **Still in the database:** the `integration_keys` table was not dropped. Removing
+> a table is destructive and needs a deliberate decision; the code that used it
+> is gone, so it is inert.
+>
+> Everything below describes the removed design, unchanged.
 
 ## Where this came from
 

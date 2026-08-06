@@ -52,16 +52,13 @@ const RATE_LIMIT_CONFIGS: Record<string, RateLimitConfig> = {
   'send-email': { maxAttempts: 10, windowMs: 5 * 60 * 1000 },   // 10 per 5 min
   'generate-pdf': { maxAttempts: 10, windowMs: 5 * 60 * 1000 }, // 10 per 5 min
   provision: { maxAttempts: 5, windowMs: 15 * 60 * 1000 },     // 5 per 15 min
-  // Keyed by integration key id, not IP — one noisy integration must not
-  // throttle another workspace pushing from the same egress IP.
-  integration: { maxAttempts: 30, windowMs: 5 * 60 * 1000 },   // 30 per 5 min
   // Every call here costs real money at OpenAI, so this is a spend cap as much
   // as an abuse control. Keyed by team member id.
   'parse-notes': { maxAttempts: 10, windowMs: 10 * 60 * 1000 }, // 10 per 10 min
 };
 
-/** Limits for a bucket prefix, so callers that enforce the same limit through a
- *  different backend (see lib/integration-auth.ts) cannot drift from this table. */
+/** Limits for a bucket prefix, so a caller enforcing the same limit through a
+ *  different backend cannot drift from this table. */
 export function getRateLimitConfig(prefix: string): RateLimitConfig | undefined {
   return RATE_LIMIT_CONFIGS[prefix];
 }

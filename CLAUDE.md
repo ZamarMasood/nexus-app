@@ -46,7 +46,9 @@ Written from a read of the code — prefer these over guessing:
 | [docs/03-database.md](docs/03-database.md) | Every table and column — **the accurate schema** |
 | [docs/04-api-reference.md](docs/04-api-reference.md) | API routes, server actions, `lib/db` helpers |
 | [docs/05-setup-and-deploy.md](docs/05-setup-and-deploy.md) | Env vars, Supabase setup, deploy |
-| [docs/06-notes2board-integration.md](docs/06-notes2board-integration.md) | The notes2board task ingest |
+| [docs/06-notes2board-integration.md](docs/06-notes2board-integration.md) | The old API-key ingest — **removed**, kept as a record |
+| [docs/07-merge-notes2board-plan.md](docs/07-merge-notes2board-plan.md) | Meeting Notes — upload a transcript, AI makes tasks |
+| [docs/08-performance-plan.md](docs/08-performance-plan.md) | Why pages were slow and what was changed |
 
 **Stale — do not trust:** `docs/schema.sql` (pre-multi-tenant),
 `docs/design-tokens.md` (documents `--color-*` variables that no longer exist).
