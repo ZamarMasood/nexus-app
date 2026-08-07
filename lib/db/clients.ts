@@ -107,9 +107,14 @@ export async function getClientById(id: string): Promise<Client> {
     .select('id, name, email, status, monthly_rate, project_type, start_date, created_at')
     .eq('id', id)
     .eq('org_id', orgId)
-    .single();
+    .maybeSingle();
 
+  // maybeSingle, not single: a missing row is a normal outcome (deleted client,
+  // stale link, another org's id) and single() turns that into a PostgREST 406
+  // whose message says nothing useful. Deleting clients is now possible from the
+  // UI, so stale links are no longer hypothetical.
   if (error) throw new Error(`Failed to fetch client ${id}: ${error.message}`);
+  if (!data) throw new Error('Client not found.');
   return data as Client;
 }
 
@@ -119,9 +124,10 @@ export async function getClientByIdForPortal(id: string): Promise<Client> {
     .from('clients')
     .select('id, name, email, status, monthly_rate, project_type, start_date, created_at')
     .eq('id', id)
-    .single();
+    .maybeSingle();
 
   if (error) throw new Error(`Failed to fetch client ${id}: ${error.message}`);
+  if (!data) throw new Error('Client not found.');
   return data as Client;
 }
 

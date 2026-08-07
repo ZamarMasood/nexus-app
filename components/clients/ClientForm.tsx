@@ -29,7 +29,7 @@ const FIELD = `w-full px-3 py-2 rounded-lg bg-[var(--bg-input)] border border-[v
   text-[var(--text-primary)] text-[13px] placeholder:text-[var(--text-faint)]
   focus:outline-none focus:border-[var(--accent-border)]
   focus:ring-1 focus:ring-[var(--accent-ring)]
-  transition-all duration-150`;
+  transition-colors duration-150`;
 const SELECT_TRIGGER = `w-full rounded-lg border border-[var(--border-default)] bg-[var(--bg-input)]
   h-[42px] text-[13px] text-[var(--text-primary)]
   focus:ring-1 focus:ring-[var(--accent-ring)] focus:border-[var(--accent-border)]
@@ -225,7 +225,7 @@ export function ClientForm({ client, onSuccess, onCancel }: ClientFormProps) {
           disabled={loading}
           className="w-full sm:w-auto px-4 py-2 rounded-lg text-[13px] font-medium text-[var(--text-muted)]
             hover:text-[var(--text-primary)] hover:bg-[var(--hover-default)]
-            transition-all duration-150 disabled:opacity-50"
+            transition-colors duration-150 disabled:opacity-50"
         >
           Cancel
         </button>
@@ -234,7 +234,7 @@ export function ClientForm({ client, onSuccess, onCancel }: ClientFormProps) {
           disabled={loading}
           className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-[13px] font-medium
             bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white
-            active:scale-[0.98] transition-all duration-150
+            active:scale-[0.98] transition-[color,background-color,border-color,transform] duration-150
             disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {loading && <Loader2 className="h-3.5 w-3.5 animate-spin" />}

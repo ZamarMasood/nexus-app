@@ -143,7 +143,7 @@ function FileItem({ file }: { file: ProjectFile }) {
       href={file.file_url ?? "#"}
       target="_blank"
       rel="noopener noreferrer"
-      className="flex items-center gap-3 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-input)] px-4 py-3 hover:border-[var(--border-hover)] hover:bg-[var(--bg-elevated)] transition-all duration-150 group"
+      className="flex items-center gap-3 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-input)] px-4 py-3 hover:border-[var(--border-hover)] hover:bg-[var(--bg-elevated)] transition-colors duration-150 group"
     >
       <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[var(--tint-accent)]">
         <FileText className="h-5 w-5 text-[var(--accent)]" />
@@ -211,7 +211,7 @@ export default function PortalTaskDetailClient({
         <div className="flex items-center gap-3">
           <button
             onClick={() => router.push("/portal/tasks")}
-            className="p-1.5 rounded-lg text-[var(--text-faint)] hover:text-[var(--text-primary)] hover:bg-[var(--hover-default)] transition-all duration-150"
+            className="p-1.5 rounded-lg text-[var(--text-faint)] hover:text-[var(--text-primary)] hover:bg-[var(--hover-default)] transition-colors duration-150"
             title="Back to Tasks"
           >
             <ArrowLeft size={16} />
@@ -246,7 +246,7 @@ export default function PortalTaskDetailClient({
                       value={search}
                       onChange={(e) => setSearch(e.target.value)}
                       placeholder="Search tasks..."
-                      className="w-full pl-9 pr-3 py-2 rounded-lg bg-[var(--bg-input)] border border-[var(--border-default)] text-[var(--text-primary)] text-[13px] placeholder:text-[var(--text-faint)] focus:outline-none focus:border-[var(--accent-border)] transition-all duration-150"
+                      className="w-full pl-9 pr-3 py-2 rounded-lg bg-[var(--bg-input)] border border-[var(--border-default)] text-[var(--text-primary)] text-[13px] placeholder:text-[var(--text-faint)] focus:outline-none focus:border-[var(--accent-border)] transition-colors duration-150"
                     />
                   </div>
                 </div>
@@ -269,7 +269,7 @@ export default function PortalTaskDetailClient({
                           key={t.id}
                           href={`/portal/tasks/${t.id}`}
                           className={[
-                            "block w-full text-left px-4 py-3 border-b border-[var(--border-subtle)] last:border-0 transition-all duration-150",
+                            "block w-full text-left px-4 py-3 border-b border-[var(--border-subtle)] last:border-0 transition-colors duration-150",
                             isActive
                               ? "bg-[var(--tint-accent)] border-l-2 border-l-[#5e6ad2]"
                               : "hover:bg-[var(--hover-default)]",

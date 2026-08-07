@@ -117,9 +117,13 @@ export async function getProjectById(id: string): Promise<Project> {
     .select('*')
     .eq('id', id)
     .eq('org_id', orgId)
-    .single();
+    .maybeSingle();
 
+  // maybeSingle, not single: a missing row is a normal outcome (deleted project,
+  // stale link, another org's id) and single() turns that into a PostgREST 406
+  // whose message says nothing useful.
   if (error) throw new Error(`Failed to fetch project ${id}: ${error.message}`);
+  if (!data) throw new Error('Project not found.');
   return data;
 }
 

@@ -50,7 +50,7 @@ function StatusBanner({ state, type = 'profile' }: { state: SettingsState; type?
   );
 }
 
-const inputClass = 'w-full px-3 py-2 rounded-lg bg-[var(--bg-input)] border border-[var(--border-default)] text-[var(--text-primary)] text-[13px] placeholder:text-[var(--text-faint)] focus:outline-none focus:border-[var(--accent-border)] focus:ring-1 focus:ring-[var(--accent-ring)] transition-all duration-150';
+const inputClass = 'w-full px-3 py-2 rounded-lg bg-[var(--bg-input)] border border-[var(--border-default)] text-[var(--text-primary)] text-[13px] placeholder:text-[var(--text-faint)] focus:outline-none focus:border-[var(--accent-border)] focus:ring-1 focus:ring-[var(--accent-ring)] transition-colors duration-150';
 
 const labelClass = "block text-[11px] font-medium text-[var(--text-muted)] uppercase tracking-[0.06em] mb-1.5";
 
@@ -266,7 +266,7 @@ export default function SettingsClient({ initialName, initialAvatarUrl, userRole
                     disabled={profileLoading}
                     className="flex items-center gap-2 px-4 py-1.5 rounded-lg text-[13px] font-medium
                       bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white
-                      active:scale-[0.98] transition-all duration-150
+                      active:scale-[0.98] transition-[color,background-color,border-color,transform] duration-150
                       disabled:opacity-60 disabled:cursor-not-allowed"
                   >
                     {profileLoading && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
@@ -336,7 +336,7 @@ export default function SettingsClient({ initialName, initialAvatarUrl, userRole
                       {[1, 2, 3].map((level) => (
                         <div
                           key={level}
-                          className="h-1 flex-1 rounded-full transition-all duration-150"
+                          className="h-1 flex-1 rounded-full transition-[width] duration-150"
                           style={{
                             background: strength.score >= level 
                               ? strength.color 
@@ -362,7 +362,7 @@ export default function SettingsClient({ initialName, initialAvatarUrl, userRole
                     disabled={passwordLoading || !password || password !== confirm}
                     className="flex items-center gap-2 px-4 py-1.5 rounded-lg text-[13px] font-medium
                       bg-[var(--priority-urgent)] hover:bg-[var(--priority-urgent)]/90 text-white
-                      active:scale-[0.98] transition-all duration-150
+                      active:scale-[0.98] transition-[color,background-color,border-color,transform] duration-150
                       disabled:opacity-60 disabled:cursor-not-allowed"
                   >
                     {passwordLoading && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
@@ -402,7 +402,7 @@ export default function SettingsClient({ initialName, initialAvatarUrl, userRole
                     className="shrink-0 flex items-center gap-2 px-4 py-1.5 rounded-lg text-[13px] font-medium
                       bg-[var(--tint-red)] hover:bg-[var(--tint-red)]
                       text-[var(--priority-urgent)] border border-[var(--tint-red-border)]
-                      transition-all duration-150"
+                      transition-colors duration-150"
                   >
                     <Trash2 size={14} />
                     Delete Workspace
@@ -497,7 +497,7 @@ export default function SettingsClient({ initialName, initialAvatarUrl, userRole
                   onClick={closeDeleteModal}
                   disabled={deleteLoading}
                   className="px-3 py-1.5 rounded-lg text-[13px] font-medium text-[var(--text-muted)]
-                    hover:bg-[var(--hover-default)] hover:text-[var(--text-primary)] transition-all duration-150
+                    hover:bg-[var(--hover-default)] hover:text-[var(--text-primary)] transition-colors duration-150
                     disabled:opacity-40"
                 >
                   Cancel
@@ -507,7 +507,7 @@ export default function SettingsClient({ initialName, initialAvatarUrl, userRole
                   disabled={deleteLoading || deleteConfirmName !== orgName}
                   className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-[13px] font-medium
                     bg-[var(--priority-urgent)] hover:bg-[var(--priority-urgent)]/90 text-white
-                    active:scale-[0.98] transition-all duration-150
+                    active:scale-[0.98] transition-[color,background-color,border-color,transform] duration-150
                     disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                   {deleteLoading && <Loader2 className="h-3.5 w-3.5 animate-spin" />}

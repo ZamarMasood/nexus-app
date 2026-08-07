@@ -1,7 +1,22 @@
-'use server';
 import { supabaseAdmin as supabase } from '../supabase-admin';
 import type { Task, Invoice, Comment, ProjectFile, TeamMember } from '../types';
 import { getTaskStatuses, type TaskStatusRow } from './task-statuses';
+
+/**
+ * Portal data access. Plain server-side helpers — deliberately NOT `'use server'`.
+ *
+ * Every function here takes `clientId` as an argument and trusts it. That is
+ * fine for a module only the server can reach, but `'use server'` turns each
+ * export into an endpoint the browser can call with any arguments it likes —
+ * so `getPortalInvoices('<someone-elses-uuid>')` would have returned another
+ * company's invoices. Nothing exploited it (the one client-side import is a
+ * type, which is erased at build time), but a single ordinary import would have
+ * opened all nine at once.
+ *
+ * The rule this follows is the same one in ./session.ts: a data-access layer is
+ * not a server action. Callers resolve clientId from the `portal_client_id`
+ * cookie and pass it down.
+ */
 
 export type PortalTask = Task & {
   assignee?: Pick<TeamMember, 'name' | 'avatar_url'> | null;
@@ -125,6 +140,20 @@ export async function createPortalComment(
   content: string,
   clientId: string
 ): Promise<Comment> {
+  // Confirm the task really belongs to this client before writing.
+  //
+  // Every read helper here already does this; the one write did not, relying on
+  // its single caller to check first. That caller does — but a write path is the
+  // wrong place to depend on someone else remembering.
+  const { data: owned } = await supabase
+    .from('tasks')
+    .select('id, project:projects!inner(id)')
+    .eq('id', taskId)
+    .eq('project.client_id', clientId)
+    .maybeSingle();
+
+  if (!owned) throw new Error('Task not found or access denied.');
+
   // Fetch client name to store as author_name
   const { data: client } = await supabase
     .from('clients')

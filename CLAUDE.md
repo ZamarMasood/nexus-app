@@ -117,12 +117,24 @@ Detail: [docs/02-architecture.md](docs/02-architecture.md).
 
 ## Known issues (not yet fixed)
 
-- **`comments` and `files` have an RLS policy of `USING (true) WITH CHECK (true)`
-  for ALL on `authenticated`.** Any logged-in user of any workspace can read and
-  write every comment and file in the database via PostgREST. App code is safe
-  (it goes through `supabaseAdmin` with explicit filters), but the database is
-  not enforcing isolation on those two tables
 - Rate limiting (`lib/rate-limit.ts`) is in-memory, so on Vercel each serverless
   instance keeps its own counter — the real limit is looser than configured
-- `@anthropic-ai/sdk` is in `package.json` but nothing imports it
 - No test runner in this project
+
+## Conventions worth knowing
+
+- **`lib/db/*.ts` is a data-access layer, not an action layer.** Most of those
+  files carry `'use server'`, which turns every export into an endpoint the
+  browser can call with any arguments. That is tolerable where the function
+  derives `org_id` from the session (`getCallerOrgId()`), and dangerous where it
+  takes the scope as a parameter. `portal.ts` took `clientId` as a parameter, so
+  it is deliberately **not** `'use server'` — same as `session.ts` and
+  `email-availability.ts`. Follow that rule for anything new
+- **Fetch-by-id helpers use `.maybeSingle()`**, not `.single()`, and throw a
+  named "X not found." error. `single()` turns a missing row into a PostgREST 406
+  whose message says nothing
+- **One pagination component** — `components/layout/Pagination.tsx`. Do not
+  hand-roll page controls; the four copies that existed had already drifted
+- **Never `transition-all`** (the design system says so, and it animates layout
+  properties). Name what actually changes: `transition-colors`,
+  `transition-[width]`, or an explicit list

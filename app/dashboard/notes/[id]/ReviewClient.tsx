@@ -7,10 +7,29 @@ import { ArrowLeft, Loader2, Check, CheckCircle2 } from "lucide-react";
 import { useWorkspaceSlug } from "../../workspace-context";
 import { createTasksFromNotesAction } from "../actions";
 import type { ParsedTask } from "@/lib/db/meeting-notes";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 type Priority = ParsedTask["priority"];
 
 const PRIORITIES: Priority[] = ["urgent", "high", "normal", "low"];
+
+// Same dropdown look as the task form (components/tasks/TaskForm.tsx), but sized
+// to sit inline beside the create button instead of filling a form column.
+// A native <select> here rendered the OS dropdown, which ignores the dark theme.
+const SELECT_TRIGGER = `h-9 w-[200px] rounded-md border border-[var(--border-default)] bg-[var(--bg-input)]
+  text-[13px] text-[var(--text-primary)]
+  focus:ring-1 focus:ring-[var(--accent-ring)] focus:border-[var(--accent-border)]
+  data-[placeholder]:text-[var(--text-faint)]`;
+const SELECT_CONTENT =
+  "bg-[var(--bg-sidebar)] border-[var(--border-default)] text-[var(--text-primary)]";
+const SELECT_ITEM =
+  "text-[13px] text-[var(--text-muted)] focus:bg-[var(--tint-accent)] focus:text-[var(--accent)] cursor-pointer";
 
 interface ReviewClientProps {
   note: {
@@ -106,7 +125,9 @@ export function ReviewClient({ note, projects, teamMembers }: ReviewClientProps)
     // container. Without this the list is simply clipped with no way to reach
     // the create button.
     <div className="h-full overflow-y-auto">
-      <div className="mx-auto max-w-4xl px-6 py-8">
+      {/* pb-12: the action bar sat flush against the bottom edge, so the project
+          dropdown had nothing under it to breathe into. */}
+      <div className="mx-auto max-w-4xl px-6 pt-8 pb-12">
       <BackLink slug={slug} />
 
       <header className="mt-4 mb-6">
@@ -214,19 +235,18 @@ export function ReviewClient({ note, projects, teamMembers }: ReviewClientProps)
       {error && <p className="mt-4 text-[13px] text-[var(--priority-urgent)]">{error}</p>}
 
       <div className="mt-6 flex flex-wrap items-center gap-3 border-t border-[var(--border-subtle)] pt-4">
-        <select
-          value={projectId}
-          onChange={(e) => setProjectId(e.target.value)}
-          aria-label="Project"
-          autoComplete="off"
-          className="rounded-md border border-[var(--border-default)] bg-[var(--bg-input)] px-3 py-2 text-[13px] text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-[var(--accent-ring)]"
-        >
-          {projects.map((p) => (
-            <option key={p.id} value={p.id}>
-              {p.name}
-            </option>
-          ))}
-        </select>
+        <Select value={projectId} onValueChange={setProjectId}>
+          <SelectTrigger className={SELECT_TRIGGER} aria-label="Project">
+            <SelectValue placeholder="Select project" />
+          </SelectTrigger>
+          <SelectContent className={SELECT_CONTENT}>
+            {projects.map((p) => (
+              <SelectItem key={p.id} value={p.id} className={SELECT_ITEM}>
+                {p.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
 
         <button
           type="button"

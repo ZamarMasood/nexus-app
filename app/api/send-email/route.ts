@@ -9,6 +9,7 @@ import { createSupabaseServerClient } from '@/lib/supabase-server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 import { getTeamMemberByEmail } from '@/lib/db/team-members';
 import { checkRateLimit, formatResetTime } from '@/lib/rate-limit';
+import { isValidEmail } from '@/lib/validation';
 
 export async function POST(req: NextRequest) {
   // Authenticate: only logged-in team members can trigger emails
@@ -40,8 +41,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Missing required fields: to, subject, html' }, { status: 400 });
   }
 
-  const emailRegex = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)+$/;
-  if (typeof to !== 'string' || !emailRegex.test(to)) {
+  if (typeof to !== 'string' || !isValidEmail(to)) {
     return NextResponse.json({ error: 'Invalid email address' }, { status: 400 });
   }
 

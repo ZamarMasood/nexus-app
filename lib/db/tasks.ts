@@ -148,9 +148,13 @@ export async function getTaskById(id: string): Promise<Task> {
     .select('*')
     .eq('id', id)
     .eq('org_id', orgId)
-    .single();
+    .maybeSingle();
 
+  // maybeSingle, not single: a missing row is a normal outcome (a deleted task,
+  // a stale link, another org's id) and single() turns that into a PostgREST
+  // 406 whose message says nothing useful.
   if (error) throw new Error(`Failed to fetch task ${id}: ${error.message}`);
+  if (!data) throw new Error('Task not found.');
   return data;
 }
 
@@ -161,9 +165,10 @@ export async function getTaskByIdWithAssignee(id: string): Promise<TaskWithAssig
     .select('*, assignee:team_members!tasks_assignee_id_fkey(id, name, avatar_url, role)')
     .eq('id', id)
     .eq('org_id', orgId)
-    .single();
+    .maybeSingle();
 
   if (error) throw new Error(`Failed to fetch task ${id}: ${error.message}`);
+  if (!data) throw new Error('Task not found.');
   return data as TaskWithAssignee;
 }
 

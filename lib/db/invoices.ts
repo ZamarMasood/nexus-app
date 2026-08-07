@@ -111,9 +111,13 @@ export async function getInvoiceById(id: string): Promise<Invoice> {
     .select('*')
     .eq('id', id)
     .eq('org_id', orgId)
-    .single();
+    .maybeSingle();
 
+  // maybeSingle, not single: a missing row is a normal outcome (deleted invoice,
+  // stale link, another org's id) and single() turns that into a PostgREST 406
+  // whose message says nothing useful.
   if (error) throw new Error(`Failed to fetch invoice ${id}: ${error.message}`);
+  if (!data) throw new Error('Invoice not found.');
   return data;
 }
 
