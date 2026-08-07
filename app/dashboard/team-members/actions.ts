@@ -13,11 +13,8 @@ import {
   replaceProjectAssignments,
   getTeamMembersWithProjectsPaginated,
 } from '@/lib/db/team-members';
-// ── Validation helpers ───────────────────────────────────────────────────────
-function isValidEmail(email: string): boolean {
-  const re = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)+$/;
-  return re.test(email);
-}
+import { assertEmailIsFree } from '@/lib/db/email-availability';
+import { isValidEmail, INVALID_EMAIL_MESSAGE } from '@/lib/validation';
 
 // ── Guard helper ─────────────────────────────────────────────────────────────
 async function requireAdmin(): Promise<{ id: string; email: string; name: string }> {
@@ -31,9 +28,30 @@ async function requireAdmin(): Promise<{ id: string; email: string; name: string
 }
 
 // ── Invite member ────────────────────────────────────────────────────────────
+
+/**
+ * What the caller needs to draw the new/updated row itself.
+ *
+ * The table used to re-fetch the whole page and then refresh the route after
+ * every add, edit and delete — three server round trips to show a row we had
+ * already saved. Returning the values lets the client update in place instead.
+ *
+ * Only project IDs are sent, not names: the page already holds the full project
+ * list, so resolving names client-side costs nothing and keeps this cheap.
+ */
+export interface SavedMemberPayload {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+  user_role: string;
+  projectIds: string[];
+}
+
 export interface AddMemberState {
   error: string | null;
   success: string | null;
+  member?: SavedMemberPayload | null;
 }
 
 export async function addTeamMemberAction(
@@ -52,14 +70,13 @@ export async function addTeamMemberAction(
       return { error: 'Name and email are required.', success: null };
     }
     if (!isValidEmail(email)) {
-      return { error: 'Please enter a valid email address (e.g. name@company.com).', success: null };
+      return { error: INVALID_EMAIL_MESSAGE, success: null };
     }
 
-    // Step 1 — check if email is already taken in team_members
-    const existing = await getTeamMemberByEmail(email);
-    if (existing) {
-      return { error: 'A team member with this email already exists.', success: null };
-    }
+    // Step 1 — the address must be free product-wide, not just in this workspace.
+    // Checks team_members and clients across every org plus auth.users, so an
+    // address cannot be a member here and a client somewhere else.
+    await assertEmailIsFree(email);
 
     // Step 2 — invite via Supabase (creates auth user + sends invite email via Supabase SMTP)
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
@@ -86,7 +103,11 @@ export async function addTeamMemberAction(
       await replaceProjectAssignments(userId, projectIds);
     }
 
-    return { error: null, success: `Invitation sent to ${email}` };
+    return {
+      error: null,
+      success: `Invitation sent to ${email}`,
+      member: { id: userId, name, email, role: user_role, user_role, projectIds },
+    };
   } catch (err) {
     const msg = err instanceof Error ? err.message : 'Something went wrong. Please try again.';
     return { error: msg, success: null };
@@ -97,6 +118,7 @@ export async function addTeamMemberAction(
 export interface EditMemberState {
   error: string | null;
   success: string | null;
+  member?: SavedMemberPayload | null;
 }
 
 export async function editTeamMemberAction(
@@ -141,10 +163,21 @@ export async function editTeamMemberAction(
       return { error: 'Only the workspace owner can change roles.', success: null };
     }
 
-    await updateTeamMemberFull(id, { name, user_role });
+    const updated = await updateTeamMemberFull(id, { name, user_role });
     await replaceProjectAssignments(id, projectIds);
 
-    return { error: null, success: 'Team member updated successfully.' };
+    return {
+      error: null,
+      success: 'Team member updated successfully.',
+      member: {
+        id,
+        name,
+        email: updated.email,
+        role: updated.role ?? user_role,
+        user_role,
+        projectIds,
+      },
+    };
   } catch (err) {
     const msg = err instanceof Error ? err.message : 'Something went wrong. Please try again.';
     return { error: msg, success: null };
@@ -155,6 +188,7 @@ export async function editTeamMemberAction(
 export interface DeleteMemberState {
   error: string | null;
   success: string | null;
+  deletedId?: string | null;
 }
 
 export async function deleteTeamMemberAction(
@@ -193,24 +227,52 @@ export async function deleteTeamMemberAction(
       return { error: 'Team member not found in your workspace.', success: null };
     }
 
-    // Delete Auth user first (cascade not automatic for auth.users).
-    // If the auth user doesn't exist (e.g. manually-inserted member), proceed anyway.
-    const { error: authDeleteError } = await supabaseAdmin.auth.admin.deleteUser(id);
-    if (authDeleteError && !authDeleteError.message.toLowerCase().includes('user not found')) {
-      return { error: authDeleteError.message, success: null };
-    }
+    // Clear every reference BEFORE deleting the row, or the delete fails.
+    //
+    // Order matters and the database row goes last. Deleting the auth user first
+    // (the previous order) meant any later failure left an auth account with no
+    // team_members row — four such orphans built up in production, and each one
+    // silently blocks re-inviting that address.
+    //
+    // tasks.assignee_id and project_members.assigned_by are both FK ... NO ACTION,
+    // so a member who had ever assigned someone to a project could not be
+    // deleted at all. meeting_notes.created_by and integration_keys.created_by
+    // are ON DELETE SET NULL and need nothing here; project_members.member_id
+    // cascades.
+    const adminAny = supabaseAdmin as any;
 
-    // Unassign from tasks (FK tasks.assignee_id → team_members.id, no cascade) — scoped to org
-    await supabaseAdmin
+    const { error: taskErr } = await supabaseAdmin
       .from('tasks')
       .update({ assignee_id: null })
       .eq('assignee_id', id)
       .eq('org_id', orgId);
+    if (taskErr) {
+      return { error: `Failed to unassign their tasks: ${taskErr.message}`, success: null };
+    }
 
-    // Delete from team_members (cascade handles project_members)
+    const { error: assignedByErr } = await adminAny
+      .from('project_members')
+      .update({ assigned_by: null })
+      .eq('assigned_by', id)
+      .eq('org_id', orgId);
+    if (assignedByErr) {
+      return { error: `Failed to clear their project assignments: ${assignedByErr.message}`, success: null };
+    }
+
+    // Delete from team_members (cascade handles project_members.member_id)
     await deleteTeamMember(id);
 
-    return { error: null, success: 'Team member removed.' };
+    // Auth account last. If this fails the member is already gone from the
+    // workspace, so report it rather than leaving a silent orphan behind.
+    const { error: authDeleteError } = await supabaseAdmin.auth.admin.deleteUser(id);
+    if (authDeleteError && !authDeleteError.message.toLowerCase().includes('user not found')) {
+      return {
+        error: `Removed from the workspace, but their login account could not be deleted: ${authDeleteError.message}`,
+        success: null,
+      };
+    }
+
+    return { error: null, success: 'Team member removed.', deletedId: id };
   } catch (err) {
     const msg = err instanceof Error ? err.message : 'Something went wrong. Please try again.';
     return { error: msg, success: null };
