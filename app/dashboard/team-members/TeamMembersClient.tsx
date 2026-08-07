@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useFormState, useFormStatus } from "react-dom";
-import { useRouter } from "next/navigation";
 import {
   Plus,
   Pencil,
@@ -19,15 +18,14 @@ import {
   Search,
   Users,
   Mail,
-  Briefcase,
-  ChevronRight,
-  ChevronLeft
+  Briefcase
 } from "lucide-react";
 import {
   Dialog,
   DialogContent,
 } from "@/components/ui/dialog";
 import type { Project, TeamMemberWithProjects } from "@/lib/types";
+import { Pagination } from "@/components/layout/Pagination";
 import {
   addTeamMemberAction,
   editTeamMemberAction,
@@ -36,6 +34,7 @@ import {
   type AddMemberState,
   type EditMemberState,
   type DeleteMemberState,
+  type SavedMemberPayload,
 } from "./actions";
 
 const PAGE_SIZE = 5;
@@ -130,7 +129,7 @@ function SubmitButton({ label, pendingLabel, className }: { label: string; pendi
 // ── Input field class ─────────────────────────────────────────────────────────
 
 const fieldCls =
-  "w-full px-3 py-2 rounded-lg bg-[var(--bg-input)] border border-[var(--border-default)] text-[var(--text-primary)] text-[13px] placeholder:text-[var(--text-faint)] focus:outline-none focus:border-[var(--accent-border)] focus:ring-1 focus:ring-[var(--accent-ring)] transition-all duration-150";
+  "w-full px-3 py-2 rounded-lg bg-[var(--bg-input)] border border-[var(--border-default)] text-[var(--text-primary)] text-[13px] placeholder:text-[var(--text-faint)] focus:outline-none focus:border-[var(--accent-border)] focus:ring-1 focus:ring-[var(--accent-ring)] transition-colors duration-150";
 
 const labelCls = "block text-[11px] font-medium text-[var(--text-muted)] mb-1.5";
 
@@ -278,14 +277,14 @@ function AddMemberModal({
   open: boolean;
   projects: Project[];
   onClose: () => void;
-  onSuccess: (msg: string) => void;
+  onSuccess: (state: AddMemberState) => void;
 }) {
   const [state, formAction] = useFormState(addTeamMemberAction, ADD_INITIAL);
   const [selectedProjects, setSelectedProjects] = useState<string[]>([]);
 
   useEffect(() => {
     if (state.success) {
-      onSuccess(state.success);
+      onSuccess(state);
     }
   }, [state.success]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -343,7 +342,7 @@ function AddMemberModal({
                 type="button"
                 onClick={onClose}
                 className="w-full sm:w-auto px-3 py-1.5 rounded-lg text-[12px] font-medium text-[var(--text-muted)]
-                  hover:bg-[var(--hover-default)] hover:text-[var(--text-primary)] transition-all duration-150"
+                  hover:bg-[var(--hover-default)] hover:text-[var(--text-primary)] transition-colors duration-150"
               >
                 Cancel
               </button>
@@ -352,7 +351,7 @@ function AddMemberModal({
                 pendingLabel="Sending..."
                 className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-3 py-1.5 rounded-lg text-[12px] font-medium
                   bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white
-                  active:scale-[0.98] transition-all duration-150
+                  active:scale-[0.98] transition-[color,background-color,border-color,transform] duration-150
                   disabled:opacity-50 disabled:cursor-not-allowed"
               />
             </div>
@@ -380,7 +379,7 @@ function EditMemberModal({
   projects: Project[];
   isOwner: boolean;
   onClose: () => void;
-  onSuccess: (msg: string) => void;
+  onSuccess: (state: EditMemberState) => void;
 }) {
   const [state, formAction] = useFormState(editTeamMemberAction, EDIT_INITIAL);
 
@@ -397,7 +396,7 @@ function EditMemberModal({
   }, [member?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
-    if (state.success) onSuccess(state.success);
+    if (state.success) onSuccess(state);
   }, [state.success]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!member) return null;
@@ -488,7 +487,7 @@ function EditMemberModal({
                 type="button"
                 onClick={onClose}
                 className="w-full sm:w-auto px-3 py-1.5 rounded-lg text-[12px] font-medium text-[var(--text-muted)]
-                  hover:bg-[var(--hover-default)] hover:text-[var(--text-primary)] transition-all duration-150"
+                  hover:bg-[var(--hover-default)] hover:text-[var(--text-primary)] transition-colors duration-150"
               >
                 Cancel
               </button>
@@ -497,7 +496,7 @@ function EditMemberModal({
                 pendingLabel="Saving..."
                 className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-3 py-1.5 rounded-lg text-[12px] font-medium
                   bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white
-                  active:scale-[0.98] transition-all duration-150
+                  active:scale-[0.98] transition-[color,background-color,border-color,transform] duration-150
                   disabled:opacity-50 disabled:cursor-not-allowed"
               />
             </div>
@@ -521,12 +520,12 @@ function DeleteMemberModal({
   open: boolean;
   member: TeamMemberWithProjects | null;
   onClose: () => void;
-  onSuccess: (msg: string) => void;
+  onSuccess: (state: DeleteMemberState) => void;
 }) {
   const [state, formAction] = useFormState(deleteTeamMemberAction, DELETE_INITIAL);
 
   useEffect(() => {
-    if (state.success) onSuccess(state.success);
+    if (state.success) onSuccess(state);
   }, [state.success]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!member) return null;
@@ -567,7 +566,7 @@ function DeleteMemberModal({
                 type="button"
                 onClick={onClose}
                 className="w-full sm:w-auto px-3 py-1.5 rounded-lg text-[12px] font-medium text-[var(--text-muted)]
-                  hover:bg-[var(--hover-default)] hover:text-[var(--text-primary)] transition-all duration-150"
+                  hover:bg-[var(--hover-default)] hover:text-[var(--text-primary)] transition-colors duration-150"
               >
                 Cancel
               </button>
@@ -576,7 +575,7 @@ function DeleteMemberModal({
                 pendingLabel="Removing..."
                 className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-3 py-1.5 rounded-lg text-[12px] font-medium
                   bg-[var(--priority-urgent)] hover:bg-[var(--priority-urgent)]/90 text-white
-                  active:scale-[0.98] transition-all duration-150
+                  active:scale-[0.98] transition-[color,background-color,border-color,transform] duration-150
                   disabled:opacity-50 disabled:cursor-not-allowed"
               />
             </div>
@@ -604,7 +603,6 @@ export default function TeamMembersClient({
   currentUserId,
   isOwner,
 }: TeamMembersClientProps) {
-  const router = useRouter();
   const { toasts, push, dismiss } = useToast();
 
   const [members, setMembers] = useState<TeamMemberWithProjects[]>(initialMembers);
@@ -648,13 +646,78 @@ export default function TeamMembersClient({
     member.email.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  function handleSuccess(msg: string) {
-    push(msg, "success");
+  /** Build a table row from what the action returned. Project names come from
+   *  the list this page already holds, so no extra query is needed. */
+  const toRow = useCallback(
+    (p: SavedMemberPayload, existing?: TeamMemberWithProjects): TeamMemberWithProjects => ({
+      id: p.id,
+      name: p.name,
+      email: p.email,
+      role: p.role,
+      avatar_url: existing?.avatar_url ?? null,
+      user_role: p.user_role,
+      is_owner: existing?.is_owner ?? false,
+      // The list query never selects org_id and nothing on this page reads it —
+      // it is only here because TeamMemberWithProjects extends the full row type.
+      org_id: existing?.org_id ?? null,
+      project_members: p.projectIds.map((project_id) => {
+        const match = projects.find((pr) => pr.id === project_id);
+        return { project_id, projects: match ? { id: match.id, name: match.name } : null };
+      }),
+    }),
+    [projects]
+  );
+
+  // All three paths used to close the dialog, re-fetch the whole page, and then
+  // refresh the route — three server round trips to show a change already saved.
+  // The action now hands back what it wrote, so the table updates in place.
+  function closeDialogs() {
     setAddOpen(false);
     setEditMember(null);
     setDeleteMember(null);
-    fetchPage(0);
-    router.refresh();
+  }
+
+  function handleAdded(state: AddMemberState) {
+    push(state.success!, "success");
+    closeDialogs();
+    if (!state.member) return;
+    // Sorted by name, so a fresh invite is not necessarily first — only page 0
+    // can be rebuilt locally without guessing.
+    if (currentPage !== 0) { fetchPage(0); return; }
+    const row = toRow(state.member);
+    // Never trim back to PAGE_SIZE here. Doing so silently dropped the
+    // alphabetically-last row — very often the member just invited — so adding
+    // a second member made one vanish from the table. Show every row, and only
+    // when the page has genuinely overflowed ask the server which rows belong
+    // on it. Nothing the user just created may disappear.
+    const overflowed = members.length + 1 > PAGE_SIZE;
+    setMembers((prev) => [...prev, row].sort((a, b) => a.name.localeCompare(b.name)));
+    setTotal((t) => t + 1);
+    if (overflowed) fetchPage(0);
+  }
+
+  function handleEdited(state: EditMemberState) {
+    push(state.success!, "success");
+    closeDialogs();
+    if (!state.member) return;
+    const payload = state.member;
+    setMembers((prev) =>
+      prev
+        .map((m) => (m.id === payload.id ? toRow(payload, m) : m))
+        .sort((a, b) => a.name.localeCompare(b.name))
+    );
+  }
+
+  function handleDeleted(state: DeleteMemberState) {
+    push(state.success!, "success");
+    closeDialogs();
+    if (!state.deletedId) return;
+    const hadLaterPages = total > PAGE_SIZE;
+    setMembers((prev) => prev.filter((m) => m.id !== state.deletedId));
+    setTotal((t) => Math.max(0, t - 1));
+    // The row leaves the screen instantly. Only re-read the page when a row
+    // from a later page now has to move up into the gap.
+    if (hadLaterPages) fetchPage(currentPage);
   }
 
   return (
@@ -671,7 +734,7 @@ export default function TeamMembersClient({
           <button
             onClick={() => { setAddOpen(true); setAddKey((k) => k + 1); }}
             className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium
-              bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white transition-all duration-150"
+              bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white transition-colors duration-150"
           >
             <Plus size={14} />
             Invite Member
@@ -723,7 +786,7 @@ export default function TeamMembersClient({
                   bg-[var(--bg-sidebar)] border border-[var(--border-default)]
                   text-[13px] text-[var(--text-primary)] placeholder:text-[var(--text-faint)]
                   focus:outline-none focus:border-[var(--accent-border)]
-                  transition-all duration-150"
+                  transition-colors duration-150"
               />
             </div>
           </div>
@@ -814,7 +877,7 @@ export default function TeamMembersClient({
                               <button
                                 onClick={() => { setEditMember(member); setEditKey((k) => k + 1); }}
                                 className="p-1.5 rounded-md text-[var(--text-faint)] hover:text-[var(--text-primary)] hover:bg-[var(--hover-default)]
-                                  transition-all duration-150"
+                                  transition-colors duration-150"
                                 title="Edit member"
                               >
                                 <Pencil size={14} />
@@ -826,7 +889,7 @@ export default function TeamMembersClient({
                                 disabled={member.is_owner}
                                 title={member.is_owner ? "Owner cannot be removed" : "Remove member"}
                                 className="p-1.5 rounded-md text-[var(--text-faint)] hover:text-[var(--priority-urgent)] hover:bg-[var(--priority-urgent)]/10
-                                  transition-all duration-150 disabled:opacity-30 disabled:cursor-not-allowed
+                                  transition-colors duration-150 disabled:opacity-30 disabled:cursor-not-allowed
                                   disabled:hover:text-[var(--text-faint)] disabled:hover:bg-transparent"
                               >
                                 <Trash2 size={14} />
@@ -840,58 +903,12 @@ export default function TeamMembersClient({
                 </table>
               </div>
 
-              {/* Pagination controls */}
-              {totalPages > 1 && (
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 px-4 sm:px-5 py-3
-                  border-t border-[var(--border-subtle)] bg-[var(--bg-sidebar)]">
-                  <span className="text-[12px] text-[var(--text-faint)] text-center sm:text-left">
-                    Page {currentPage + 1} of {totalPages}
-                  </span>
-                  <div className="flex items-center justify-center gap-1.5 sm:gap-2">
-                    <button
-                      onClick={() => fetchPage(currentPage - 1)}
-                      disabled={currentPage === 0 || loading}
-                      aria-label="Previous page"
-                      className="flex items-center gap-1 px-2 sm:px-3 py-1.5 rounded-md text-[12px] font-medium
-                        text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--hover-default)]
-                        disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-[var(--text-muted)]
-                        transition-colors duration-150"
-                    >
-                      <ChevronLeft size={14} />
-                      <span className="hidden sm:inline">Previous</span>
-                    </button>
-                    <div className="flex items-center gap-1 flex-wrap justify-center">
-                      {Array.from({ length: totalPages }, (_, i) => (
-                        <button
-                          key={i}
-                          onClick={() => fetchPage(i)}
-                          disabled={loading}
-                          className={`w-8 h-8 rounded-md text-[12px] font-medium transition-colors duration-150
-                            ${i === currentPage
-                              ? 'bg-[var(--accent)] text-white'
-                              : 'text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--hover-default)]'
-                            }
-                            disabled:cursor-not-allowed`}
-                        >
-                          {i + 1}
-                        </button>
-                      ))}
-                    </div>
-                    <button
-                      onClick={() => fetchPage(currentPage + 1)}
-                      disabled={currentPage >= totalPages - 1 || loading}
-                      aria-label="Next page"
-                      className="flex items-center gap-1 px-2 sm:px-3 py-1.5 rounded-md text-[12px] font-medium
-                        text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--hover-default)]
-                        disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-[var(--text-muted)]
-                        transition-colors duration-150"
-                    >
-                      <span className="hidden sm:inline">Next</span>
-                      <ChevronRight size={14} />
-                    </button>
-                  </div>
-                </div>
-              )}
+              <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                loading={loading}
+                onPageChange={fetchPage}
+              />
             </div>
           )}
         </div>
@@ -903,7 +920,7 @@ export default function TeamMembersClient({
         open={addOpen}
         projects={projects}
         onClose={() => setAddOpen(false)}
-        onSuccess={handleSuccess}
+        onSuccess={handleAdded}
       />
 
       <EditMemberModal
@@ -913,7 +930,7 @@ export default function TeamMembersClient({
         projects={projects}
         isOwner={isOwner}
         onClose={() => setEditMember(null)}
-        onSuccess={handleSuccess}
+        onSuccess={handleEdited}
       />
 
       <DeleteMemberModal
@@ -921,7 +938,7 @@ export default function TeamMembersClient({
         open={!!deleteMember}
         member={deleteMember}
         onClose={() => setDeleteMember(null)}
-        onSuccess={handleSuccess}
+        onSuccess={handleDeleted}
       />
     </div>
   );

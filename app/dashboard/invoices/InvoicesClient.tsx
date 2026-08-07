@@ -4,7 +4,6 @@ import { useState, useMemo, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import {
   ChevronRight,
-  ChevronLeft,
   Layers,
   Plus,
   Search,
@@ -25,6 +24,7 @@ import { formatCurrency, formatDate } from "@/lib/utils";
 import { useWorkspaceSlug } from "@/app/dashboard/workspace-context";
 import { fetchInvoicesPageAction } from "@/app/dashboard/invoices/actions";
 import { EmptyState } from "@/components/layout/EmptyState";
+import { Pagination } from "@/components/layout/Pagination";
 import type { ClientListItem } from "@/lib/db/clients";
 import type { Invoice, InvoiceStatus } from "@/lib/types";
 
@@ -142,10 +142,23 @@ export default function InvoicesClient({ initialInvoices, totalInvoices, clients
     return filtered;
   }, [invoices, filter, searchQuery, clientMap]);
 
-  async function handleInvoiceCreated() {
+  // Show the invoice the insert just returned instead of re-fetching the page
+  // and then refreshing the whole route on top of it. createInvoiceAction has
+  // already revalidated server-side, so both of those were duplicates.
+  async function handleInvoiceCreated(invoice: Invoice) {
     setCreateOpen(false);
-    await fetchPage(0);
-    router.refresh();
+    if (currentPage !== 0) {
+      await fetchPage(0);
+      return;
+    }
+    // Never trim back to PAGE_SIZE here — that silently dropped a row once the
+    // page was full, so creating a second invoice made one disappear from the
+    // table. Show every row, and only re-read the page when it has genuinely
+    // overflowed.
+    const overflowed = invoices.length + 1 > PAGE_SIZE;
+    setInvoices((prev) => [invoice, ...prev]);
+    setTotal((t) => t + 1);
+    if (overflowed) await fetchPage(0);
   }
 
   return (
@@ -370,58 +383,12 @@ export default function InvoicesClient({ initialInvoices, totalInvoices, clients
                 </table>
               </div>
 
-              {/* Pagination controls */}
-              {totalPages > 1 && (
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 px-4 sm:px-5 py-3
-                  border-t border-[var(--border-subtle)] bg-[var(--bg-sidebar)]">
-                  <span className="text-[12px] text-[var(--text-faint)] text-center sm:text-left">
-                    Page {currentPage + 1} of {totalPages}
-                  </span>
-                  <div className="flex items-center justify-center gap-1.5 sm:gap-2">
-                    <button
-                      onClick={() => fetchPage(currentPage - 1)}
-                      disabled={currentPage === 0 || loading}
-                      aria-label="Previous page"
-                      className="flex items-center gap-1 px-2 sm:px-3 py-1.5 rounded-md text-[12px] font-medium
-                        text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--hover-default)]
-                        disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-[var(--text-muted)]
-                        transition-colors duration-150"
-                    >
-                      <ChevronLeft size={14} />
-                      <span className="hidden sm:inline">Previous</span>
-                    </button>
-                    <div className="flex items-center gap-1 flex-wrap justify-center">
-                      {Array.from({ length: totalPages }, (_, i) => (
-                        <button
-                          key={i}
-                          onClick={() => fetchPage(i)}
-                          disabled={loading}
-                          className={`w-8 h-8 rounded-md text-[12px] font-medium transition-colors duration-150
-                            ${i === currentPage
-                              ? 'bg-[var(--accent)] text-white'
-                              : 'text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--hover-default)]'
-                            }
-                            disabled:cursor-not-allowed`}
-                        >
-                          {i + 1}
-                        </button>
-                      ))}
-                    </div>
-                    <button
-                      onClick={() => fetchPage(currentPage + 1)}
-                      disabled={currentPage >= totalPages - 1 || loading}
-                      aria-label="Next page"
-                      className="flex items-center gap-1 px-2 sm:px-3 py-1.5 rounded-md text-[12px] font-medium
-                        text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--hover-default)]
-                        disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-[var(--text-muted)]
-                        transition-colors duration-150"
-                    >
-                      <span className="hidden sm:inline">Next</span>
-                      <ChevronRight size={14} />
-                    </button>
-                  </div>
-                </div>
-              )}
+              <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                loading={loading}
+                onPageChange={fetchPage}
+              />
             </div>
           )}
         </div>

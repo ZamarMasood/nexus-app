@@ -7,7 +7,6 @@ import { createTaskAction } from "@/app/dashboard/tasks/actions";
 import { createTagAction, setTaskTagsAction } from "@/app/dashboard/tasks/tag-actions";
 import { getProjects } from "@/lib/db/projects";
 import { getTeamMembers } from "@/lib/db/team-members";
-import { revalidateDashboard } from "@/app/dashboard/actions";
 import { getTaskStatuses, type TaskStatusRow } from "@/lib/db/task-statuses";
 import { type TagRow } from "@/lib/db/tags";
 import type { Task, TaskPriority, TaskStatus, Project, TeamMember } from "@/lib/types";
@@ -480,7 +479,10 @@ export function TaskFormDialog({
       }
 
       onOpenChange(false);
-      await revalidateDashboard();
+      // No revalidateDashboard() here. createTaskAction/updateTask and
+      // setTaskTagsAction have each already called revalidatePath('/dashboard',
+      // 'layout'); a third one re-rendered the entire dashboard tree again for
+      // the same result, and the user waited through every one of them.
       onSuccess?.();
     } catch (err: unknown) {
       setSubmitError(err instanceof Error ? err.message : "Something went wrong");

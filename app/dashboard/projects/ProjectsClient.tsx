@@ -12,7 +12,6 @@ import {
   Plus,
   Search,
   ChevronRight,
-  ChevronLeft,
   FolderKanban,
   DollarSign
 } from "lucide-react";
@@ -32,6 +31,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import type { Project, Client } from "@/lib/types";
+import { Pagination } from "@/components/layout/Pagination";
 
 const PAGE_SIZE = 5;
 
@@ -82,7 +82,7 @@ interface NewProjectFormProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   clients: Client[];
-  onSuccess: () => void;
+  onSuccess: (project: Project) => void;
 }
 
 function NewProjectDialog({ open, onOpenChange, clients, onSuccess }: NewProjectFormProps) {
@@ -108,7 +108,7 @@ function NewProjectDialog({ open, onOpenChange, clients, onSuccess }: NewProject
     setSubmitting(true);
     setSubmitError(null);
     try {
-      await createProjectAction({
+      const project = await createProjectAction({
         name: name.trim(),
         client_id: clientId || null,
         status,
@@ -116,7 +116,9 @@ function NewProjectDialog({ open, onOpenChange, clients, onSuccess }: NewProject
         total_value: totalValue ? Math.max(0, parseFloat(totalValue)) : null,
       });
       onOpenChange(false);
-      onSuccess();
+      // Hand the saved row up so the list can show it without asking the server
+      // for it a second time.
+      onSuccess(project);
     } catch (err: unknown) {
       setSubmitError(err instanceof Error ? err.message : "Something went wrong");
     } finally {
@@ -129,7 +131,7 @@ function NewProjectDialog({ open, onOpenChange, clients, onSuccess }: NewProject
     text-[var(--text-primary)] text-[13px] placeholder:text-[var(--text-faint)]
     focus:outline-none focus:border-[var(--accent-border)]
     focus:ring-1 focus:ring-[var(--accent-ring)]
-    transition-all duration-150`;
+    transition-colors duration-150`;
 
   const selectTriggerClass = `w-full rounded-lg border border-[var(--border-default)] bg-[var(--bg-input)]
     h-[42px] text-[13px] text-[var(--text-primary)]
@@ -276,7 +278,7 @@ function NewProjectDialog({ open, onOpenChange, clients, onSuccess }: NewProject
               type="button"
               onClick={() => onOpenChange(false)}
               className="w-full sm:w-auto px-4 py-2 rounded-lg text-[13px] font-medium text-[var(--text-muted)]
-                hover:bg-[var(--hover-default)] hover:text-[var(--text-primary)] transition-all duration-150"
+                hover:bg-[var(--hover-default)] hover:text-[var(--text-primary)] transition-colors duration-150"
             >
               Cancel
             </button>
@@ -285,7 +287,7 @@ function NewProjectDialog({ open, onOpenChange, clients, onSuccess }: NewProject
               disabled={submitting}
               className="w-full sm:w-auto px-4 py-2 rounded-lg text-[13px] font-medium
                 bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white
-                active:scale-[0.98] transition-all duration-150
+                active:scale-[0.98] transition-[color,background-color,border-color,transform] duration-150
                 disabled:opacity-50 disabled:cursor-not-allowed
                 inline-flex items-center justify-center gap-2"
             >
@@ -373,9 +375,23 @@ export default function ProjectsClient({
   const completedTasks = Object.values(taskCounts).reduce((sum, counts) => sum + counts.done, 0);
   const overallProgress = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
 
-  async function handleProjectCreated() {
-    await fetchPage(0);
-    router.refresh();
+  // createProjectAction already revalidated server-side, so re-fetching the page
+  // and then refreshing the route were both duplicates the user waited through.
+  // A brand-new project has no tasks, so its counts are known without a query.
+  async function handleProjectCreated(project: Project) {
+    if (currentPage !== 0) {
+      await fetchPage(0);
+      return;
+    }
+    // Never trim back to PAGE_SIZE here — that silently dropped a row once the
+    // page was full, so creating a second project made one disappear from the
+    // list. Show every row, and only re-read the page when it has genuinely
+    // overflowed.
+    const overflowed = projects.length + 1 > PAGE_SIZE;
+    setProjects((prev) => [project, ...prev]);
+    setTaskCounts((prev) => ({ ...prev, [project.id]: { total: 0, done: 0 } }));
+    setTotal((t) => t + 1);
+    if (overflowed) await fetchPage(0);
   }
 
   return (
@@ -391,7 +407,7 @@ export default function ProjectsClient({
           <button
             onClick={() => setNewProjectOpen(true)}
             className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-[13px] font-medium
-              bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white transition-all duration-150
+              bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white transition-[color,background-color,border-color,transform] duration-150
               active:scale-[0.98]"
           >
             <Plus size={14} />
@@ -406,7 +422,7 @@ export default function ProjectsClient({
 
           {/* Stats cards */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
-            <div className="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-sidebar)] p-4 hover:border-[var(--border-medium)] transition-all duration-200">
+            <div className="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-sidebar)] p-4 hover:border-[var(--border-medium)] transition-colors duration-200">
               <div className="flex items-center gap-2 mb-2">
                 <div className="p-1.5 rounded-lg bg-[var(--tint-green)]">
                   <CheckCircle size={14} className="text-[var(--status-done)]" />
@@ -417,7 +433,7 @@ export default function ProjectsClient({
               <p className="text-[11px] text-[var(--text-faint)] mt-1">Out of {total} total</p>
             </div>
 
-            <div className="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-sidebar)] p-4 hover:border-[var(--border-medium)] transition-all duration-200">
+            <div className="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-sidebar)] p-4 hover:border-[var(--border-medium)] transition-colors duration-200">
               <div className="flex items-center gap-2 mb-2">
                 <div className="p-1.5 rounded-lg bg-[var(--tint-accent)]">
                   <Layers size={14} className="text-[var(--accent)]" />
@@ -427,7 +443,7 @@ export default function ProjectsClient({
               <p className="text-[28px] font-semibold text-[var(--text-primary)]">{overallProgress}%</p>
               <div className="mt-2 h-1.5 rounded-full bg-[var(--border-subtle)] overflow-hidden">
                 <div
-                  className="h-full rounded-full transition-all duration-500 ease-out"
+                  className="h-full rounded-full transition-[width] duration-500 ease-out"
                   style={{ width: `${overallProgress}%`, background: '#5e6ad2' }}
                 />
               </div>
@@ -449,7 +465,7 @@ export default function ProjectsClient({
                   text-[13px] text-[var(--text-primary)] placeholder:text-[var(--text-faint)]
                   focus:outline-none focus:border-[var(--accent-border)]
                   focus:ring-1 focus:ring-[var(--accent-ring)]
-                  transition-all duration-150"
+                  transition-colors duration-150"
               />
             </div>
             <div className="flex gap-2">
@@ -457,7 +473,7 @@ export default function ProjectsClient({
                 <button
                   key={filter}
                   onClick={() => setStatusFilter(filter)}
-                  className={`px-3 py-1.5 rounded-lg text-[12px] font-medium transition-all duration-150
+                  className={`px-3 py-1.5 rounded-lg text-[12px] font-medium transition-colors duration-150
                     ${statusFilter === filter
                       ? 'bg-[var(--accent)] text-white shadow-sm'
                       : 'bg-[var(--bg-sidebar)] text-[var(--text-muted)] hover:text-[var(--text-primary)] border border-[var(--border-default)] hover:border-[var(--border-hover)]'}`}
@@ -530,7 +546,7 @@ export default function ProjectsClient({
                           key={project.id}
                           onClick={() => router.push(`/${slug}/projects/${project.id}`)}
                           className="group border-b border-[var(--border-subtle)] last:border-0
-                            hover:bg-[var(--bg-elevated)] cursor-pointer transition-all duration-150"
+                            hover:bg-[var(--bg-elevated)] cursor-pointer transition-colors duration-150"
                         >
                           <td className="px-5 py-4">
                             <div className="min-w-0">
@@ -575,7 +591,7 @@ export default function ProjectsClient({
                                 </div>
                                 <div className="h-1 w-full rounded-full bg-[var(--border-subtle)] overflow-hidden">
                                   <div
-                                    className="h-full rounded-full transition-all duration-500 ease-out"
+                                    className="h-full rounded-full transition-[width] duration-500 ease-out"
                                     style={{ width: `${pct}%`, background: '#5e6ad2' }}
                                   />
                                 </div>
@@ -587,7 +603,7 @@ export default function ProjectsClient({
 
                           <td className="px-5 py-4 text-right">
                             <ChevronRight size={14} className="text-[var(--text-disabled)] group-hover:text-[var(--accent)]
-                              transition-all duration-150 ml-auto" />
+                              transition-colors duration-150 ml-auto" />
                           </td>
                         </tr>
                       );
@@ -596,74 +612,12 @@ export default function ProjectsClient({
                 </table>
               </div>
 
-              {/* Pagination controls */}
-              {totalPages > 1 && (
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 px-4 sm:px-5 py-3.5
-                  border-t border-[var(--border-subtle)] bg-[var(--bg-input)]">
-                  <span className="text-[12px] text-[var(--text-faint)] text-center sm:text-left">
-                    Page {currentPage + 1} of {totalPages}
-                  </span>
-                  <div className="flex items-center justify-center gap-1.5 sm:gap-3">
-                    <button
-                      onClick={() => fetchPage(currentPage - 1)}
-                      disabled={currentPage === 0 || loading}
-                      aria-label="Previous page"
-                      className="flex items-center gap-1.5 px-2 sm:px-3 py-1.5 rounded-lg text-[12px] font-medium
-                        text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--hover-default)]
-                        disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent
-                        transition-colors duration-150"
-                    >
-                      <ChevronLeft size={14} />
-                      <span className="hidden sm:inline">Previous</span>
-                    </button>
-                    <div className="flex items-center gap-1 flex-wrap justify-center">
-                      {Array.from({ length: Math.min(totalPages, 7) }, (_, i) => {
-                        let pageNum = i;
-                        // Show pages around current page
-                        if (totalPages > 7) {
-                          if (currentPage < 3) {
-                            pageNum = i;
-                          } else if (currentPage > totalPages - 4) {
-                            pageNum = totalPages - 7 + i;
-                          } else {
-                            pageNum = currentPage - 3 + i;
-                          }
-                        }
-                        if (pageNum >= 0 && pageNum < totalPages) {
-                          return (
-                            <button
-                              key={pageNum}
-                              onClick={() => fetchPage(pageNum)}
-                              disabled={loading}
-                              className={`w-8 h-8 rounded-lg text-[12px] font-medium transition-colors duration-150
-                                ${pageNum === currentPage
-                                  ? 'bg-[var(--accent)] text-white shadow-sm'
-                                  : 'text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--hover-default)]'
-                                }
-                                disabled:cursor-not-allowed`}
-                            >
-                              {pageNum + 1}
-                            </button>
-                          );
-                        }
-                        return null;
-                      })}
-                    </div>
-                    <button
-                      onClick={() => fetchPage(currentPage + 1)}
-                      disabled={currentPage >= totalPages - 1 || loading}
-                      aria-label="Next page"
-                      className="flex items-center gap-1.5 px-2 sm:px-3 py-1.5 rounded-lg text-[12px] font-medium
-                        text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--hover-default)]
-                        disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent
-                        transition-colors duration-150"
-                    >
-                      <span className="hidden sm:inline">Next</span>
-                      <ChevronRight size={14} />
-                    </button>
-                  </div>
-                </div>
-              )}
+              <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                loading={loading}
+                onPageChange={fetchPage}
+              />
             </div>
           )}
         </div>

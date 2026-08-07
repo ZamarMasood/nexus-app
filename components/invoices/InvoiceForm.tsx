@@ -11,7 +11,6 @@ import {
 } from "@/components/ui/select";
 import { createInvoiceAction } from "@/app/dashboard/invoices/actions";
 import { getClients } from "@/lib/db/clients";
-import { revalidateDashboard } from "@/app/dashboard/actions";
 import type { Invoice, InvoiceStatus } from "@/lib/types";
 
 interface ClientOption {
@@ -110,12 +109,15 @@ export function InvoiceForm({ onSuccess, onCancel, initialClients = [] }: Invoic
           body:    JSON.stringify({ invoiceId: invoice.id }),
         });
         const json = await res.json() as { pdf_url?: string; invoice?: Invoice; error?: string };
-        if (json.invoice) { await revalidateDashboard(); onSuccess(json.invoice); return; }
+        // No revalidateDashboard() here: createInvoiceAction already revalidated
+        // server-side. Calling it again re-rendered the whole dashboard layout a
+        // second time — a full Washington→Sydney round trip the user waited on
+        // for nothing.
+        if (json.invoice) { onSuccess(json.invoice); return; }
       } catch {
         // PDF generation failed — still succeed with created invoice
       }
 
-      await revalidateDashboard();
       onSuccess(invoice);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong.");

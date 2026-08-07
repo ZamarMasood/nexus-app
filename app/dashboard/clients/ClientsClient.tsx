@@ -4,7 +4,6 @@ import { useState, useMemo, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import {
   ChevronRight,
-  ChevronLeft,
   Layers,
   Plus,
   Search,
@@ -14,10 +13,11 @@ import {
   Mail,
   Building2,
   TrendingUp,
-  TrendingDown
+  TrendingDown,
+  Trash2
 } from "lucide-react";
-import { revalidateDashboard } from "@/app/dashboard/actions";
-import { fetchClientsPageAction } from "@/app/dashboard/clients/actions";
+import { fetchClientsPageAction, deleteClientAction } from "@/app/dashboard/clients/actions";
+import { useConfirm } from "@/components/ui/ConfirmDialog";
 import {
   Dialog,
   DialogContent,
@@ -26,6 +26,7 @@ import { ClientForm } from "@/components/clients/ClientForm";
 import { formatCurrency } from "@/lib/utils";
 import { useWorkspaceSlug } from "@/app/dashboard/workspace-context";
 import { EmptyState } from "@/components/layout/EmptyState";
+import { Pagination } from "@/components/layout/Pagination";
 import type { ProjectListItem } from "@/lib/db/projects";
 import type { Client, ClientStatus } from "@/lib/types";
 
@@ -78,6 +79,7 @@ interface ClientsClientProps {
 export default function ClientsClient({ initialClients, totalClients, projects: initialProjects, isAdmin }: ClientsClientProps) {
   const router = useRouter();
   const slug = useWorkspaceSlug();
+  const confirm = useConfirm();
   const [clients, setClients] = useState<Client[]>(initialClients);
   const [total, setTotal] = useState(totalClients);
   const [projects, setProjects] = useState<ProjectListItem[]>(initialProjects);
@@ -138,10 +140,59 @@ export default function ClientsClient({ initialClients, totalClients, projects: 
     return filtered;
   }, [clients, filter, searchQuery]);
 
+  // The insert already returned the finished row, so show it now.
+  //
+  // This used to throw `client` away and then pay two MORE server round trips —
+  // revalidateDashboard() and fetchPage(0) — before the user saw anything. With
+  // functions in Washington and the database in Sydney that was the visible
+  // ~2s wait. createClientAction already revalidates server-side, so the extra
+  // calls bought nothing.
+  //
+  // Only page 0 can be rebuilt locally; from any other page we genuinely have to
+  // ask the server what page 0 looks like.
   async function handleClientAdded(client: Client) {
     setAddOpen(false);
-    await revalidateDashboard();
-    await fetchPage(0);
+    if (currentPage !== 0) {
+      await fetchPage(0);
+      return;
+    }
+    // Never trim back to PAGE_SIZE here — that silently dropped a row once the
+    // page was full, so adding a second client made one disappear from the
+    // table. Show every row, and only re-read the page when it has genuinely
+    // overflowed.
+    const overflowed = clients.length + 1 > PAGE_SIZE;
+    setClients((prev) => [client, ...prev]);
+    setTotal((t) => t + 1);
+    if (overflowed) await fetchPage(0);
+  }
+
+  async function handleDelete(client: Client) {
+    await confirm({
+      title: `Delete ${client.name}?`,
+      description:
+        "This removes the client permanently, including their portal login. It cannot be undone.",
+      confirmLabel: "Delete client",
+      variant: "destructive",
+      // Thrown errors stay inside the dialog, so "still has 3 invoices" is shown
+      // where the admin is looking instead of vanishing behind a closed modal.
+      onConfirm: async () => {
+        const snapshot = clients;
+        const hadLaterPages = total > PAGE_SIZE;
+        // Drop it from the table first — a delete has nothing to wait for, and
+        // the row is restored below if the server refuses.
+        setClients((prev) => prev.filter((c) => c.id !== client.id));
+        setTotal((t) => Math.max(0, t - 1));
+        try {
+          await deleteClientAction(client.id);
+          // Only re-read when a row from a later page has to move up.
+          if (hadLaterPages) await fetchPage(currentPage);
+        } catch (err) {
+          setClients(snapshot);
+          setTotal((t) => t + 1);
+          throw err;
+        }
+      },
+    });
   }
 
   return (
@@ -273,7 +324,7 @@ export default function ClientsClient({ initialClients, totalClients, projects: 
                       <th className="px-3 sm:px-5 py-3 text-left text-[11px] font-medium text-[var(--text-faint)] uppercase tracking-[0.06em] hidden lg:table-cell">
                         Active Projects
                       </th>
-                      <th className="px-3 sm:px-5 py-3 w-8" />
+                      <th className="px-3 sm:px-5 py-3 w-20" />
                     </tr>
                   </thead>
                   <tbody className={loading ? 'opacity-50 pointer-events-none' : ''}>
@@ -349,8 +400,26 @@ export default function ClientsClient({ initialClients, totalClients, projects: 
                           </td>
 
                           <td className="px-3 sm:px-5 py-3.5 text-right">
-                            <ChevronRight size={14} className="text-[var(--text-disabled)] group-hover:text-[var(--text-faint)]
-                              transition-colors duration-150 ml-auto" />
+                            <div className="flex items-center justify-end gap-1">
+                              {isAdmin && (
+                                <button
+                                  type="button"
+                                  aria-label={`Delete ${client.name}`}
+                                  // The row itself navigates to the client, so the
+                                  // click must not bubble up to it.
+                                  onClick={(e) => { e.stopPropagation(); handleDelete(client); }}
+                                  className="p-1.5 rounded-md text-[var(--text-disabled)]
+                                    opacity-0 group-hover:opacity-100 focus-visible:opacity-100
+                                    hover:bg-[var(--tint-red)] hover:text-[var(--priority-urgent)]
+                                    focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[var(--accent-ring)]
+                                    transition-colors duration-150"
+                                >
+                                  <Trash2 size={14} />
+                                </button>
+                              )}
+                              <ChevronRight size={14} className="text-[var(--text-disabled)] group-hover:text-[var(--text-faint)]
+                                transition-colors duration-150" />
+                            </div>
                           </td>
                         </tr>
                       );
@@ -359,58 +428,12 @@ export default function ClientsClient({ initialClients, totalClients, projects: 
                 </table>
               </div>
 
-              {/* Pagination controls */}
-              {totalPages > 1 && (
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 px-4 sm:px-5 py-3
-                  border-t border-[var(--border-subtle)] bg-[var(--bg-sidebar)]">
-                  <span className="text-[12px] text-[var(--text-faint)] text-center sm:text-left">
-                    Page {currentPage + 1} of {totalPages}
-                  </span>
-                  <div className="flex items-center justify-center gap-1.5 sm:gap-2">
-                    <button
-                      onClick={() => fetchPage(currentPage - 1)}
-                      disabled={currentPage === 0 || loading}
-                      aria-label="Previous page"
-                      className="flex items-center gap-1 px-2 sm:px-3 py-1.5 rounded-md text-[12px] font-medium
-                        text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--hover-default)]
-                        disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-[var(--text-muted)]
-                        transition-colors duration-150"
-                    >
-                      <ChevronLeft size={14} />
-                      <span className="hidden sm:inline">Previous</span>
-                    </button>
-                    <div className="flex items-center gap-1 flex-wrap justify-center">
-                      {Array.from({ length: totalPages }, (_, i) => (
-                        <button
-                          key={i}
-                          onClick={() => fetchPage(i)}
-                          disabled={loading}
-                          className={`w-8 h-8 rounded-md text-[12px] font-medium transition-colors duration-150
-                            ${i === currentPage
-                              ? 'bg-[var(--accent)] text-white'
-                              : 'text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--hover-default)]'
-                            }
-                            disabled:cursor-not-allowed`}
-                        >
-                          {i + 1}
-                        </button>
-                      ))}
-                    </div>
-                    <button
-                      onClick={() => fetchPage(currentPage + 1)}
-                      disabled={currentPage >= totalPages - 1 || loading}
-                      aria-label="Next page"
-                      className="flex items-center gap-1 px-2 sm:px-3 py-1.5 rounded-md text-[12px] font-medium
-                        text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--hover-default)]
-                        disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-[var(--text-muted)]
-                        transition-colors duration-150"
-                    >
-                      <span className="hidden sm:inline">Next</span>
-                      <ChevronRight size={14} />
-                    </button>
-                  </div>
-                </div>
-              )}
+              <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                loading={loading}
+                onPageChange={fetchPage}
+              />
             </div>
           )}
         </div>

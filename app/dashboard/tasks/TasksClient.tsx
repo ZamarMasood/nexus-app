@@ -416,9 +416,11 @@ export default function TasksClient({
           t.id === draggableId ? { ...t, status: source.droppableId } : t
         )
       );
-    } else {
-      router.refresh();
     }
+    // No router.refresh() on success: the card was already moved optimistically
+    // above, so refreshing only re-rendered the whole route to arrive at the
+    // state already on screen — and the board visibly stalled while it did.
+    // updateTaskStatusAction revalidates server-side, so other routes stay fresh.
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [router, tasks]);
 
